@@ -1,0 +1,765 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Beta and the SML</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: 1 beta from a scatter plot, 2 the SML, 3 portfolio beta, 4 what to notice. Real monthly data embedded below. */
+:root {
+  color-scheme: light;
+  --bg: #eef1f1; --fg: #1a2328; --muted: #5b6a70; --panel: #ffffff; --line: #d5dcde;
+  --accent: #0f7c71; --cap: #f3f6f6; --neg: #a1402f; --pos: #1d6b3a;
+  --grid: #e3e8e9; --axis: #8a989d; --other: #8d9a9f;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-cond: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #11171a; --fg: #e2e8ea; --muted: #9aaab0; --panel: #182024; --line: #29343a;
+    --accent: #5cc9bb; --cap: #1f292e; --neg: #e3826f; --pos: #6fcf8f;
+    --grid: #253035; --axis: #6f7f85; --other: #75858b;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #11171a; --fg: #e2e8ea; --muted: #9aaab0; --panel: #182024; --line: #29343a;
+  --accent: #5cc9bb; --cap: #1f292e; --neg: #e3826f; --pos: #6fcf8f;
+  --grid: #253035; --axis: #6f7f85; --other: #75858b;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+[hidden] { display: none !important; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 28px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); }
+header.top { display: grid; gap: 6px; margin-bottom: 22px; }
+header.top h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+header.top p { margin: 0; color: var(--muted); max-width: 78ch; }
+nav.steps { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+nav.steps a { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 999px; padding: 3px 12px; }
+nav.steps a:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+nav.steps a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+section.lesson { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px 22px; margin-bottom: 22px; display: grid; gap: 16px; min-width: 0; }
+.lesson > h2 { margin: 0; font-size: 19px; font-weight: 600; display: flex; gap: 10px; align-items: baseline; }
+.lesson > h2 .num { font-family: var(--font-cond); font-size: 13px; color: var(--panel); background: var(--accent); border-radius: 999px; padding: 1px 9px; }
+.lesson > p.lead { margin: -8px 0 0; color: var(--muted); max-width: 80ch; }
+@media (max-width: 520px) { section.lesson { padding: 16px 14px 18px; } }
+
+.tm { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px 22px; align-items: start; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: 20px 22px; align-items: start; }
+@media (max-width: 860px) { .tm, .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.col { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; }
+
+/* controls */
+.pickrow { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: end; }
+.pick { display: grid; gap: 4px; min-width: 0; }
+.pick label, .lab { font-size: 13px; font-weight: 600; color: var(--muted); }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+select { font: 500 14px var(--font-body); color: var(--fg); background: var(--cap); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; max-width: 100%; }
+.ctl { display: grid; gap: 4px; }
+.ctl .lab { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.ctl .lab b { color: var(--fg); font-size: 15px; font-variant-numeric: tabular-nums; }
+.ctl.big .lab b { font-size: 22px; color: var(--accent); }
+.ctl.big .lab b#w1Out { white-space: nowrap; }
+@media (max-width: 520px) { .ctl.big .lab b#w1Out { font-size: 16px; } }
+input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; margin: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.seg button { font: 600 13px var(--font-body); border: 0; background: transparent; color: var(--muted); padding: 5px 12px; cursor: pointer; }
+.seg button[aria-pressed=true] { background: var(--accent); color: var(--panel); }
+.btn { font: 600 13px var(--font-body); color: var(--accent); background: transparent; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 999px; padding: 4px 12px; cursor: pointer; text-align: left; }
+.btn:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.btn.primary { background: var(--accent); color: var(--panel); border-color: var(--accent); }
+.btn[aria-pressed=true]:not(.primary) { background: var(--accent); color: var(--panel); border-color: var(--accent); }
+.btn:focus-visible, .seg button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, .chart:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.takeaway { margin: 0; padding: 10px 14px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); border-radius: 0 8px 8px 0; font-size: 14.5px; }
+.takeaway b { font-weight: 600; }
+.note { margin: 0; font-size: 13px; color: var(--muted); }
+.caution { margin: 0; padding: 10px 14px; border-left: 3px solid var(--neg); background: color-mix(in srgb, var(--neg) 7%, transparent); border-radius: 0 8px 8px 0; font-size: 14px; }
+
+/* readout + calculation cards */
+.card { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; background: color-mix(in srgb, var(--cap) 60%, var(--panel)); min-width: 0; }
+.card h3 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+table.stat { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 14px; }
+table.stat th, table.stat td { padding: 5px 6px; text-align: right; border-bottom: 1px solid var(--line); }
+table.stat thead th { font-size: 12.5px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+table.stat tbody th { text-align: left; font-weight: 500; color: var(--muted); font-size: 13px; }
+table.stat tr.key td { font-size: 20px; font-weight: 600; }
+table.stat td.mk { color: var(--muted); }
+.sub { margin: 0; font-size: 13.5px; color: var(--muted); }
+.sub b { color: var(--fg); font-weight: 600; }
+.eq { font-size: 14.5px; font-variant-numeric: tabular-nums; display: grid; gap: 6px; }
+.eq div { overflow-wrap: anywhere; }
+.eq .big { font-size: 16px; }
+.eq b { font-weight: 600; }
+.eq .res { color: var(--accent); font-weight: 600; }
+.formula { font-size: 16px; text-align: center; padding: 6px 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+
+/* charts */
+.chart { position: relative; min-width: 0; border-radius: 6px; }
+.chart svg { width: 100%; height: auto; display: block; touch-action: pan-y; overflow: visible; }
+.chart .gridl { stroke: var(--grid); stroke-width: 1; }
+.chart .axisl { stroke: var(--axis); stroke-width: 1; }
+.chart .zero { stroke: var(--axis); stroke-width: 1; }
+.chart .tick { font: 500 11.5px var(--font-body); fill: var(--muted); font-variant-numeric: tabular-nums; }
+.chart .axtitle { font: 600 12px var(--font-body); fill: var(--muted); }
+.chart .ref { stroke: var(--axis); stroke-width: 1.5; stroke-dasharray: 5 4; fill: none; }
+.chart .reflab { font: 500 11.5px var(--font-body); fill: var(--muted); }
+.chart .fit { fill: none; stroke-width: 2.25; stroke-linecap: round; }
+.chart .sml { fill: none; stroke: var(--fg); stroke-width: 2; stroke-linecap: round; }
+.chart .band { fill: none; stroke: var(--s3); stroke-width: 9; stroke-linecap: round; opacity: .28; }
+.chart .dot { stroke: var(--panel); stroke-width: 2; }
+.chart .hollow { fill: var(--panel); stroke-width: 2; }
+.chart .whisk { stroke-width: 1.5; fill: none; opacity: .6; }
+.chart .dlab { font: 600 12px var(--font-body); fill: var(--fg); font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
+.chart .olab { font: 500 11.5px var(--font-body); fill: var(--muted); paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
+.chart .leader { stroke: var(--axis); stroke-width: 1; }
+.chart .halo { fill: none; stroke: var(--fg); stroke-width: 2; pointer-events: none; }
+.tip { position: absolute; pointer-events: none; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; font-size: 12.5px; line-height: 1.45; box-shadow: 0 4px 14px rgba(0,0,0,.12); white-space: nowrap; font-variant-numeric: tabular-nums; z-index: 2; }
+.tip i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+.tip .t { color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--muted); }
+.legend span { white-space: nowrap; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+.legend i.ln { width: 16px; height: 0; border-radius: 0; border-top: 2px dashed var(--axis); vertical-align: 3px; }
+.legend i.solid { width: 16px; height: 0; border-radius: 0; border-top: 2px solid var(--fg); vertical-align: 3px; }
+.legend i.dia { width: 9px; height: 9px; border-radius: 1px; transform: rotate(45deg); background: var(--fg); margin: 0 8px 0 2px; }
+.legend i.ring { background: var(--panel); border: 2px solid var(--muted); }
+.charthead { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; margin-bottom: 4px; }
+.charthead h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* tables */
+.tblwrap { overflow-x: auto; }
+table.data { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+table.data th, table.data td { padding: 5px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.data th { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+table.data th:first-child, table.data td:first-child { text-align: left; }
+table.data tr.cur td { background: color-mix(in srgb, var(--accent) 10%, transparent); font-weight: 600; }
+td.neg { color: var(--neg); } td.pos { color: var(--pos); }
+details.tbl { min-width: 0; }
+details.tbl summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--accent); }
+details.tbl[open] summary { margin-bottom: 8px; }
+@media (max-width: 520px) { table.data { font-size: 13.5px; } table.data th, table.data td { padding: 5px 6px; } table.data th { white-space: normal; } table.stat tr.key td { font-size: 18px; } }
+
+ol.notice { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; counter-reset: n; }
+ol.notice li { counter-increment: n; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 12px; max-width: 86ch; }
+ol.notice li::before { content: counter(n); grid-row: span 2; font: 600 13px var(--font-cond); color: var(--panel); background: var(--accent); border-radius: 999px; width: 22px; height: 22px; display: grid; place-items: center; margin-top: 2px; }
+ol.notice h3 { margin: 0; font-size: 15px; font-weight: 600; }
+ol.notice p { margin: 0; font-size: 14.5px; }
+footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 86ch; display: grid; gap: 6px; }
+footer.note p { margin: 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+</head><body>
+<div class="wrap">
+  <header class="top">
+    <h1>Beta and the Security Market Line</h1>
+    <p>A diversified investor cares about one kind of risk: how much a stock moves with the market. Beta (β) measures it, and CAPM turns beta into a required return. Everything here uses real monthly returns for ten well-known U.S. stocks over the last five years.</p>
+    <nav class="steps" aria-label="Sections"><a href="#s1">1 · Beta from a scatter plot</a><a href="#s2">2 · The Security Market Line</a><a href="#s3">3 · Portfolio beta</a><a href="#s4">4 · What to notice</a></nav>
+  </header>
+
+  <!-- ===================== 1. BETA FROM A SCATTER PLOT ===================== -->
+  <section class="lesson" id="s1" aria-labelledby="h1">
+    <h2 id="h1"><span class="num">1</span>Beta from a scatter plot</h2>
+    <p class="lead">Each dot is one month: the market's return across, the stock's return up. The best-fit line through the dots is the stock's characteristic line, and its slope is beta: how many percentage points the stock moved, on average, for each 1-point move in the market. Pick two stocks to compare.</p>
+    <div class="pickrow">
+      <div class="pick"><label for="selA"><span class="sw" style="background:var(--s1)"></span>Stock A</label><select id="selA"></select></div>
+      <div class="pick"><label for="selB"><span class="sw" style="background:var(--s2)"></span>Stock B</label><select id="selB"></select></div>
+      <div class="pick"><span class="lab" id="modeLab">Returns</span><div class="seg" role="group" aria-labelledby="modeLab"><button type="button" id="mEx" aria-pressed="true">Excess over T-bill</button><button type="button" id="mRaw" aria-pressed="false">Raw</button></div></div>
+    </div>
+    <div class="tm">
+      <div class="col">
+        <div class="chart" id="scWrap" tabindex="0" aria-describedby="scHelp">
+          <div class="charthead"><h3 id="scTitle"></h3><div class="legend" id="scLeg"></div></div>
+          <svg id="sc" role="img"></svg>
+          <div class="tip" id="scTip" hidden></div>
+        </div>
+        <p class="note" id="scHelp">Hover or tap a dot to see its month. Click the chart (or tab to it) and use the ← → keys to step through the 60 months.</p>
+        <p class="sr" id="scLive" aria-live="polite"></p>
+        <details class="tbl"><summary>Show the 60 months as a table</summary><div class="tblwrap"><table class="data" id="scTbl"></table></div></details>
+      </div>
+      <div class="col">
+        <div class="card" aria-labelledby="hStat">
+          <h3 id="hStat">Estimates, <span id="statRange"></span></h3>
+          <table class="stat" id="statTbl"></table>
+          <p class="sub" id="statNote"></p>
+        </div>
+        <div class="ctl"><span class="lab" id="p1Lab">Comparisons to try</span><div class="presets" id="presets1" role="group" aria-labelledby="p1Lab"></div></div>
+        <p class="takeaway" id="story1" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 2. THE SML ===================== -->
+  <section class="lesson" id="s2" aria-labelledby="h2">
+    <h2 id="h2"><span class="num">2</span>The Security Market Line</h2>
+    <p class="lead">CAPM turns beta into a required return. Plot required return against beta and you get a straight line, the SML. It starts at the risk-free rate (β = 0), passes through the market (β = 1), and its slope is the market risk premium, r<sub>M</sub> − r<sub>RF</sub>.</p>
+    <div class="grid2">
+      <div class="col">
+        <div class="formula" aria-label="r sub i equals r sub RF plus beta sub i times, r sub M minus r sub RF">r<sub>i</sub> = r<sub>RF</sub> + β<sub>i</sub> (r<sub>M</sub> − r<sub>RF</sub>)</div>
+        <div class="ctl big">
+          <div class="lab"><label for="rrf">Risk-free rate r<sub>RF</sub></label><b id="rrfOut"></b></div>
+          <input type="range" id="rrf" min="0" max="8" step="0.05" value="3">
+        </div>
+        <div class="ctl big">
+          <div class="lab"><label for="rpm">Market risk premium r<sub>M</sub> − r<sub>RF</sub></label><b id="rpmOut"></b></div>
+          <input type="range" id="rpm" min="0" max="10" step="0.05" value="5">
+        </div>
+        <p class="sub" id="rmOut"></p>
+        <div class="ctl"><span class="lab" id="p2Lab">Set the inputs</span><div class="presets" id="presets2" role="group" aria-labelledby="p2Lab"></div></div>
+        <div class="card" aria-labelledby="hReq">
+          <h3 id="hReq">Required returns</h3>
+          <div class="eq" id="reqEq"></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="chart" id="smlWrap" tabindex="0" aria-describedby="smlHelp">
+          <div class="charthead"><h3>Required return and beta</h3><div class="legend" id="smlLeg"></div></div>
+          <svg id="sml" role="img"></svg>
+          <div class="tip" id="smlTip" hidden></div>
+        </div>
+        <p class="note" id="smlHelp">All ten stocks sit on the line at their estimated beta. A and B are in colour. Hover a point, or focus the chart and use ← →.</p>
+        <p class="sr" id="smlLive" aria-live="polite"></p>
+        <div class="row"><button class="btn" type="button" id="realBtn" aria-pressed="false">Show what A, B and the market actually earned</button></div>
+        <p class="caution" id="realNote" hidden></p>
+      </div>
+    </div>
+    <details class="tbl"><summary>Show all ten stocks as a table</summary><div class="tblwrap"><table class="data" id="smlTbl"></table></div></details>
+  </section>
+
+  <!-- ===================== 3. PORTFOLIO BETA ===================== -->
+  <section class="lesson" id="s3" aria-labelledby="h3">
+    <h2 id="h3"><span class="num">3</span>Portfolio beta</h2>
+    <p class="lead">A portfolio's beta is the weighted average of its stocks' betas. Move the weights and the portfolio slides along the SML between the two stocks. The r<sub>RF</sub> and market risk premium come from section 2.</p>
+    <div class="grid2">
+      <div class="col">
+        <div class="formula">β<sub>p</sub> = w<sub>1</sub> β<sub>1</sub> + w<sub>2</sub> β<sub>2</sub></div>
+        <div class="pickrow">
+          <div class="pick"><label for="selA2"><span class="sw" style="background:var(--s1)"></span>Stock 1</label><select id="selA2"></select></div>
+          <div class="pick"><label for="selB2"><span class="sw" style="background:var(--s2)"></span>Stock 2</label><select id="selB2"></select></div>
+        </div>
+        <div class="ctl big">
+          <div class="lab"><label for="w1" id="w1Lab">Weight in stock 1, w<sub>1</sub></label><b id="w1Out"></b></div>
+          <input type="range" id="w1" min="0" max="100" step="1" value="50">
+        </div>
+        <div class="row"><button class="btn primary" type="button" id="sweep">▶ Sweep w<sub>1</sub> from 0% to 100%</button><button class="btn" type="button" id="half">50 / 50</button></div>
+        <div class="card" aria-labelledby="hPort">
+          <h3 id="hPort">Portfolio beta and required return</h3>
+          <div class="eq" id="portEq"></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="chart" id="pfWrap" tabindex="0" aria-describedby="pfHelp">
+          <div class="charthead"><h3>The portfolio on the SML</h3><div class="legend" id="pfLeg"></div></div>
+          <svg id="pf" role="img"></svg>
+          <div class="tip" id="pfTip" hidden></div>
+        </div>
+        <p class="note" id="pfHelp">The shaded stretch of the SML is every mix of the two stocks with weights between 0% and 100%.</p>
+        <p class="sr" id="pfLive" aria-live="polite"></p>
+        <p class="takeaway" id="story3" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 4. WHAT TO NOTICE ===================== -->
+  <section class="lesson" id="s4" aria-labelledby="h4">
+    <h2 id="h4"><span class="num">4</span>What to notice</h2>
+    <ol class="notice" id="notice"></ol>
+  </section>
+
+  <footer class="note">
+    <p id="source"></p>
+    <p id="method"></p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  // Monthly returns in %, November 2021 to October 2026. mkt = S&P 500 Total Return index; s = stocks (adjusted closes, dividends included);
+  // rf = 3-month T-bill rate (FRED TB3MS, monthly average, annual %).
+  const D = {"start":"2021-11","end":"2026-10","mkt":[-0.69,4.48,-5.17,-2.99,3.71,-8.72,0.18,-8.25,9.22,-4.08,-9.21,8.1,5.59,-5.76,6.28,-2.44,3.67,1.56,0.43,6.61,3.21,-1.59,-4.77,-2.1,9.13,4.54,1.68,5.34,3.22,-4.08,4.96,3.59,1.22,2.43,2.14,-0.91,5.87,-2.38,2.79,-1.3,-5.63,-0.68,6.29,5.08,2.24,2.03,3.65,2.34,0.24,0.06,1.45,-0.76,-4.98,10.49,5.26,-0.95,-0.06,2.72,-0.35,-0.87],"rf":[0.05,0.06,0.15,0.33,0.44,0.76,0.98,1.49,2.23,2.63,3.13,3.72,4.15,4.25,4.54,4.65,4.69,4.92,5.14,5.16,5.25,5.3,5.32,5.34,5.27,5.24,5.22,5.24,5.24,5.24,5.25,5.24,5.2,5.05,4.72,4.51,4.42,4.27,4.21,4.22,4.2,4.21,4.25,4.23,4.25,4.12,3.92,3.82,3.78,3.59,3.57,3.6,3.61,3.61,3.6,3.66,3.73,3.72,3.94,4.05],"s":{"XOM":[-5.93,2.26,24.14,4.38,5.32,3.22,13.76,-10.79,13.18,-0.42,-8.66,26.92,1.29,-0.93,5.18,-4.53,-0.23,7.92,-12.91,4.96,-0.01,4.53,5.75,-9.98,-2.05,-2.69,2.83,2.61,11.21,1.75,-0.05,-1.82,3.01,0.25,-0.61,-0.38,1.84,-8.81,-0.69,5.14,6.83,-11.18,-2.26,5.38,3.56,3.33,-1.35,1.43,2.25,3.81,17.5,8.57,11.25,-9.04,-5.24,-5.88,13.69,4.21,1.12,15.05],"KO":[-6.23,12.89,3.04,2.02,0.38,4.21,-1.9,-0.02,2.0,-3.83,-8.56,6.84,7.04,0.0,-3.6,-2.95,5.03,3.42,-7.0,1.71,2.84,-3.39,-5.69,0.91,4.28,0.84,0.95,0.89,2.75,0.96,1.88,1.93,4.86,8.59,-0.16,-9.12,-1.14,-2.84,1.96,12.18,1.32,1.3,-0.62,-1.18,-4.04,1.62,-3.13,3.89,6.12,-3.72,7.01,9.02,-6.12,3.56,0.32,3.52,7.78,1.23,-2.34,9.29],"DUK":[-3.97,8.13,0.15,-3.47,11.2,-1.34,3.07,-4.72,2.54,-1.85,-12.99,0.17,8.36,3.06,-0.52,-7.05,2.35,2.5,-8.77,0.5,4.32,-4.08,-0.61,0.71,5.01,5.16,-1.25,-3.09,5.31,1.6,6.46,-3.23,9.02,5.25,1.19,-0.03,2.51,-7.95,3.94,5.88,3.81,0.04,-2.65,0.24,3.08,1.57,1.03,0.44,0.58,-5.43,3.53,8.75,0.07,-1.06,-4.45,3.14,-0.91,-3.56,-4.92,11.74],"WMT":[-5.88,3.3,-3.37,-3.33,10.61,2.73,-15.62,-5.48,8.61,0.82,-2.15,9.74,7.09,-6.62,1.47,-1.21,4.17,2.39,-2.35,7.02,1.71,2.08,-1.65,2.18,-4.72,1.64,4.82,6.4,3.01,-1.36,11.18,2.96,1.37,12.84,4.56,1.49,12.87,-2.11,8.64,0.46,-10.73,10.78,1.76,-0.95,0.2,-0.79,6.27,-1.82,9.22,1.02,6.94,7.39,-2.67,6.16,-12.1,-2.15,-1.82,-5.47,-0.91,18.85],"JPM":[-6.51,-0.3,-5.59,-4.58,-3.87,-11.79,10.78,-14.84,3.35,-1.41,-8.12,21.54,9.77,-2.95,5.14,2.42,-9.1,6.92,-1.83,7.17,9.35,-7.36,-0.9,-3.4,12.24,8.98,3.14,6.71,7.65,-3.71,5.68,-0.18,5.79,5.64,-6.2,5.89,12.53,-4.01,12.09,-0.99,-7.31,0.34,7.92,9.81,2.68,1.75,4.65,-0.89,0.63,2.92,-4.64,-1.83,-2.04,7.03,-4.44,9.36,7.96,1.2,-7.08,2.38],"AAPL":[10.51,7.42,-1.57,-5.41,5.75,-9.71,-5.45,-8.14,18.86,-3.12,-12.1,10.96,-3.3,-12.23,11.05,2.32,11.87,2.9,4.61,9.43,1.28,-4.24,-8.87,-0.26,11.38,1.36,-4.22,-1.85,-5.13,-0.67,13.02,9.55,5.44,3.23,1.75,-3.04,5.17,5.52,-5.76,2.59,-8.15,-4.33,-5.36,2.15,1.17,11.96,9.69,6.18,3.24,-2.51,-4.55,1.91,-3.93,6.92,15.11,-7.27,6.76,2.66,5.1,3.49],"AMZN":[3.99,-4.92,-10.28,2.67,6.14,-23.75,-3.28,-11.65,27.06,-6.06,-10.86,-9.35,-5.76,-12.99,22.77,-8.63,9.62,2.09,14.35,8.11,2.55,3.24,-7.89,4.7,9.77,4.0,2.15,13.89,2.05,-2.98,0.82,9.53,-3.25,-4.54,4.39,0.04,11.53,5.53,8.34,-10.69,-10.37,-3.07,11.16,7.01,6.71,-2.18,-4.12,11.23,-4.5,-1.03,3.67,-12.24,-0.82,27.27,2.1,-11.94,13.95,-4.35,-4.09,-3.53],"TSLA":[2.76,-7.68,-11.36,-7.08,23.8,-19.2,-12.92,-11.19,32.38,-7.25,-3.76,-14.22,-14.43,-36.73,40.62,18.76,0.85,-20.8,24.11,28.36,2.16,-3.5,-3.05,-19.73,19.54,3.5,-24.63,7.79,-12.92,4.26,-2.84,11.12,17.28,-7.74,22.19,-4.5,38.15,17.0,0.19,-27.59,-11.54,8.88,22.79,-8.31,-2.96,8.3,33.2,2.66,-5.78,4.54,-4.29,-6.48,-7.64,2.66,14.19,-3.49,-26.01,18.23,-3.57,12.68],"NVDA":[27.8,-9.98,-16.75,-0.41,11.92,-32.03,0.67,-18.8,19.82,-16.9,-19.55,11.19,25.42,-13.64,33.69,18.83,19.67,-0.1,36.34,11.82,10.46,5.62,-11.86,-6.25,14.69,5.89,24.24,28.58,14.22,-4.38,26.89,12.69,-5.28,2.01,1.74,9.32,4.13,-2.86,-10.59,4.04,-13.23,0.5,24.06,16.93,12.58,-2.08,7.12,8.53,-12.59,5.37,2.48,-7.29,-1.57,14.43,5.8,-5.12,0.33,9.98,3.56,-10.39],"GME":[6.92,-24.37,-26.59,13.23,35.06,-24.92,-0.26,-1.96,11.23,-15.79,-12.26,12.65,-7.42,-29.57,18.47,-12.07,19.71,-16.2,24.68,0.83,-8.45,-16.44,-11.27,-16.34,5.66,20.48,-18.82,0.28,-12.26,-11.42,108.66,6.7,-8.18,3.31,-2.09,-3.27,30.97,7.88,-14.17,-6.91,-10.86,24.82,6.96,-18.15,-7.95,-0.18,21.73,-18.29,1.08,-10.87,18.92,0.63,-4.12,8.29,-15.11,4.25,-1.63,-15.38,34.11,-1.7]}};
+
+  const $ = id => document.getElementById(id);
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs, parent, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; if (parent) parent.appendChild(e); return e; };
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const MINUS = '−';
+  const fx = (v, d = 2) => (v < 0 && Math.abs(v) >= 0.5 * Math.pow(10, -d) ? MINUS : '') + Math.abs(v).toFixed(d);
+  const pct = (v, d = 2) => fx(v, d) + '%';
+  const spct = (v, d = 1) => (v > 0 ? '+' : '') + fx(v, d) + '%';
+  const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
+  const sd = a => { const m = mean(a); return Math.sqrt(a.reduce((s, v) => s + (v - m) * (v - m), 0) / (a.length - 1)); };
+
+  // ---------- data ----------
+  const N = D.mkt.length;
+  const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const MONL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const [sy, sm] = D.start.split('-').map(Number);
+  const mIdx = i => sy * 12 + (sm - 1) + i;
+  const mLab = i => MON[mIdx(i) % 12] + ' ' + Math.floor(mIdx(i) / 12);
+  const mLong = i => MONL[mIdx(i) % 12] + ' ' + Math.floor(mIdx(i) / 12);
+  const RANGE = mLab(0) + ' – ' + mLab(N - 1);
+  const META = {
+    XOM: { name: 'ExxonMobil', sector: 'Oil and gas' },
+    KO: { name: 'Coca-Cola', sector: 'Consumer staples' },
+    DUK: { name: 'Duke Energy', sector: 'Electric utility' },
+    WMT: { name: 'Walmart', sector: 'Discount retail' },
+    JPM: { name: 'JPMorgan Chase', sector: 'Bank' },
+    AAPL: { name: 'Apple', sector: 'Big tech' },
+    AMZN: { name: 'Amazon', sector: 'Online retail and cloud' },
+    TSLA: { name: 'Tesla', sector: 'Electric vehicles' },
+    NVDA: { name: 'NVIDIA', sector: 'Semiconductors (AI chips)' },
+    GME: { name: 'GameStop', sector: 'Video-game retail (our case)' },
+  };
+  const TICKS = Object.keys(META).filter(k => D.s[k]).sort((a, b) => META[a].name.localeCompare(META[b].name));
+  const rfM = D.rf.map(v => v / 12);
+  const RF_AVG = mean(D.rf);
+  const MKT_AVG = mean(D.mkt) * 12, MKT_SD = sd(D.mkt) * Math.sqrt(12);
+  const MKT_SE = sd(D.mkt) * 12 / Math.sqrt(N);
+  const LAST_RF = D.rf[N - 1];
+  const nm = tk => META[tk].name;
+
+  const ser = (arr, mode) => mode === 'excess' ? arr.map((v, i) => v - rfM[i]) : arr.slice();
+  function regress(x, y) {
+    const n = x.length, mx = mean(x), my = mean(y);
+    let sxx = 0, sxy = 0, syy = 0;
+    for (let i = 0; i < n; i++) { const dx = x[i] - mx, dy = y[i] - my; sxx += dx * dx; sxy += dx * dy; syy += dy * dy; }
+    const beta = sxy / sxx, alpha = my - beta * mx;
+    const s2 = (syy - beta * sxy) / (n - 2);
+    return { beta, alpha, r2: sxy * sxy / (sxx * syy), seb: Math.sqrt(s2 / sxx) };
+  }
+  const S = { excess: {}, raw: {} };
+  ['excess', 'raw'].forEach(mode => {
+    const x = ser(D.mkt, mode);
+    TICKS.forEach(tk => {
+      const r = regress(x, ser(D.s[tk], mode));
+      const raw = D.s[tk];
+      S[mode][tk] = { beta: r.beta, alpha: r.alpha * 12, r2: r.r2, seb: r.seb, avg: mean(raw) * 12, sd: sd(raw) * Math.sqrt(12), se: sd(raw) * 12 / Math.sqrt(N) };
+    });
+  });
+  window.__beta = S; // exposed for checking against an independent calculation
+
+  // ---------- state ----------
+  const st = { a: 'DUK', b: 'NVDA', mode: 'excess', rrf: 3, rpm: 5, real: false, w: 50 };
+  const cur = tk => S[st.mode][tk];
+  const req = b => st.rrf + b * st.rpm;
+
+  // ---------- chart helpers ----------
+  const niceStep = (span, target) => { const raw = span / target, p = Math.pow(10, Math.floor(Math.log10(raw))); for (const k of [1, 2, 2.5, 5, 10]) if (k * p >= raw) return k * p; return 10 * p; };
+  const ticksOf = (a, b, s) => { const t = []; for (let v = Math.ceil(a / s - 1e-9) * s; v <= b + 1e-9; v += s) t.push(+v.toFixed(6)); return t; };
+  function frame(svg, W, H, m, xd, yd, o) {
+    svg.textContent = ''; svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const X = v => m.l + (v - xd[0]) / (xd[1] - xd[0]) * (W - m.l - m.r);
+    const Y = v => H - m.b - (v - yd[0]) / (yd[1] - yd[0]) * (H - m.t - m.b);
+    o.yt.forEach(v => { el('line', { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: 'gridl' }, svg); el('text', { x: m.l - 7, y: Y(v) + 4, 'text-anchor': 'end', class: 'tick' }, svg, o.yf(v)); });
+    if (o.xgrid) o.xt.forEach(v => el('line', { x1: X(v), x2: X(v), y1: m.t, y2: H - m.b, class: 'gridl' }, svg));
+    o.xt.forEach(v => el('text', { x: X(v), y: H - m.b + 17, 'text-anchor': 'middle', class: 'tick' }, svg, o.xf(v)));
+    el('line', { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, class: 'axisl' }, svg);
+    el('line', { x1: m.l, x2: m.l, y1: m.t, y2: H - m.b, class: 'axisl' }, svg);
+    el('text', { x: (m.l + W - m.r) / 2, y: H - 6, 'text-anchor': 'middle', class: 'axtitle' }, svg, o.xTitle);
+    const yc = (m.t + H - m.b) / 2;
+    el('text', { x: 12, y: yc, 'text-anchor': 'middle', class: 'axtitle', transform: `rotate(-90 12 ${yc})` }, svg, o.yTitle);
+    const cid = 'clip-' + svg.id;
+    const defs = el('defs', {}, svg); const cp = el('clipPath', { id: cid }, defs);
+    el('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b }, cp);
+    const plot = el('g', { 'clip-path': `url(#${cid})` }, svg);
+    return { X, Y, plot, W, H, m };
+  }
+  // SVG text with optional subscripts: parts = ['r', ['RF'], ' = 3%']
+  function stext(parent, attrs, parts) {
+    const t = el('text', attrs, parent);
+    let sub = false;
+    parts.forEach(p => {
+      if (Array.isArray(p)) { el('tspan', { 'font-size': '0.78em', dy: '0.3em' }, t, p[0]); sub = true; }
+      else { el('tspan', sub ? { dy: '-0.3em' } : {}, t, p); sub = false; }
+    });
+    return t;
+  }
+  const partsLen = parts => parts.reduce((s, p) => s + (Array.isArray(p) ? p[0].length * 0.78 : p.length), 0);
+
+  // Generic hover / keyboard layer. stops: [{pts:[{x,y,r}]}]; html(i) returns tooltip HTML.
+  function hoverLayer(wrap, svg, tip, live, stops, html) {
+    const g = el('g', {}, svg);
+    let curI = -1;
+    const show = (i, anchor) => {
+      curI = i; g.textContent = '';
+      stops[i].pts.forEach(p => el('circle', { cx: p.x, cy: p.y, r: (p.r || 5) + 4, class: 'halo' }, g));
+      tip.innerHTML = html(i); tip.hidden = false;
+      const a = anchor || stops[i].pts[0];
+      const sr = svg.getBoundingClientRect(), wr = wrap.getBoundingClientRect(), k = sr.width / (+svg.viewBox.baseVal.width || sr.width);
+      const px = sr.left - wr.left + a.x * k, py = sr.top - wr.top + a.y * k;
+      const tw = tip.offsetWidth, th = tip.offsetHeight;
+      let left = px + 14; if (left + tw > wr.width) left = px - 14 - tw; left = Math.max(0, Math.min(wr.width - tw, left));
+      let top = py - th - 12; if (top < sr.top - wr.top) top = py + 14;
+      tip.style.left = left + 'px'; tip.style.top = top + 'px';
+      if (live) live.textContent = tip.textContent;
+    };
+    const hide = () => { curI = -1; g.textContent = ''; tip.hidden = true; };
+    const near = e => {
+      const sr = svg.getBoundingClientRect(), k = (+svg.viewBox.baseVal.width || sr.width) / sr.width;
+      const mx = (e.clientX - sr.left) * k, my = (e.clientY - sr.top) * k;
+      let best = -1, bp = null, bd = 22 * 22;
+      stops.forEach((s, i) => s.pts.forEach(p => { const d = (p.x - mx) ** 2 + (p.y - my) ** 2; if (d < bd) { bd = d; best = i; bp = p; } }));
+      if (best >= 0) show(best, bp); else hide();
+    };
+    svg.onpointermove = near; svg.onpointerdown = near; svg.onpointerleave = hide;
+    wrap.onkeydown = e => {
+      const k = e.key; let i = curI;
+      if (k === 'ArrowRight' || k === 'ArrowDown') i = curI < 0 ? 0 : Math.min(stops.length - 1, curI + 1);
+      else if (k === 'ArrowLeft' || k === 'ArrowUp') i = curI < 0 ? 0 : Math.max(0, curI - 1);
+      else if (k === 'Home') i = 0; else if (k === 'End') i = stops.length - 1;
+      else if (k === 'Escape') { hide(); return; } else return;
+      e.preventDefault(); show(i);
+    };
+    wrap.onblur = hide;
+  }
+
+  // Label placement: try spots around a point, avoid overlaps with placed boxes and marks.
+  function placer(bounds) {
+    const boxes = [], marks = [];
+    const hit = b => b.x0 < bounds.x0 || b.x1 > bounds.x1 || b.y0 < bounds.y0 || b.y1 > bounds.y1 ||
+      boxes.some(o => b.x0 < o.x1 + 2 && b.x1 > o.x0 - 2 && b.y0 < o.y1 + 1 && b.y1 > o.y0 - 1) ||
+      marks.some(m => m.x > b.x0 - m.r && m.x < b.x1 + m.r && m.y > b.y0 - m.r && m.y < b.y1 + m.r);
+    return {
+      mark(x, y, r) { marks.push({ x, y, r }); },
+      box(b) { boxes.push(b); },
+      place(px, py, w, prefer, optional) {
+        const c = [];
+        for (let k = 0; k < 5; k++) {
+          const up = { anchor: 'end', x: px - 8, y: py - 8 - k * 14, k }, dn = { anchor: 'start', x: px + 8, y: py + 17 + k * 14, k };
+          const mid = { anchor: 'middle', x: px, y: py - 13 - k * 14, k }, upr = { anchor: 'start', x: px + 8, y: py - 10 - k * 14, k };
+          if (prefer === 'below') c.push(dn, up, mid, upr); else c.push(up, mid, dn, upr);
+        }
+        if (prefer === 'right') c.unshift({ anchor: 'start', x: px + 9, y: py + 4, k: 0 });
+        const bx = s => { const x0 = s.anchor === 'end' ? s.x - w : s.anchor === 'middle' ? s.x - w / 2 : s.x; return { x0, x1: x0 + w, y0: s.y - 11, y1: s.y + 3 }; };
+        let pick = c.find(s => !hit(bx(s)));
+        if (!pick) { if (optional) return null; pick = c[0]; }
+        boxes.push(bx(pick));
+        return pick;
+      },
+    };
+  }
+
+  // ===================== 1. SCATTER =====================
+  function fillSelects() {
+    [['selA', 'a'], ['selB', 'b'], ['selA2', 'a'], ['selB2', 'b']].forEach(([id, key]) => {
+      const s = $(id);
+      if (!s.options.length) TICKS.forEach(tk => { const o = document.createElement('option'); o.value = tk; o.textContent = `${nm(tk)} (${tk})`; s.appendChild(o); });
+      s.value = st[key];
+    });
+  }
+  function setPair(a, b) { st.a = a; st.b = b; fillSelects(); renderAll(); }
+  function onPick(key, val) {
+    const other = key === 'a' ? 'b' : 'a';
+    if (st[other] === val) st[other] = st[key]; // picking the other stock swaps the pair
+    st[key] = val; story1Preset = null; fillSelects(); renderAll();
+  }
+  ['selA', 'selA2'].forEach(id => $(id).addEventListener('change', e => onPick('a', e.target.value)));
+  ['selB', 'selB2'].forEach(id => $(id).addEventListener('change', e => onPick('b', e.target.value)));
+  const setMode = m => { st.mode = m; $('mEx').setAttribute('aria-pressed', m === 'excess'); $('mRaw').setAttribute('aria-pressed', m === 'raw'); renderAll(); };
+  $('mEx').addEventListener('click', () => setMode('excess'));
+  $('mRaw').addEventListener('click', () => setMode('raw'));
+
+  const PRESETS1 = [
+    { t: 'Low beta vs high beta', a: 'DUK', b: 'NVDA', s: (A, B) => `<b>Same market, very different sensitivity.</b> On average, for each 1-point move in the market, Duke Energy moved about ${fx(A.beta)} points and NVIDIA about ${fx(B.beta)} points. A regulated utility's profits are relatively steady through the business cycle; demand for NVIDIA's chips, and investors' enthusiasm for them, are far more tied to it.` },
+    { t: 'Equally volatile, different beta', a: 'XOM', b: 'AAPL', s: (A, B) => `<b>Volatility is not beta.</b> ExxonMobil's returns were about as volatile as Apple's (standard deviation ${pct(A.sd, 0)} vs ${pct(B.sd, 0)} a year), yet its beta was only ${fx(A.beta)}, against ${fx(B.beta)} for Apple. Exxon's swings were mostly unrelated to the market (R² = ${fx(A.r2)}), so they are risk a diversified investor can largely diversify away.` },
+    { t: 'Similar beta, different R²', a: 'AMZN', b: 'GME', s: (A, B) => `<b>Similar betas, very different fits.</b> Amazon (β = ${fx(A.beta)}) and GameStop (β = ${fx(B.beta)}) have similar betas, but GameStop's dots are scattered far from its line: R² is ${fx(B.r2)}, against ${fx(A.r2)} for Amazon. Most of GameStop's risk is firm-specific, and its beta estimate is much less precise (standard error ${fx(B.seb)} vs ${fx(A.seb)}).` },
+    { t: 'Two betas near 1', a: 'JPM', b: 'AAPL', s: (A, B) => `<b>A bank and a tech giant, both near β = 1.</b> JPMorgan (${fx(A.beta)}) and Apple (${fx(B.beta)}) moved roughly one-for-one with the market on average, so CAPM gives each a required return close to the market's own. Different businesses can carry the same market risk.` },
+  ];
+  let story1Preset = 0;
+  PRESETS1.forEach((p, i) => { const b = document.createElement('button'); b.className = 'btn'; b.type = 'button'; b.textContent = p.t; b.addEventListener('click', () => { story1Preset = i; setPair(p.a, p.b); }); $('presets1').appendChild(b); });
+
+  function drawScatter() {
+    const wrap = $('scWrap'), svg = $('sc');
+    const W = Math.max(280, Math.round(wrap.clientWidth)), narrow = W < 520;
+    const H = Math.round(Math.max(300, Math.min(440, W * (narrow ? 0.95 : 0.72))));
+    const m = { l: 54, r: 14, t: 14, b: 42 };
+    const x = ser(D.mkt, st.mode), ya = ser(D.s[st.a], st.mode), yb = ser(D.s[st.b], st.mode);
+    const A = cur(st.a), B = cur(st.b);
+    const xs = niceStep(Math.max(...x) - Math.min(...x), narrow ? 4 : 6);
+    const xd = [Math.floor(Math.min(...x) / xs) * xs, Math.ceil(Math.max(...x) / xs) * xs];
+    const ally = ya.concat(yb), ylo = Math.min(...ally, xd[0]), yhi = Math.max(...ally, xd[1]);
+    const ys = niceStep(yhi - ylo, narrow ? 6 : 7);
+    const yd = [Math.floor(ylo / ys) * ys, Math.ceil(yhi / ys) * ys];
+    const word = st.mode === 'excess' ? 'excess return' : 'return';
+    const f = frame(svg, W, H, m, xd, yd, { xt: ticksOf(xd[0], xd[1], xs), yt: ticksOf(yd[0], yd[1], ys), xf: v => fx(v, 0) + '%', yf: v => fx(v, 0) + '%', xgrid: true,
+      xTitle: `S&P 500 monthly ${word}`, yTitle: `Stock's monthly ${word}` });
+    const { X, Y, plot } = f;
+    el('line', { x1: X(0), x2: X(0), y1: m.t, y2: H - m.b, class: 'zero' }, plot);
+    el('line', { x1: m.l, x2: W - m.r, y1: Y(0), y2: Y(0), class: 'zero' }, plot);
+    // beta = 1 reference
+    el('line', { x1: X(xd[0]), y1: Y(xd[0]), x2: X(xd[1]), y2: Y(xd[1]), class: 'ref' }, plot);
+    const pl = placer({ x0: m.l + 2, x1: W - m.r - 2, y0: m.t + 2, y1: H - m.b - 2 });
+    const pts = [[], []];
+    [[yb, 'var(--s2)', 1], [ya, 'var(--s1)', 0]].forEach(([yy, c, k]) => yy.forEach((v, i) => {
+      const p = { x: X(x[i]), y: Y(v), r: 4.5 }; pts[k][i] = p; pl.mark(p.x, p.y, 3);
+      el('circle', { cx: p.x, cy: p.y, r: 4.5, class: 'dot', style: `fill:${c}` }, plot);
+    }));
+    // fitted lines across the observed market range
+    const x0 = Math.min(...x), x1 = Math.max(...x);
+    const fits = [[A, st.a, 'var(--s1)'], [B, st.b, 'var(--s2)']].map(([s, tk, c]) => {
+      const intercept = mean(tk === st.a ? ya : yb) - s.beta * mean(x);
+      const y0 = intercept + s.beta * x0, y1 = intercept + s.beta * x1;
+      el('line', { x1: X(x0), y1: Y(y0), x2: X(x1), y2: Y(y1), class: 'fit', style: `stroke:${c}` }, plot);
+      return { tk, s, ex: X(x1), ey: Y(y1) };
+    });
+    // direct labels at the right end of each line: higher line labelled above, lower below
+    const hi = fits[0].ey <= fits[1].ey ? 0 : 1;
+    fits.forEach((fl, k) => {
+      const txt = `${fl.tk}  β = ${fx(fl.s.beta)}`, w = txt.length * 7.1;
+      let ly = k === hi ? fl.ey - 9 : fl.ey + 18;
+      ly = Math.max(m.t + 12, Math.min(H - m.b - 6, ly));
+      if (k !== hi && Math.abs(ly - (fits[hi].ey - 9)) < 15) ly = fits[hi].ey - 9 + 15;
+      el('text', { x: Math.min(fl.ex, W - m.r - 2), y: ly, 'text-anchor': 'end', class: 'dlab' }, svg, txt);
+      pl.box({ x0: fl.ex - w, x1: fl.ex, y0: ly - 11, y1: ly + 3 });
+    });
+    // label for the beta = 1 line, placed near its lower-left end where it is least crowded
+    const refX = xd[0] + (xd[1] - xd[0]) * 0.12, refY = Math.max(refX, yd[0]);
+    if (refY < yd[1]) el('text', { x: X(refY) + 6, y: Y(refY) + 16, class: 'reflab' }, plot, 'β = 1');
+    $('scTitle').textContent = `Monthly ${word}s, ${RANGE}`;
+    $('scLeg').innerHTML = `<span><i style="background:var(--s1)"></i>${nm(st.a)}</span><span><i style="background:var(--s2)"></i>${nm(st.b)}</span><span><i class="ln"></i>β = 1</span>`;
+    svg.setAttribute('aria-label', `Scatter plot of ${N} monthly ${word}s. ${nm(st.a)} beta ${fx(A.beta)}, ${nm(st.b)} beta ${fx(B.beta)}.`);
+    const stops = x.map((_, i) => ({ pts: [pts[0][i], pts[1][i]] }));
+    hoverLayer(wrap, svg, $('scTip'), $('scLive'), stops, i =>
+      `<div class="t">${mLong(i)} · ${word}s</div><div>S&amp;P 500: <b>${spct(x[i])}</b></div><div><i style="background:var(--s1)"></i>${st.a}: <b>${spct(ya[i])}</b></div><div><i style="background:var(--s2)"></i>${st.b}: <b>${spct(yb[i])}</b></div>`);
+  }
+
+  function renderStats() {
+    const A = cur(st.a), B = cur(st.b);
+    $('statRange').textContent = RANGE;
+    const row = (lab, a, b, mk, cls) => `<tr${cls ? ` class="${cls}"` : ''}><th scope="row">${lab}</th><td>${a}</td><td>${b}</td><td class="mk">${mk}</td></tr>`;
+    $('statTbl').innerHTML = `<thead><tr><th></th><th scope="col"><span class="sw" style="background:var(--s1)"></span>${st.a}</th><th scope="col"><span class="sw" style="background:var(--s2)"></span>${st.b}</th><th scope="col">S&amp;P 500</th></tr></thead><tbody>` +
+      row('Beta β', fx(A.beta), fx(B.beta), '1.00', 'key') +
+      row('R² (fit)', fx(A.r2), fx(B.r2), '1.00') +
+      row('Average return / yr', pct(A.avg, 1), pct(B.avg, 1), pct(MKT_AVG, 1)) +
+      row('Std. deviation / yr', pct(A.sd, 1), pct(B.sd, 1), pct(MKT_SD, 1)) + '</tbody>';
+    $('statNote').innerHTML = `Beta is an estimate. A rough range is β ± 2 standard errors: <b>${st.a} ${fx(A.beta - 2 * A.seb)} to ${fx(A.beta + 2 * A.seb)}</b>, <b>${st.b} ${fx(B.beta - 2 * B.seb)} to ${fx(B.beta + 2 * B.seb)}</b>. R² is the share of the stock's month-to-month variance that lines up with the market. Averages are the mean monthly return × 12.`;
+    const p = story1Preset != null ? PRESETS1[story1Preset] : null;
+    if (p && p.a === st.a && p.b === st.b) $('story1').innerHTML = p.s(A, B);
+    else {
+      const hiK = A.beta >= B.beta ? st.a : st.b, loK = hiK === st.a ? st.b : st.a;
+      $('story1').innerHTML = `<b>Reading the slopes.</b> On average, for each 1-point move in the market, ${nm(st.a)} moved about ${fx(A.beta)} points and ${nm(st.b)} about ${fx(B.beta)}. ${nm(hiK)} carries more market risk, so CAPM requires a higher return from it than from ${nm(loK)}. R² (${fx(A.r2)} and ${fx(B.r2)}) shows how tightly the dots hug each line.`;
+    }
+    // monthly table
+    const word = st.mode === 'excess' ? 'excess return' : 'return';
+    const x = ser(D.mkt, st.mode), ya = ser(D.s[st.a], st.mode), yb = ser(D.s[st.b], st.mode);
+    const td = v => `<td class="${v < 0 ? 'neg' : ''}">${spct(v, 2)}</td>`;
+    $('scTbl').innerHTML = `<caption class="sr">Monthly ${word}s</caption><thead><tr><th scope="col">Month</th><th scope="col">S&amp;P 500 ${word}</th><th scope="col">${st.a} ${word}</th><th scope="col">${st.b} ${word}</th><th scope="col">T-bill, % per yr</th></tr></thead><tbody>` +
+      x.map((_, i) => `<tr><td>${mLab(i)}</td>${td(x[i])}${td(ya[i])}${td(yb[i])}<td>${fx(D.rf[i])}</td></tr>`).join('') + '</tbody>';
+  }
+
+  // ===================== 2 & 3. SML charts =====================
+  function drawSML(wrap, svg, tip, live, cfg) {
+    const W = Math.max(280, Math.round(wrap.clientWidth)), narrow = W < 520;
+    const H = Math.round(Math.max(narrow ? 330 : 290, Math.min(420, W * (narrow ? 1.05 : 0.66))));
+    const m = { l: 54, r: 14, t: 14, b: 42 };
+    const xd = [0, 2.5];
+    const hl = cfg.hl; // [{tk, c}]
+    let top = Math.max(25, req(2.5));
+    if (cfg.real) { hl.forEach(h => { top = Math.max(top, cur(h.tk).avg + 2); }); top = Math.max(top, MKT_AVG + 2); }
+    const ys = top > 40 ? 10 : 5;
+    const yd = [0, Math.ceil(top / ys) * ys];
+    const f = frame(svg, W, H, m, xd, yd, { xt: ticksOf(0, 2.5, 0.5), yt: ticksOf(0, yd[1], ys), xf: v => v.toFixed(1), yf: v => v + '%', xTitle: 'Beta (β)', yTitle: 'Return, % per year' });
+    const { X, Y, plot } = f;
+    const pl = placer({ x0: m.l + 2, x1: W - m.r - 2, y0: m.t + 2, y1: H - m.b - 2 });
+    const rM = st.rrf + st.rpm;
+    for (let b = 0; b <= 2.5; b += 0.02) pl.mark(X(b), Y(req(b)), 2); // keep labels off the SML itself
+    // slope triangle from beta 0 to 1
+    if (cfg.triangle && st.rpm > 0.4) {
+      el('path', { d: `M${X(0)} ${Y(st.rrf)} H${X(1)} V${Y(rM)}`, class: 'ref' }, plot);
+      const t = stext(plot, { x: X(1) + 6, y: (Y(st.rrf) + Y(rM)) / 2 + 4, class: 'reflab' }, ['slope = r', ['M'], ' − r', ['RF'], ' = ' + pct(st.rpm)]);
+      const tw = t.getComputedTextLength() || 150; pl.box({ x0: X(1) + 6, x1: X(1) + 6 + tw, y0: (Y(st.rrf) + Y(rM)) / 2 - 8, y1: (Y(st.rrf) + Y(rM)) / 2 + 6 });
+      pl.box({ x0: X(0), x1: X(1), y0: Y(st.rrf) - 1, y1: Y(st.rrf) + 1 });
+    }
+    if (cfg.band) el('line', { x1: X(cfg.band[0]), y1: Y(req(cfg.band[0])), x2: X(cfg.band[1]), y2: Y(req(cfg.band[1])), class: 'band' }, plot);
+    el('line', { x1: X(0), y1: Y(req(0)), x2: X(2.5), y2: Y(req(2.5)), class: 'sml' }, plot);
+    // SML label at the right end, below the line
+    const smlY = Math.min(H - m.b - 4, Y(req(2.5)) + 18);
+    el('text', { x: W - m.r - 4, y: smlY, 'text-anchor': 'end', class: 'dlab' }, svg, 'SML');
+    pl.box({ x0: W - m.r - 34, x1: W - m.r, y0: smlY - 11, y1: smlY + 3 });
+
+    const stops = [];
+    // collect all marks first so labels avoid every point
+    const others = cfg.others ? TICKS.filter(tk => !hl.some(h => h.tk === tk)) : [];
+    const P = tk => ({ x: X(cur(tk).beta), y: Y(req(cur(tk).beta)) });
+    others.forEach(tk => { const p = P(tk); pl.mark(p.x, p.y, 5); });
+    hl.forEach(h => { const p = P(h.tk); pl.mark(p.x, p.y, 7); });
+    const pRF = { x: X(0), y: Y(st.rrf) }, pM = { x: X(1), y: Y(rM) };
+    pl.mark(pRF.x, pRF.y, 6); pl.mark(pM.x, pM.y, 6);
+    let pP = null; if (cfg.port) { pP = { x: X(cfg.port.beta), y: Y(req(cfg.port.beta)) }; pl.mark(pP.x, pP.y, 7); }
+
+    // realised averages with +/- 2 SE whiskers (selected stocks and the market only)
+    if (cfg.real) {
+      const real = hl.map(h => ({ name: h.tk, b: cur(h.tk).beta, avg: cur(h.tk).avg, se: cur(h.tk).se, c: h.c })).concat([{ name: 'Market', b: 1, avg: MKT_AVG, se: MKT_SE, c: 'var(--fg)', dia: true }]);
+      real.forEach(r => {
+        const x = X(r.b), off = r.dia ? 0 : 0;
+        el('line', { x1: x + off, x2: x + off, y1: Y(r.avg - 2 * r.se), y2: Y(r.avg + 2 * r.se), class: 'whisk', style: `stroke:${r.c}` }, plot);
+        [r.avg - 2 * r.se, r.avg + 2 * r.se].forEach(v => el('line', { x1: x - 5, x2: x + 5, y1: Y(v), y2: Y(v), class: 'whisk', style: `stroke:${r.c}` }, plot));
+        const y = Y(r.avg);
+        if (r.dia) el('rect', { x: x - 5, y: y - 5, width: 10, height: 10, transform: `rotate(45 ${x} ${y})`, class: 'hollow', style: `stroke:${r.c}` }, plot);
+        else el('circle', { cx: x, cy: y, r: 5.5, class: 'hollow', style: `stroke:${r.c}` }, plot);
+        pl.mark(x, y, 6);
+        stops.push({ b: r.b + 0.0001, pts: [{ x, y, r: 6 }], html: `<div class="t">${r.name === 'Market' ? 'S&amp;P 500' : nm(r.name)} · realised, ${RANGE}</div><div>Average return: <b>${pct(r.avg, 1)}</b> a year</div><div>± 2 standard errors: <b>${pct(r.avg - 2 * r.se, 1)} to ${pct(r.avg + 2 * r.se, 1)}</b></div><div>CAPM required (β = ${fx(r.b)}): <b>${pct(req(r.b))}</b></div>` });
+      });
+    }
+
+    // T-bills and market (diamonds)
+    [[pRF, 0, ['r', ['RF'], ' = ' + pct(st.rrf)], 'T-bills (risk-free)'], [pM, 1, ['Market r', ['M'], ' = ' + pct(rM)], 'The market (S&amp;P 500)']].forEach(([p, b, parts, name]) => {
+      el('rect', { x: p.x - 5, y: p.y - 5, width: 10, height: 10, transform: `rotate(45 ${p.x} ${p.y})`, class: 'dot', style: 'fill:var(--fg)' }, plot);
+      const t = stext(svg, { x: 0, y: 0, class: 'dlab' }, parts);
+      const s = pl.place(p.x, p.y, t.getComputedTextLength() || partsLen(parts) * 7.5, b === 0 ? 'right' : 'up');
+      t.setAttribute('x', s.x); t.setAttribute('y', s.y); t.setAttribute('text-anchor', s.anchor);
+      t.querySelectorAll('tspan').forEach(ts => ts.removeAttribute('x'));
+      stops.push({ b, pts: [{ x: p.x, y: p.y, r: 6 }], html: `<div class="t">${name}</div><div>β = <b>${fx(b)}</b></div><div>Required return: <b>${pct(req(b))}</b></div>` });
+    });
+    // other stocks: neutral
+    const dotTip = (tk, c) => { const s = cur(tk); return `<div class="t">${c ? `<i style="background:${c}"></i>` : ''}${nm(tk)} (${tk}) · ${META[tk].sector}</div><div>β = <b>${fx(s.beta)}</b></div><div>Required return: <b>${pct(req(s.beta))}</b></div><div class="t">${pct(st.rrf)} + ${fx(s.beta)} × ${pct(st.rpm)}</div>`; };
+    others.forEach(tk => {
+      const p = P(tk);
+      el('circle', { cx: p.x, cy: p.y, r: 4.5, class: 'dot', style: 'fill:var(--other)' }, plot);
+      stops.push({ b: cur(tk).beta, pts: [{ x: p.x, y: p.y, r: 4.5 }], html: dotTip(tk) });
+    });
+    // highlighted stocks and the portfolio
+    hl.forEach(h => {
+      const p = P(h.tk);
+      el('circle', { cx: p.x, cy: p.y, r: 6.5, class: 'dot', style: `fill:${h.c}` }, plot);
+      stops.push({ b: cur(h.tk).beta, pts: [{ x: p.x, y: p.y, r: 6.5 }], html: dotTip(h.tk, h.c) });
+    });
+    if (pP) {
+      el('circle', { cx: pP.x, cy: pP.y, r: 7, class: 'dot', style: 'fill:var(--s3)' }, plot);
+      stops.push({ b: cfg.port.beta, pts: [{ x: pP.x, y: pP.y, r: 7 }], html: `<div class="t"><i style="background:var(--s3)"></i>Portfolio · ${st.w}% ${st.a}, ${100 - st.w}% ${st.b}</div><div>β<sub>p</sub> = <b>${fx(cfg.port.beta)}</b></div><div>Required return: <b>${pct(req(cfg.port.beta))}</b></div>` });
+    }
+    // labels: most important first
+    const lab = (p, txt, cls, prefer) => {
+      const t = el('text', { x: 0, y: 0, class: cls }, svg, txt);
+      const w = (t.getComputedTextLength() || txt.length * 8) + 2;
+      const s = pl.place(p.x, p.y, w, prefer, cls === 'olab');
+      if (!s) { t.remove(); return; }
+      if (s.k > 0) { el('line', { x1: p.x, y1: p.y, x2: s.anchor === 'end' ? s.x + 2 : s.anchor === 'middle' ? s.x : s.x - 2, y2: s.anchor === 'middle' || s.y < p.y ? s.y + 3 : s.y - 11, class: 'leader' }, svg); }
+      t.setAttribute('x', s.x); t.setAttribute('y', s.y); t.setAttribute('text-anchor', s.anchor);
+    };
+    if (pP) lab(pP, `Portfolio ${pct(req(cfg.port.beta))}`, 'dlab', 'below');
+    hl.forEach(h => lab(P(h.tk), cfg.port ? `${h.tk} ${pct(req(cur(h.tk).beta))}` : h.tk, 'dlab', 'up'));
+    others.sort((a, b) => cur(a).beta - cur(b).beta).forEach(tk => lab(P(tk), tk, 'olab', 'up'));
+
+    stops.sort((a, b) => a.b - b.b);
+    hoverLayer(wrap, svg, tip, live, stops, i => stops[i].html);
+    return { X, Y };
+  }
+
+  function smlLegend(withOthers) {
+    return `<span><i style="background:var(--s1)"></i>${st.a}</span><span><i style="background:var(--s2)"></i>${st.b}</span>` +
+      (withOthers ? `<span><i style="background:var(--other)"></i>Other stocks</span>` : `<span><i style="background:var(--s3)"></i>Portfolio</span>`) +
+      `<span><i class="dia"></i>T-bills, market</span>` + (withOthers && st.real ? `<span><i class="ring"></i>Realised average ± 2 SE</span>` : '');
+  }
+
+  // ---------- section 2 controls ----------
+  const PRESETS2 = [
+    { t: 'Class example: 3% and 5%', rrf: 3, rpm: 5 },
+    { t: `Latest T-bill: ${pct(LAST_RF)} (${mLab(N - 1)})`, rrf: LAST_RF, rpm: null },
+    { t: `What happened, ${RANGE}`, rrf: RF_AVG, rpm: MKT_AVG - RF_AVG, real: true },
+  ];
+  PRESETS2.forEach(p => {
+    const b = document.createElement('button'); b.className = 'btn'; b.type = 'button'; b.textContent = p.t;
+    b.addEventListener('click', () => { st.rrf = p.rrf; if (p.rpm != null) st.rpm = p.rpm; if (p.real) st.real = true; syncSliders(); renderAll(); });
+    $('presets2').appendChild(b);
+  });
+  function syncSliders() { $('rrf').value = st.rrf; $('rpm').value = st.rpm; }
+  $('rrf').addEventListener('input', e => { st.rrf = +e.target.value; renderAll(); });
+  $('rpm').addEventListener('input', e => { st.rpm = +e.target.value; renderAll(); });
+  $('realBtn').addEventListener('click', () => { st.real = !st.real; renderAll(); });
+
+  function renderSML() {
+    const A = cur(st.a), B = cur(st.b), rM = st.rrf + st.rpm;
+    $('rrfOut').textContent = pct(st.rrf); $('rpmOut').textContent = pct(st.rpm);
+    $('rmOut').innerHTML = `Market return r<sub>M</sub> = r<sub>RF</sub> + (r<sub>M</sub> − r<sub>RF</sub>) = <b>${pct(rM)}</b>. In class we use a premium of about 4% to 8% a year.`;
+    const line = (tk, s, c) => `<div><span class="sw" style="background:${c}"></span><b>${nm(tk)}</b>: ${pct(st.rrf)} + ${fx(s.beta)} × (${pct(rM)} − ${pct(st.rrf)}) = <span class="res">${pct(req(s.beta))}</span></div>`;
+    $('reqEq').innerHTML = line(st.a, A, 'var(--s1)') + line(st.b, B, 'var(--s2)') +
+      `<div class="sub">Market (β = 1): ${pct(rM)}. T-bills (β = 0): ${pct(st.rrf)}. Each extra 0.1 of beta adds 0.1 × ${pct(st.rpm)} = ${pct(0.1 * st.rpm)} to the required return.</div>`;
+    drawSML($('smlWrap'), $('sml'), $('smlTip'), $('smlLive'), { hl: [{ tk: st.a, c: 'var(--s1)' }, { tk: st.b, c: 'var(--s2)' }], others: true, triangle: true, real: st.real });
+    $('smlLeg').innerHTML = smlLegend(true);
+    $('sml').setAttribute('aria-label', `Security Market Line from ${pct(st.rrf)} at beta 0 with slope ${pct(st.rpm)}. ${nm(st.a)} required return ${pct(req(A.beta))}, ${nm(st.b)} ${pct(req(B.beta))}.`);
+    const rb = $('realBtn'); rb.setAttribute('aria-pressed', st.real); rb.textContent = st.real ? 'Hide realised returns' : 'Show what A, B and the market actually earned';
+    const note = $('realNote'); note.hidden = !st.real;
+    if (st.real) {
+      const ses = TICKS.map(tk => 2 * cur(tk).se), lo = Math.min(...ses), hi = Math.max(...ses);
+      const atReal = Math.abs(st.rrf - RF_AVG) < 0.01 && Math.abs(st.rpm - (MKT_AVG - RF_AVG)) < 0.01;
+      note.innerHTML = `<b>Realised is not expected.</b> The hollow markers are what each one actually earned on average, ${RANGE}. CAPM gives a <i>required</i> (expected) return; one five-year average is a very noisy guess at it. The bars show ± 2 standard errors: about ± ${fx(lo, 0)} to ± ${fx(hi, 0)} percentage points for these stocks, and ± ${fx(2 * MKT_SE, 0)} for the market. ` +
+        (atReal ? `The inputs are now set to what happened (average T-bill ${pct(RF_AVG)}, market ${pct(MKT_AVG)}), so the vertical gap between a hollow marker and the SML is the stock's realised alpha over this window: ${st.a} ${spct(A.alpha, 1)}, ${st.b} ${spct(B.alpha, 1)}. A positive gap means it beat its CAPM benchmark here, not that it is a bargain going forward.`
+          : `The market itself averaged ${pct(MKT_AVG, 1)} a year over this window, well above r<sub>M</sub> = ${pct(rM)}, so many points look "above the line". Press <i>What happened</i> to put the SML on the same footing as the realised returns.`);
+    }
+    // table
+    const rows = TICKS.slice().sort((a, b) => cur(a).beta - cur(b).beta).map(tk => {
+      const s = cur(tk), r = req(s.beta), g = s.avg - r;
+      return `<tr${tk === st.a || tk === st.b ? ' class="cur"' : ''}><td>${nm(tk)} (${tk})</td><td style="text-align:left">${META[tk].sector}</td><td>${fx(s.beta)}</td><td>${fx(s.r2)}</td><td>${pct(r)}</td><td>${pct(s.avg, 1)}</td><td>± ${fx(2 * s.se, 1)}</td><td class="${g < 0 ? 'neg' : 'pos'}">${spct(g, 1)}</td></tr>`;
+    }).join('');
+    $('smlTbl').innerHTML = `<caption class="sr">CAPM required returns for all stocks</caption><thead><tr><th scope="col">Stock</th><th scope="col" style="text-align:left">Business</th><th scope="col">β</th><th scope="col">R²</th><th scope="col">Required r<sub>i</sub></th><th scope="col">Realised average</th><th scope="col">± 2 SE</th><th scope="col">Realised − required</th></tr></thead><tbody>` + rows +
+      `<tr><td>S&amp;P 500 (market)</td><td style="text-align:left">Total return index</td><td>1.00</td><td>1.00</td><td>${pct(rM)}</td><td>${pct(MKT_AVG, 1)}</td><td>± ${fx(2 * MKT_SE, 1)}</td><td class="${MKT_AVG - rM < 0 ? 'neg' : 'pos'}">${spct(MKT_AVG - rM, 1)}</td></tr></tbody>`;
+  }
+
+  // ---------- section 3 ----------
+  $('w1').addEventListener('input', e => { stopSweep(); st.w = +e.target.value; renderPort(); });
+  $('half').addEventListener('click', () => { stopSweep(); st.w = 50; $('w1').value = 50; renderPort(); });
+  let raf = null;
+  function stopSweep() { if (raf) { cancelAnimationFrame(raf); clearTimeout(raf); raf = null; } $('sweep').innerHTML = '▶ Sweep w<sub>1</sub> from 0% to 100%'; }
+  $('sweep').addEventListener('click', () => {
+    if (raf) { stopSweep(); return; }
+    $('sweep').textContent = '■ Stop';
+    if (reduce) { // reduced motion: a few discrete steps, no smooth animation
+      let k = 0; const steps = [0, 25, 50, 75, 100];
+      const next = () => { st.w = steps[k]; $('w1').value = st.w; renderPort(); k++; if (k < steps.length) raf = setTimeout(next, 1200); else { raf = null; stopSweep(); } };
+      next(); return;
+    }
+    const t0 = performance.now(), dur = 4000;
+    const tick = t => { const u = Math.min(1, (t - t0) / dur); st.w = Math.round(u * 100); $('w1').value = st.w; renderPort(); if (u < 1) raf = requestAnimationFrame(tick); else { raf = null; stopSweep(); } };
+    raf = requestAnimationFrame(tick);
+  });
+  function renderPort() {
+    const A = cur(st.a), B = cur(st.b), w1 = st.w / 100, w2 = 1 - w1;
+    const bp = w1 * A.beta + w2 * B.beta, rM = st.rrf + st.rpm;
+    const r1 = req(A.beta), r2 = req(B.beta), rp = req(bp);
+    $('w1Lab').innerHTML = `Weight in ${st.a}, w<sub>1</sub>`;
+    $('w1Out').textContent = `${st.w}% ${st.a} · ${100 - st.w}% ${st.b}`;
+    const money = v => '$' + Math.round(v).toLocaleString('en-US');
+    $('portEq').innerHTML =
+      `<div class="sub">With $10,000: ${money(10000 * w1)} in ${nm(st.a)} and ${money(10000 * w2)} in ${nm(st.b)}.</div>` +
+      `<div class="big">β<sub>p</sub> = ${fx(w1)}(${fx(A.beta)}) + ${fx(w2)}(${fx(B.beta)}) = <span class="res">${fx(bp)}</span></div>` +
+      `<div class="big">r<sub>p</sub> = ${pct(st.rrf)} + ${fx(bp)} × (${pct(rM)} − ${pct(st.rrf)}) = <span class="res">${pct(rp)}</span></div>` +
+      `<div class="sub">Check: the weighted average of the two required returns gives the same answer, ${fx(w1)}(${pct(r1)}) + ${fx(w2)}(${pct(r2)}) = <b>${pct(w1 * r1 + w2 * r2)}</b>, because the SML is a straight line.</div>`;
+    const lo = Math.min(A.beta, B.beta), hi = Math.max(A.beta, B.beta);
+    drawSML($('pfWrap'), $('pf'), $('pfTip'), $('pfLive'), { hl: [{ tk: st.a, c: 'var(--s1)' }, { tk: st.b, c: 'var(--s2)' }], others: false, band: [lo, hi], port: { beta: bp } });
+    $('pfLeg').innerHTML = smlLegend(false);
+    $('pf').setAttribute('aria-label', `Portfolio of ${st.w}% ${nm(st.a)} and ${100 - st.w}% ${nm(st.b)}: beta ${fx(bp)}, required return ${pct(rp)}.`);
+    $('story3').innerHTML = `<b>Always between the two.</b> With weights between 0% and 100%, β<sub>p</sub> is a weighted average, so it lies between ${fx(lo)} and ${fx(hi)}, and the portfolio's required return lies between ${pct(Math.min(r1, r2))} and ${pct(Math.max(r1, r2))} on the same SML. Shifting money toward the higher-beta stock raises market risk and the required return together.`;
+  }
+
+  // ---------- section 4 ----------
+  function renderNotice() {
+    const s = k => cur(k);
+    const x = s('XOM'), ap = s('AAPL'), nv = s('NVDA'), du = s('DUK'), gm = s('GME');
+    $('notice').innerHTML =
+      `<li><h3>Beta measures market (systematic) risk, the only risk CAPM says the market rewards.</h3><p>Part of every stock's ups and downs is firm-specific and tends to cancel out in a diversified portfolio, so investors are not paid extra for bearing it. Beta captures the part that does not cancel: how the stock moves with the market. ExxonMobil was about as volatile as Apple over these five years (${pct(x.sd, 0)} vs ${pct(ap.sd, 0)} a year), but its beta was ${fx(x.beta)} against ${fx(ap.beta)}. High stand-alone risk does not by itself mean a high required return.</p></li>` +
+      `<li><h3>β &gt; 1 amplifies market moves; β &lt; 1 dampens them.</h3><p>On average, NVIDIA moved about ${fx(nv.beta)} points for each 1-point move in the market, Duke Energy about ${fx(du.beta)}. That is an average tendency, not a rule for any one month: the dots scatter around the line, and a beta from 60 months is only an estimate (NVIDIA's rough range is ${fx(nv.beta - 2 * nv.seb)} to ${fx(nv.beta + 2 * nv.seb)}; GameStop's is ${fx(gm.beta - 2 * gm.seb)} to ${fx(gm.beta + 2 * gm.seb)}).</p></li>` +
+      `<li><h3>Required return rises in a straight line with beta.</h3><p>The SML starts at r<sub>RF</sub> and its slope is the market risk premium r<sub>M</sub> − r<sub>RF</sub>, not beta. With r<sub>RF</sub> = ${pct(st.rrf)} and a ${pct(st.rpm)} premium, every extra 0.1 of beta adds ${pct(0.1 * st.rpm)}. Doubling beta does not double the required return, because r<sub>RF</sub> stays the same: β = 1 requires ${pct(req(1))}, β = 2 requires ${pct(req(2))}.</p></li>`;
+  }
+
+  // ---------- footer ----------
+  $('source').innerHTML = `Source: monthly adjusted closing prices from Yahoo Finance (adjusted for splits and dividends, so stock returns include dividends); market = S&amp;P 500 Total Return index (^SP500TR, dividends reinvested). Risk-free rate: 3-month Treasury bill, secondary market rate, monthly average (FRED series TB3MS, Board of Governors of the Federal Reserve System via the Federal Reserve Bank of St. Louis). ${N} monthly returns, ${mLong(0)} to ${mLong(N - 1)}; last month covered: ${mLong(N - 1)}. Data downloaded 4 November 2026.`;
+  $('method').innerHTML = `Betas are ordinary least-squares slopes computed in this page from the ${N} monthly returns. Excess return = monthly return − T-bill rate ÷ 12. Average returns are the mean monthly return × 12 (arithmetic, not compounded); standard deviations are monthly × √12; a standard error is the monthly standard deviation × 12 ÷ √${N}. Published betas (Yahoo, Value Line, Bloomberg) differ because they use other periods, return intervals, market indexes or adjustments.`;
+
+  // ---------- render ----------
+  function renderAll() { drawScatter(); renderStats(); renderSML(); renderPort(); renderNotice(); }
+  fillSelects(); syncSliders(); renderAll();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { drawScatter(); renderSML(); renderPort(); }); // re-place labels with the real font metrics
+  let lastW = 0, rz;
+  const onResize = () => { const w = $('scWrap').clientWidth + $('smlWrap').clientWidth; if (w === lastW) return; lastW = w; clearTimeout(rz); rz = setTimeout(() => { drawScatter(); renderSML(); renderPort(); }, 100); };
+  if (window.ResizeObserver) new ResizeObserver(onResize).observe(document.querySelector('.wrap')); else window.addEventListener('resize', onResize);
+})();
+</script>
+</body></html>
