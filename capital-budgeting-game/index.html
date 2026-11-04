@@ -59,7 +59,7 @@ section.lesson { background: var(--panel); border: 1px solid var(--line); border
 .btn { font: 600 13px var(--font-body); color: var(--accent); background: transparent; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 999px; padding: 5px 13px; cursor: pointer; }
 .btn:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .btn.primary { background: var(--accent); color: var(--panel); border-color: var(--accent); }
-.btn:disabled { opacity: .5; cursor: default; background: transparent; }
+.btn:disabled { opacity: .45; cursor: default; background: transparent; }
 .btn.primary:disabled { background: var(--accent); }
 .btn:focus-visible, .seg button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 select, input.code { font: 500 14px var(--font-body); color: var(--fg); background: var(--cap); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; }
@@ -182,6 +182,14 @@ ol.notice { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; c
 ol.notice li { counter-increment: n; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14.5px; max-width: 92ch; }
 ol.notice li::before { content: counter(n); font: 600 14px var(--font-cond); color: var(--panel); background: var(--accent); border-radius: 999px; width: 26px; height: 26px; display: grid; place-items: center; margin-top: 1px; }
 ol.notice b.h { display: block; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 10px 12px; border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 12px; }
+.toolbar .note { flex: 1 1 200px; }
+.predict { border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); background: color-mix(in srgb, var(--accent) 7%, var(--panel)); border-radius: 12px; padding: 12px 14px; display: grid; gap: 10px; }
+.predict p { margin: 0; }
+.fb-ok { color: var(--pos); font-weight: 600; } .fb-no { color: var(--neg); font-weight: 600; }
+.chart.masked svg, .chart.masked details { filter: blur(8px); pointer-events: none; user-select: none; }
+.chart .maskmsg { position: absolute; inset: 40% 10% auto; text-align: center; font-weight: 600; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.blurred { filter: blur(7px); pointer-events: none; user-select: none; }
 footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 86ch; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
@@ -273,6 +281,15 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
     <p class="lead">The NPV profile plots a project's NPV at every discount rate. It crosses zero at the IRR. At the WACC, its height is the NPV you earn.</p>
     <p class="locked" id="lock3">Reveal the numbers in step 1 first.</p>
     <div id="res3" hidden style="display:grid;gap:16px;min-width:0">
+      <div class="toolbar">
+        <button class="btn primary" type="button" id="modeBtn3">👁 Reveal answer</button>
+        <span class="note" id="modeNote3"></span>
+      </div>
+      <div class="predict" id="predictBox3">
+        <p><b>Predict first.</b> <span id="pQ3"></span></p>
+        <div class="row" id="pBtns3"></div>
+        <p id="pFeedback3" aria-live="polite"></p>
+      </div>
       <div class="row">
         <label class="lab" for="projSel">Project</label>
         <select id="projSel"></select>
@@ -283,7 +300,8 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
           <div class="charthead"><h3 id="c2title">NPV profile</h3><div class="legend" id="leg2"></div></div>
           <svg id="chart2" viewBox="0 0 560 330" aria-label="NPV profile"></svg>
           <div class="tip" id="tip2" hidden></div>
-          <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="tbl2"></table></div></details>
+          <div class="maskmsg" id="mask3" hidden>Make your prediction to see the chart</div>
+          <details class="tbl" id="tbl2d"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="tbl2"></table></div></details>
           <p class="takeaway" id="profNote" style="margin-top:10px"></p>
         </div>
         <div class="calc" aria-labelledby="hkeys">
@@ -291,7 +309,7 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
           <ol class="keysteps" id="keys"></ol>
           <div><div class="note" style="margin-bottom:4px">Excel (from the slides: =NPV(rate, CF1:CFn) + CF0)</div><div class="formula" id="excel"></div></div>
           <div class="kv" id="kv"></div>
-          <details class="tbl"><summary>Payback worksheet</summary><div class="tblwrap"><table class="data" id="pbTbl"></table></div></details>
+          <details class="tbl" id="pbDet"><summary>Payback worksheet</summary><div class="tblwrap"><table class="data" id="pbTbl"></table></div></details>
         </div>
       </div>
     </div>
@@ -500,12 +518,14 @@ if (typeof module !== 'undefined') module.exports = CB;
   const LET = 'ABCDEFGH';
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
+  // links: ?mode=reveal opens with the game numbers and every predict section revealed; no mode = predict mode
+  const START_PREDICT = !['reveal', 'explore'].includes(new URLSearchParams(location.search).get('mode'));
   const S = { round: 0, code: null, menu: null, A: null, R: null, picks: new Set(), revealed: false, sort: 'menu', sel: 0, rival: true };
 
   // ---------- load a menu ----------
   function load(menu) {
     S.menu = menu; S.A = CB.analyze(menu); S.R = CB.roles(menu, S.A);
-    S.picks = new Set(); S.revealed = false; S.sel = S.R.L != null ? S.R.L : 0;
+    S.picks = new Set(); S.revealed = false; S.sel = S.R.L != null ? S.R.L : 0; setHidden3(START_PREDICT);
     $('roundSeg').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', S.code == null && +b.dataset.round === S.round));
     $('roundCode').innerHTML = S.code == null ? esc(menu.title) : `Round code <b>${S.code}</b>`;
     const sitePair = S.A.me.map(i => LET[i]);
@@ -711,9 +731,19 @@ if (typeof module !== 'undefined') module.exports = CB;
     $('leg2').innerHTML = ser.map((j, k) => `<span><i style="background:${colors[k]}"></i>${LET[j]} · ${esc(P[j].name)}</span>`).join('');
     const xo = ser.length === 2 ? crossover(ser[0], ser[1], xmax) : null;
     drawProfile(ser, colors, xmax, xo);
+    const q = P3.q = question(i, ser, xo, xmax);
+    // predict mode: hide the curve, IRR markers, table, takeaway and the computed answers
+    const hide = P3.hidden;
+    $('c2wrap').classList.toggle('masked', hide); $('mask3').hidden = !hide;
+    if (hide) { $('tbl2d').open = false; $('pbDet').open = false; $('tip2').hidden = true; }
+    $('pbDet').classList.toggle('blurred', hide);
+    $('profNote').hidden = hide;
+    $('predictBox3').hidden = !(hide || P3.fb); $('pBtns3').hidden = !hide;
+    $('pQ3').innerHTML = q.text;
+    $('pBtns3').innerHTML = q.choices.map(c => `<button class="btn" type="button" data-guess="${c[0]}">${c[1]}</button>`).join('');
     // table
     const rates = []; for (let r = 0; r <= xmax * 100 + 1e-9; r += xmax > 0.5 ? 10 : 5) rates.push(r / 100);
-    [p.w].concat(ser.map(j => A.M[j].irr)).forEach(r => { if (!rates.some(x => Math.abs(x - r) < 1e-6)) rates.push(r); });
+    [p.w].concat(ser.map(j => A.M[j].irr), q.rate != null ? [q.rate] : []).forEach(r => { if (!rates.some(x => Math.abs(x - r) < 1e-6)) rates.push(r); });
     rates.sort((a, b) => a - b);
     $('tbl2').innerHTML = `<thead><tr><th>Discount rate</th>${ser.map(j => `<th>NPV of ${LET[j]}</th>`).join('')}</tr></thead><tbody>` +
       rates.map(r => { const tag = Math.abs(r - p.w) < 1e-9 ? ' (WACC)' : ser.map(j => Math.abs(r - A.M[j].irr) < 1e-9 ? ` (IRR ${LET[j]})` : '').join(''); return `<tr class="${tag ? 'cur' : ''}"><td>${pct(r)}${tag}</td>${ser.map(j => `<td>${m2(npvAt(j, r))}</td>`).join('')}</tr>`; }).join('') + '</tbody>';
@@ -724,8 +754,54 @@ if (typeof module !== 'undefined') module.exports = CB;
       note += ` ${LET[Sx]} has the higher IRR (${pct(A.M[Sx].irr)} vs ${pct(A.M[L].irr)}), but at the WACC ${LET[L]} has the higher NPV. Because they share a site, choose ${LET[L]}, the one that adds more value.` + (xo != null ? ` The profiles cross at about ${pct(xo, 1)}; above that rate, ${LET[Sx]} would win.` : '');
     }
     $('profNote').innerHTML = note;
-    renderKeys(i);
+    renderKeys(i, hide);
   }
+  // ---------- section 3 predict question, written from the current project ----------
+  // Same-site pair shown: "if the WACC rose past the crossover, which would add more value?" (her case question, part f).
+  // Otherwise: "is the IRR above or below the WACC?"
+  function question(i, ser, xo, xmax) {
+    const A = S.A, P = S.menu.projects, p = P[i], m = A.M[i];
+    if (ser.length === 2 && xo != null) {
+      const j = ser[1], L = A.M[i].npv >= A.M[j].npv ? i : j, Sx = L === i ? j : i;
+      // prefer a whole-percent rate just past the crossover where both NPVs are still positive; else 3 points past it
+      const lowIrr = Math.min(A.M[L].irr, A.M[Sx].irr);
+      let rate = null;
+      for (let r = Math.ceil(xo * 100 + 0.01); r / 100 < lowIrr; r++) { const a = npvAt(L, r / 100), b = npvAt(Sx, r / 100); if (a >= 0.01 && b >= 0.01 && Math.abs(a - b) >= 0.01) { rate = r / 100; break; } }
+      if (rate == null) rate = (Math.ceil(xo * 100) + 3) / 100;
+      const dL = npvAt(L, rate), dS = npvAt(Sx, rate);
+      if (rate > p.w && rate <= xmax && Math.abs(dL - dS) >= 0.01 && Math.abs(Math.max(dL, dS)) >= 0.01) {
+        const ans = Math.max(dL, dS) < 0 ? 'none' : String(dS > dL ? Sx : L);
+        const R2 = Math.round(rate * 100) + '%';
+        const verdict = ans === 'none' ? `Both NPVs are negative, so neither project should be funded at ${R2}, even though ${LET[Sx]} loses less.`
+          : ans === String(Sx) ? `Above the crossover rate, ${LET[Sx]} adds more value, so the ranking flips.` : `Even at this rate, ${LET[L]} still adds more value.`;
+        return { rate, ans, choices: [[String(L), `${LET[L]} · ${esc(P[L].name)}`], [String(Sx), `${LET[Sx]} · ${esc(P[Sx].name)}`], ['none', 'Neither: both NPVs &lt; 0']],
+          text: `${LET[L]} and ${LET[Sx]} share ${esc(p.site)}, so the Sharks can fund only one. At the ${wTxt(p.w)} WACC, ${LET[L]} has the higher NPV. Suppose the WACC rose to <b>${R2}</b>. Which project would the Sharks fund then?`,
+          why: `At ${R2}, NPV of ${LET[L]} = <b>${m2(dL)}</b> and NPV of ${LET[Sx]} = <b>${m2(dS)}</b>. ${verdict} The two NPV profiles cross at about ${pct(xo, 1)}: ${LET[L]}'s big cash flows arrive late, so a higher discount rate cuts their PV harder, while ${LET[Sx]}'s cash comes back sooner. Which mutually exclusive project wins depends on the WACC, so compare NPVs at the right rate.` };
+      }
+    }
+    const above = m.irr > p.w;
+    return { rate: null, ans: above ? 'above' : 'below',
+      choices: [['above', `Above ${wTxt(p.w)} (NPV &gt; 0)`], ['below', `Below ${wTxt(p.w)} (NPV &lt; 0)`]],
+      text: `Project ${LET[i]} (${esc(p.name)}) costs ${m2(p.cost)} today and returns ${p.cf.map(kn).join(', ')} over the next ${p.cf.length} years. Its WACC is ${wTxt(p.w)}. Is its IRR above or below the WACC?`,
+      why: `IRR = <b>${pct(m.irr)}</b>, ${above ? 'above' : 'below'} the ${wTxt(p.w)} WACC, so the NPV profile crosses zero ${above ? 'to the right' : 'to the left'} of the WACC line and NPV at ${wTxt(p.w)} is <b>${m2(m.npv)}</b>. IRR &gt; WACC and NPV &gt; 0 always agree for a project like this one, with one outflow followed by inflows.` };
+  }
+  const P3 = { hidden: true, fb: false, q: null };
+  function setHidden3(h, keepFeedback) {
+    P3.hidden = h;
+    if (!keepFeedback) { P3.fb = false; $('pFeedback3').innerHTML = ''; }
+    $('modeBtn3').textContent = h ? '👁 Reveal answer' : '↩ Back to predict mode';
+    $('modeNote3').textContent = h ? 'Predict mode: the answer is hidden. Answer the question, or click Reveal answer.'
+                                   : 'Answer shown: everything updates live. Click Back to predict mode to quiz again.';
+    if (S.revealed) renderCloseup();
+  }
+  const clearFb3 = () => { P3.fb = false; $('pFeedback3').innerHTML = ''; };
+  $('modeBtn3').addEventListener('click', () => setHidden3(!P3.hidden));
+  $('pBtns3').addEventListener('click', e => {
+    const g = e.target.closest('button[data-guess]'); if (!g || !P3.q) return;
+    const ok = g.dataset.guess === P3.q.ans;
+    $('pFeedback3').innerHTML = `${ok ? '<span class="fb-ok">✓ Correct.</span>' : '<span class="fb-no">✗ Not quite.</span>'} ${P3.q.why}`;
+    P3.fb = true; setHidden3(false, true);
+  });
   function drawProfile(ser, colors, xmax, xo) {
     const svg = $('chart2'), nar = narrow($('c2wrap')), W = nar ? 380 : 560, H = nar ? 340 : 330, m = { l: 66, r: 14, t: 18, b: 44 }, A = S.A, P = S.menu.projects, i = ser[0], p = P[i];
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.textContent = '';
@@ -777,7 +853,7 @@ if (typeof module !== 'undefined') module.exports = CB;
   const cap = (t, cls = '') => `<span class="cap ${cls}">${t}</span>`;
   const numk = t => `<span class="cap">${t}</span>`;
   const kn = v => String(+v.toFixed(2));
-  function renderKeys(i) {
+  function renderKeys(i, hide) {
     const p = S.menu.projects[i], m = S.A.M[i];
     // group repeated cash flows, as the F (frequency) entries on the calculator allow
     const groups = []; p.cf.forEach(c => { const g = groups[groups.length - 1]; if (g && g.c === c) g.f++; else groups.push({ c, f: 1 }); });
@@ -790,20 +866,21 @@ if (typeof module !== 'undefined') module.exports = CB;
       steps.push([keysTxt, `C${nn} = ${kn(g.c)}${g.f > 1 ? `, and F${nn} = ${g.f} because it repeats for years ${yr}–${yr + g.f - 1}` : ` for year ${yr}; F${nn} stays at 1`}.`]);
     });
     steps.push([cap('NPV') + numk(String(Math.round(p.w * 100))) + cap('ENTER'), `Open NPV. I = ${Math.round(p.w * 100)}, the WACC.`]);
-    steps.push([cap('↓') + cap('CPT'), `NPV = <b>${(m.npv < 0 ? MINUS : '') + Math.abs(m.npv).toFixed(2)}</b> ($ millions). ${m.npv > 0 ? 'Positive: the project adds value.' : 'Negative: reject.'}`]);
-    steps.push([cap('IRR') + cap('CPT'), `IRR = <b>${pct(m.irr)}</b>, ${m.irr > p.w ? 'above' : 'below'} the ${wTxt(p.w)} WACC.`]);
+    steps.push([cap('↓') + cap('CPT'), hide ? 'NPV = <b>?</b> ($ millions).' : `NPV = <b>${(m.npv < 0 ? MINUS : '') + Math.abs(m.npv).toFixed(2)}</b> ($ millions). ${m.npv > 0 ? 'Positive: the project adds value.' : 'Negative: reject.'}`]);
+    steps.push([cap('IRR') + cap('CPT'), hide ? 'IRR = <b>?</b>' : `IRR = <b>${pct(m.irr)}</b>, ${m.irr > p.w ? 'above' : 'below'} the ${wTxt(p.w)} WACC.`]);
     $('keys').innerHTML = steps.map(s => `<li><span class="seq">${s[0]}</span> ${s[1]}</li>`).join('');
     const sgn = v => (v < 0 ? MINUS : '') + Math.abs(v).toFixed(4);
-    $('excel').innerHTML = esc(`=NPV(${p.w.toFixed(2)}, ${p.cf.map(kn).join(', ')}) + (-${kn(p.cost)})  →  ${sgn(m.npv)}`) + '<br>' +
-      esc(`=IRR({-${kn(p.cost)}, ${p.cf.map(kn).join(', ')}})  →  ${pct(m.irr, 4)}`);
-    $('kv').innerHTML = `<span>PV of future CFs</span><b>${m2(m.npv + p.cost)}</b><span>PI</span><b>${m2(m.npv + p.cost).replace('M', '')} ÷ ${kn(p.cost)} = ${piTxt(m.pi)}</b><span>Payback</span><b>${yrs(m.pb)}</b><span>Discounted payback</span><b>${yrs(m.dpb)}</b>`;
+    $('excel').innerHTML = esc(`=NPV(${p.w.toFixed(2)}, ${p.cf.map(kn).join(', ')}) + (-${kn(p.cost)})  →  ${hide ? '?' : sgn(m.npv)}`) + '<br>' +
+      esc(`=IRR({-${kn(p.cost)}, ${p.cf.map(kn).join(', ')}})  →  ${hide ? '?' : pct(m.irr, 4)}`);
+    $('kv').innerHTML = hide ? `<span>PV of future CFs</span><b>?</b><span>PI</span><b>?</b><span>Payback</span><b>${yrs(m.pb)}</b><span>Discounted payback</span><b>?</b>`
+      : `<span>PV of future CFs</span><b>${m2(m.npv + p.cost)}</b><span>PI</span><b>${m2(m.npv + p.cost).replace('M', '')} ÷ ${kn(p.cost)} = ${piTxt(m.pi)}</b><span>Payback</span><b>${yrs(m.pb)}</b><span>Discounted payback</span><b>${yrs(m.dpb)}</b>`;
     let cum = -p.cost, dcum = -p.cost;
     const rows = [`<tr><td>0</td><td>${cfTxt(-p.cost)}</td><td>${cfTxt(cum)}</td><td>${cfTxt(-p.cost)}</td><td>${cfTxt(dcum)}</td></tr>`];
     p.cf.forEach((c, t) => { const pv = c / Math.pow(1 + p.w, t + 1); cum += c; dcum += pv; rows.push(`<tr><td>${t + 1}</td><td>${cfTxt(c)}</td><td class="${cum >= 0 ? 'pos' : ''}">${cfTxt(cum)}</td><td>${cfTxt(pv)}</td><td class="${dcum >= 0 ? 'pos' : ''}">${cfTxt(dcum)}</td></tr>`); });
     $('pbTbl').innerHTML = `<thead><tr><th>Year</th><th>CF</th><th>Cumulative CF</th><th>PV at ${wTxt(p.w)}</th><th>Cumulative PV</th></tr></thead><tbody>${rows.join('')}</tbody>`;
   }
-  $('projSel').addEventListener('change', e => { S.sel = +e.target.value; renderCloseup(); });
-  $('rivalChk').addEventListener('change', e => { S.rival = e.target.checked; renderCloseup(); });
+  $('projSel').addEventListener('change', e => { S.sel = +e.target.value; clearFb3(); renderCloseup(); });
+  $('rivalChk').addEventListener('change', e => { S.rival = e.target.checked; clearFb3(); renderCloseup(); });
 
   // ---------- section 4: what to notice ----------
   function renderNotice() {
@@ -839,6 +916,7 @@ if (typeof module !== 'undefined') module.exports = CB;
   $('codeIn').addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
 
   loadRound(0);
+  if (!START_PREDICT) { S.revealed = true; renderAll(); }
   let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (S.revealed) { renderResults(); renderCloseup(); } }, 150); });
 })();
 </script>
