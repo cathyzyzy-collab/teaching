@@ -348,9 +348,10 @@ footer.note p { margin: 0; }
   const el = (tag, attrs, parent, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; if (parent) parent.appendChild(e); return e; };
   const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const MINUS = '−';
-  const fx = (v, d = 2) => (v < 0 && Math.abs(v) >= 0.5 * Math.pow(10, -d) ? MINUS : '') + Math.abs(v).toFixed(d);
+  const fx = (v, d = 2) => (v < 0 && Math.abs(v) >= 0.5 * Math.pow(10, -d) ? MINUS : '') + (Math.abs(v) + 1e-9).toFixed(d);
   const pct = (v, d = 2) => fx(v, d) + '%';
   const spct = (v, d = 1) => (v > 0 ? '+' : '') + fx(v, d) + '%';
+  const r2d = v => Math.round(v * 100 + (v >= 0 ? 1e-9 : -1e-9)) / 100; // round to the 2 decimals we display
   const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
   const sd = a => { const m = mean(a); return Math.sqrt(a.reduce((s, v) => s + (v - m) * (v - m), 0) / (a.length - 1)); };
 
@@ -398,7 +399,7 @@ footer.note p { margin: 0; }
     TICKS.forEach(tk => {
       const r = regress(x, ser(D.s[tk], mode));
       const raw = D.s[tk];
-      S[mode][tk] = { beta: r.beta, alpha: r.alpha * 12, r2: r.r2, seb: r.seb, avg: mean(raw) * 12, sd: sd(raw) * Math.sqrt(12), se: sd(raw) * 12 / Math.sqrt(N) };
+      S[mode][tk] = { beta: r.beta, cb: r2d(r.beta), alpha: r.alpha * 12, r2: r.r2, seb: r.seb, avg: mean(raw) * 12, sd: sd(raw) * Math.sqrt(12), se: sd(raw) * 12 / Math.sqrt(N) };
     });
   });
   window.__beta = S; // exposed for checking against an independent calculation
@@ -653,7 +654,7 @@ footer.note p { margin: 0; }
     const stops = [];
     // collect all marks first so labels avoid every point
     const others = cfg.others ? TICKS.filter(tk => !hl.some(h => h.tk === tk)) : [];
-    const P = tk => ({ x: X(cur(tk).beta), y: Y(req(cur(tk).beta)) });
+    const P = tk => ({ x: X(cur(tk).cb), y: Y(req(cur(tk).cb)) });
     others.forEach(tk => { const p = P(tk); pl.mark(p.x, p.y, 5); });
     hl.forEach(h => { const p = P(h.tk); pl.mark(p.x, p.y, 7); });
     const pRF = { x: X(0), y: Y(st.rrf) }, pM = { x: X(1), y: Y(rM) };
@@ -662,7 +663,7 @@ footer.note p { margin: 0; }
 
     // realised averages with +/- 2 SE whiskers (selected stocks and the market only)
     if (cfg.real) {
-      const real = hl.map(h => ({ name: h.tk, b: cur(h.tk).beta, avg: cur(h.tk).avg, se: cur(h.tk).se, c: h.c })).concat([{ name: 'Market', b: 1, avg: MKT_AVG, se: MKT_SE, c: 'var(--fg)', dia: true }]);
+      const real = hl.map(h => ({ name: h.tk, b: cur(h.tk).cb, avg: cur(h.tk).avg, se: cur(h.tk).se, c: h.c })).concat([{ name: 'Market', b: 1, avg: MKT_AVG, se: MKT_SE, c: 'var(--fg)', dia: true }]);
       real.forEach(r => {
         const x = X(r.b), off = r.dia ? 0 : 0;
         el('line', { x1: x + off, x2: x + off, y1: Y(r.avg - 2 * r.se), y2: Y(r.avg + 2 * r.se), class: 'whisk', style: `stroke:${r.c}` }, plot);
@@ -685,17 +686,17 @@ footer.note p { margin: 0; }
       stops.push({ b, pts: [{ x: p.x, y: p.y, r: 6 }], html: `<div class="t">${name}</div><div>β = <b>${fx(b)}</b></div><div>Required return: <b>${pct(req(b))}</b></div>` });
     });
     // other stocks: neutral
-    const dotTip = (tk, c) => { const s = cur(tk); return `<div class="t">${c ? `<i style="background:${c}"></i>` : ''}${nm(tk)} (${tk}) · ${META[tk].sector}</div><div>β = <b>${fx(s.beta)}</b></div><div>Required return: <b>${pct(req(s.beta))}</b></div><div class="t">${pct(st.rrf)} + ${fx(s.beta)} × ${pct(st.rpm)}</div>`; };
+    const dotTip = (tk, c) => { const s = cur(tk); return `<div class="t">${c ? `<i style="background:${c}"></i>` : ''}${nm(tk)} (${tk}) · ${META[tk].sector}</div><div>β = <b>${fx(s.cb)}</b></div><div>Required return: <b>${pct(req(s.cb))}</b></div><div class="t">${pct(st.rrf)} + ${fx(s.cb)} × ${pct(st.rpm)}</div>`; };
     others.forEach(tk => {
       const p = P(tk);
       el('circle', { cx: p.x, cy: p.y, r: 4.5, class: 'dot', style: 'fill:var(--other)' }, plot);
-      stops.push({ b: cur(tk).beta, pts: [{ x: p.x, y: p.y, r: 4.5 }], html: dotTip(tk) });
+      stops.push({ b: cur(tk).cb, pts: [{ x: p.x, y: p.y, r: 4.5 }], html: dotTip(tk) });
     });
     // highlighted stocks and the portfolio
     hl.forEach(h => {
       const p = P(h.tk);
       el('circle', { cx: p.x, cy: p.y, r: 6.5, class: 'dot', style: `fill:${h.c}` }, plot);
-      stops.push({ b: cur(h.tk).beta, pts: [{ x: p.x, y: p.y, r: 6.5 }], html: dotTip(h.tk, h.c) });
+      stops.push({ b: cur(h.tk).cb, pts: [{ x: p.x, y: p.y, r: 6.5 }], html: dotTip(h.tk, h.c) });
     });
     if (pP) {
       el('circle', { cx: pP.x, cy: pP.y, r: 7, class: 'dot', style: 'fill:var(--s3)' }, plot);
@@ -711,8 +712,8 @@ footer.note p { margin: 0; }
       t.setAttribute('x', s.x); t.setAttribute('y', s.y); t.setAttribute('text-anchor', s.anchor);
     };
     if (pP) lab(pP, `Portfolio ${pct(req(cfg.port.beta))}`, 'dlab', 'below');
-    hl.forEach(h => lab(P(h.tk), cfg.port ? `${h.tk} ${pct(req(cur(h.tk).beta))}` : h.tk, 'dlab', 'up'));
-    others.sort((a, b) => cur(a).beta - cur(b).beta).forEach(tk => lab(P(tk), tk, 'olab', 'up'));
+    hl.forEach(h => lab(P(h.tk), cfg.port ? `${h.tk} ${pct(req(cur(h.tk).cb))}` : h.tk, 'dlab', 'up'));
+    others.sort((a, b) => cur(a).cb - cur(b).cb).forEach(tk => lab(P(tk), tk, 'olab', 'up'));
 
     stops.sort((a, b) => a.b - b.b);
     hoverLayer(wrap, svg, tip, live, stops, i => stops[i].html);
@@ -729,7 +730,7 @@ footer.note p { margin: 0; }
   const PRESETS2 = [
     { t: 'Class example: 3% and 5%', rrf: 3, rpm: 5 },
     { t: `Latest T-bill: ${pct(LAST_RF)} (${mLab(N - 1)})`, rrf: LAST_RF, rpm: null },
-    { t: `What happened, ${RANGE}`, rrf: RF_AVG, rpm: MKT_AVG - RF_AVG, real: true },
+    { t: `What happened, ${RANGE}`, rrf: r2d(RF_AVG), rpm: r2d(r2d(MKT_AVG) - r2d(RF_AVG)), real: true },
   ];
   PRESETS2.forEach(p => {
     const b = document.createElement('button'); b.className = 'btn'; b.type = 'button'; b.textContent = p.t;
@@ -745,7 +746,7 @@ footer.note p { margin: 0; }
     const A = cur(st.a), B = cur(st.b), rM = st.rrf + st.rpm, hide = P[2].hidden;
     $('rrfOut').textContent = pct(st.rrf); $('rpmOut').textContent = pct(st.rpm);
     $('rmOut').innerHTML = `Market return r<sub>M</sub> = r<sub>RF</sub> + (r<sub>M</sub> − r<sub>RF</sub>) = <b>${pct(rM)}</b>. In class we use a premium of about 4% to 8% a year.`;
-    const line = (tk, s, c) => `<div><span class="sw" style="background:${c}"></span><b>${nm(tk)}</b>: ${pct(st.rrf)} + ${fx(s.beta)} × (${pct(rM)} − ${pct(st.rrf)}) = <span class="res">${hide ? '?' : pct(req(s.beta))}</span></div>`;
+    const line = (tk, s, c) => `<div><span class="sw" style="background:${c}"></span><b>${nm(tk)}</b>: ${pct(st.rrf)} + ${fx(s.cb)} × (${pct(rM)} − ${pct(st.rrf)}) = <span class="res">${hide ? '?' : pct(req(s.cb))}</span></div>`;
     $('reqEq').innerHTML = line(st.a, A, 'var(--s1)') + line(st.b, B, 'var(--s2)') +
       `<div class="sub">Market (β = 1): ${pct(rM)}. T-bills (β = 0): ${pct(st.rrf)}. Each extra 0.1 of beta adds 0.1 × ${pct(st.rpm)} = ${pct(0.1 * st.rpm)} to the required return.</div>`;
     drawSML($('smlWrap'), $('sml'), $('smlTip'), $('smlLive'), { hl: [{ tk: st.a, c: 'var(--s1)' }, { tk: st.b, c: 'var(--s2)' }], others: true, triangle: true, real: st.real });
@@ -758,23 +759,23 @@ footer.note p { margin: 0; }
     $('pTerms2').innerHTML = `${nm(st.a)} (stock A) has an estimated beta of ${fx(q2.b)}. ${q2.example ? `Suppose r<sub>RF</sub> = ${pct(q2.rf)} and the market risk premium is ${pct(q2.rpm)}` : `With r<sub>RF</sub> = ${pct(q2.rf)} and a market risk premium of ${pct(q2.rpm)}`} (so r<sub>M</sub> = ${pct(q2.rM)})${q2.example ? '. What' : ', what'} required return does CAPM give it?`;
     $('g2lo').textContent = `Below ${pct(q2.rf)} (less than T-bills)`; $('g2mid').textContent = `Between ${pct(q2.rf)} and ${pct(q2.rM)}`; $('g2hi').textContent = `Above ${pct(q2.rM)} (more than the market)`;
     if (hide) { $('sml').setAttribute('aria-label', 'Security Market Line chart, hidden until you make your prediction.'); }
-    else $('sml').setAttribute('aria-label', `Security Market Line from ${pct(st.rrf)} at beta 0 with slope ${pct(st.rpm)}. ${nm(st.a)} required return ${pct(req(A.beta))}, ${nm(st.b)} ${pct(req(B.beta))}.`);
+    else $('sml').setAttribute('aria-label', `Security Market Line from ${pct(st.rrf)} at beta 0 with slope ${pct(st.rpm)}. ${nm(st.a)} required return ${pct(req(A.cb))}, ${nm(st.b)} ${pct(req(B.cb))}.`);
     const rb = $('realBtn'); rb.setAttribute('aria-pressed', st.real); rb.textContent = st.real ? 'Hide realised returns' : 'Show what A, B and the market actually earned';
     const note = $('realNote'); note.hidden = !st.real || hide;
     if (st.real) {
       const ses = TICKS.map(tk => 2 * cur(tk).se), lo = Math.min(...ses), hi = Math.max(...ses);
-      const atReal = Math.abs(st.rrf - RF_AVG) < 0.01 && Math.abs(st.rpm - (MKT_AVG - RF_AVG)) < 0.01;
+      const atReal = Math.abs(st.rrf - r2d(RF_AVG)) < 0.001 && Math.abs(st.rpm - r2d(r2d(MKT_AVG) - r2d(RF_AVG))) < 0.001;
       note.innerHTML = `<b>Realised is not expected.</b> The hollow markers are what each one actually earned on average, ${RANGE}. CAPM gives a <i>required</i> (expected) return; one five-year average is a very noisy guess at it. The bars show ± 2 standard errors: about ± ${fx(lo, 0)} to ± ${fx(hi, 0)} percentage points for these stocks, and ± ${fx(2 * MKT_SE, 0)} for the market. ` +
-        (atReal ? `The inputs are now set to what happened (average T-bill ${pct(RF_AVG)}, market ${pct(MKT_AVG)}), so the vertical gap between a hollow marker and the SML is the stock's realised alpha over this window: ${st.a} ${spct(A.alpha, 1)}, ${st.b} ${spct(B.alpha, 1)}. A positive gap means it beat its CAPM benchmark here, not that it is a bargain going forward.`
+        (atReal ? `The inputs are now set to what happened (average T-bill ${pct(RF_AVG)}, market ${pct(MKT_AVG)}), so the vertical gap between a hollow marker and the SML is, apart from rounding, the stock's realised alpha over this window: ${st.a} ${spct(A.alpha, 1)}, ${st.b} ${spct(B.alpha, 1)}. A positive gap means it beat its CAPM benchmark here, not that it is a bargain going forward.`
           : `The market itself averaged ${pct(MKT_AVG, 1)} a year over this window, well above r<sub>M</sub> = ${pct(rM)}, so many points look "above the line". Press <i>What happened</i> to put the SML on the same footing as the realised returns.`);
     }
     // table
     const rows = TICKS.slice().sort((a, b) => cur(a).beta - cur(b).beta).map(tk => {
-      const s = cur(tk), r = req(s.beta), g = s.avg - r;
-      return `<tr${tk === st.a || tk === st.b ? ' class="cur"' : ''}><td>${nm(tk)} (${tk})</td><td style="text-align:left">${META[tk].sector}</td><td>${fx(s.beta)}</td><td>${fx(s.r2)}</td><td>${pct(r)}</td><td>${pct(s.avg, 1)}</td><td>± ${fx(2 * s.se, 1)}</td><td class="${g < 0 ? 'neg' : 'pos'}">${spct(g, 1)}</td></tr>`;
+      const s = cur(tk), r = req(s.cb), g = r2d(Math.round(s.avg * 10) / 10 - r); // gap from the displayed values
+      return `<tr${tk === st.a || tk === st.b ? ' class="cur"' : ''}><td>${nm(tk)} (${tk})</td><td style="text-align:left">${META[tk].sector}</td><td>${fx(s.cb)}</td><td>${fx(s.r2)}</td><td>${pct(r)}</td><td>${pct(s.avg, 1)}</td><td>± ${fx(2 * s.se, 1)}</td><td class="${g < 0 ? 'neg' : 'pos'}">${spct(g, 2)}</td></tr>`;
     }).join('');
     $('smlTbl').innerHTML = `<caption class="sr">CAPM required returns for all stocks</caption><thead><tr><th scope="col">Stock</th><th scope="col" style="text-align:left">Business</th><th scope="col">β</th><th scope="col">R²</th><th scope="col">Required r<sub>i</sub></th><th scope="col">Realised average</th><th scope="col">± 2 SE</th><th scope="col">Realised − required</th></tr></thead><tbody>` + rows +
-      `<tr><td>S&amp;P 500 (market)</td><td style="text-align:left">Total return index</td><td>1.00</td><td>1.00</td><td>${pct(rM)}</td><td>${pct(MKT_AVG, 1)}</td><td>± ${fx(2 * MKT_SE, 1)}</td><td class="${MKT_AVG - rM < 0 ? 'neg' : 'pos'}">${spct(MKT_AVG - rM, 1)}</td></tr></tbody>`;
+      `<tr><td>S&amp;P 500 (market)</td><td style="text-align:left">Total return index</td><td>1.00</td><td>1.00</td><td>${pct(rM)}</td><td>${pct(MKT_AVG, 1)}</td><td>± ${fx(2 * MKT_SE, 1)}</td><td class="${Math.round(MKT_AVG * 10) / 10 - rM < 0 ? 'neg' : 'pos'}">${spct(r2d(Math.round(MKT_AVG * 10) / 10 - rM), 2)}</td></tr></tbody>`;
   }
 
   // ---------- section 3 ----------
@@ -798,23 +799,25 @@ footer.note p { margin: 0; }
   });
   function renderPort() {
     const A = cur(st.a), B = cur(st.b), w1 = st.w / 100, w2 = 1 - w1;
-    const bp = w1 * A.beta + w2 * B.beta, rM = st.rrf + st.rpm;
-    const r1 = req(A.beta), r2 = req(B.beta), rp = req(bp), hide = P[3].hidden;
+    const bpx = w1 * A.cb + w2 * B.cb, bp = r2d(bpx), rM = st.rrf + st.rpm; // beta_p from the rounded betas, then rounded like every displayed beta
+    const r1 = req(A.cb), r2 = req(B.cb), rp = req(bp), hide = P[3].hidden, wavg = w1 * r2d(r1) + w2 * r2d(r2); // from the displayed required returns, as a student would do it
     $('w1Lab').innerHTML = `Weight in ${st.a}, w<sub>1</sub>`;
     $('w1Out').textContent = `${st.w}% ${st.a} · ${100 - st.w}% ${st.b}`;
     const money = v => '$' + Math.round(v).toLocaleString('en-US');
     $('portEq').innerHTML =
       `<div class="sub">With $10,000: ${money(10000 * w1)} in ${nm(st.a)} and ${money(10000 * w2)} in ${nm(st.b)}.</div>` +
-      `<div class="big">β<sub>p</sub> = ${fx(w1)}(${fx(A.beta)}) + ${fx(w2)}(${fx(B.beta)}) = <span class="res">${hide ? '?' : fx(bp)}</span></div>` +
+      `<div class="big">β<sub>p</sub> = ${fx(w1)}(${fx(A.cb)}) + ${fx(w2)}(${fx(B.cb)}) = <span class="res">${hide ? '?' : fx(bp)}</span></div>` +
       `<div class="big">r<sub>p</sub> = ${pct(st.rrf)} + ${fx(bp)} × (${pct(rM)} − ${pct(st.rrf)}) = <span class="res">${hide ? '?' : pct(rp)}</span></div>` +
-      `<div class="sub"${hide ? ' hidden' : ''}>Check: the weighted average of the two required returns gives the same answer, ${fx(w1)}(${pct(r1)}) + ${fx(w2)}(${pct(r2)}) = <b>${pct(w1 * r1 + w2 * r2)}</b>, because the SML is a straight line.</div>`;
-    const lo = Math.min(A.beta, B.beta), hi = Math.max(A.beta, B.beta);
+      `<div class="sub"${hide ? ' hidden' : ''}>Check: ` + (pct(wavg) === pct(rp)
+        ? `the weighted average of the two required returns gives the same answer, ${fx(w1)}(${pct(r1)}) + ${fx(w2)}(${pct(r2)}) = <b>${pct(wavg)}</b>, because the SML is a straight line.`
+        : `the weighted average of the two required returns, ${fx(w1)}(${pct(r1)}) + ${fx(w2)}(${pct(r2)}) = <b>${pct(wavg)}</b>, matches r<sub>p</sub> apart from rounding: before rounding, β<sub>p</sub> = ${fx(bpx, 4)}, and ${pct(st.rrf)} + ${fx(bpx, 4)} × ${pct(st.rpm)} = ${pct(st.rrf + bpx * st.rpm)}. The SML is a straight line.`) + `</div>`;
+    const lo = Math.min(A.cb, B.cb), hi = Math.max(A.cb, B.cb);
     drawSML($('pfWrap'), $('pf'), $('pfTip'), $('pfLive'), { hl: [{ tk: st.a, c: 'var(--s1)' }, { tk: st.b, c: 'var(--s2)' }], others: false, band: [lo, hi], port: { beta: bp } });
     $('pfLeg').innerHTML = smlLegend(false);
     $('pfWrap').classList.toggle('masked', hide); $('mask3').hidden = !hide;
     $('story3').hidden = hide; $('sweep').disabled = hide;
     $('predictBox3').hidden = !(hide || P[3].fb); $('pBtns3').hidden = !hide; $('pEst3').hidden = !hide;
-    $('pTerms3').innerHTML = `You put ${st.w}% in ${nm(st.a)} (β<sub>1</sub> = ${fx(A.beta)}) and ${100 - st.w}% in ${nm(st.b)} (β<sub>2</sub> = ${fx(B.beta)}). Where does the portfolio beta β<sub>p</sub> land?`;
+    $('pTerms3').innerHTML = `You put ${st.w}% in ${nm(st.a)} (β<sub>1</sub> = ${fx(A.cb)}) and ${100 - st.w}% in ${nm(st.b)} (β<sub>2</sub> = ${fx(B.cb)}). Where does the portfolio beta β<sub>p</sub> land?`;
     $('g3a').textContent = `Closer to ${st.a}'s beta`; $('g3b').textContent = `Closer to ${st.b}'s beta`;
     if (hide) $('pf').setAttribute('aria-label', 'Portfolio on the SML, hidden until you make your prediction.');
     else $('pf').setAttribute('aria-label', `Portfolio of ${st.w}% ${nm(st.a)} and ${100 - st.w}% ${nm(st.b)}: beta ${fx(bp)}, required return ${pct(rp)}.`);
@@ -839,7 +842,7 @@ footer.note p { margin: 0; }
   // Same two states as the bond app: predicting (default) and revealed. One button per section switches.
   function Q2() { // section 2 question values; a near-zero premium is replaced by a 5% example so the question is not degenerate
     const example = st.rpm < 0.5, rf = st.rrf, rpm = example ? 5 : st.rpm;
-    const b = cur(st.a).beta;
+    const b = cur(st.a).cb;
     return { example, rf, rpm, rM: rf + rpm, b, r: rf + b * rpm };
   }
   function clearFb(...ns) { ns.forEach(n => { P[n].fb = false; $('pFeedback' + n).innerHTML = ''; }); }
@@ -867,9 +870,9 @@ footer.note p { margin: 0; }
     const A = cur(st.a), B = cur(st.b), actual = A.beta > B.beta ? 'a' : 'b';
     const [hk, lk] = actual === 'a' ? [st.a, st.b] : [st.b, st.a], H = cur(hk), L = cur(lk);
     const side = s => s.beta > 1 ? 'above 1, so it amplified market moves' : 'below 1, so it dampened them';
-    let html = `${verdict(g.dataset.guess === actual)} ${nm(hk)} has the higher beta: <b>${fx(H.beta)}</b>, against <b>${fx(L.beta)}</b> for ${nm(lk)}. Its cloud of dots tilts more steeply, so for each 1-point move in the market it moved about ${fx(H.beta)} points on average. ${nm(hk)}'s beta is ${side(H)}; ${nm(lk)}'s is ${side(L)}.`;
-    if (H.beta - L.beta < 0.15) html += ` This was a close call: the gap of ${fx(H.beta - L.beta)} is smaller than the uncertainty in either estimate.`;
-    html += estNote(1, B.beta, v => fx(v), '');
+    let html = `${verdict(g.dataset.guess === actual)} ${nm(hk)} has the higher beta: <b>${fx(H.cb)}</b>, against <b>${fx(L.cb)}</b> for ${nm(lk)}. Its cloud of dots tilts more steeply, so for each 1-point move in the market it moved about ${fx(H.cb)} points on average. ${nm(hk)}'s beta is ${side(H)}; ${nm(lk)}'s is ${side(L)}.`;
+    if (H.beta - L.beta < 0.15) html += ` This was a close call: the gap of ${fx(H.cb - L.cb)} is smaller than the uncertainty in either estimate.`;
+    html += estNote(1, B.cb, v => fx(v), '');
     $('pFeedback1').innerHTML = html; P[1].fb = true; setHiddenN(1, false, true);
   });
   $('pBtns2').addEventListener('click', e => {
@@ -885,11 +888,11 @@ footer.note p { margin: 0; }
   });
   $('pBtns3').addEventListener('click', e => {
     const g = e.target.closest('button[data-guess]'); if (!g) return;
-    const A = cur(st.a), B = cur(st.b), w1 = st.w / 100, w2 = 1 - w1, bp = w1 * A.beta + w2 * B.beta;
+    const A = cur(st.a), B = cur(st.b), w1 = st.w / 100, w2 = 1 - w1, bp = r2d(w1 * A.cb + w2 * B.cb);
     const actual = st.w > 50 ? 'a' : st.w < 50 ? 'b' : 'mid';
     const why = actual === 'mid' ? 'With equal weights the weighted average is the simple average, exactly halfway between the two betas.'
       : `Beta is a weighted average, so the portfolio sits closer to the stock with the bigger weight, ${actual === 'a' ? nm(st.a) : nm(st.b)} (${actual === 'a' ? st.w : 100 - st.w}%).`;
-    let html = `${verdict(g.dataset.guess === actual)} β<sub>p</sub> = ${fx(w1)}(${fx(A.beta)}) + ${fx(w2)}(${fx(B.beta)}) = <b>${fx(bp)}</b>. ${why} Its CAPM required return is ${pct(req(bp))}.`;
+    let html = `${verdict(g.dataset.guess === actual)} β<sub>p</sub> = ${fx(w1)}(${fx(A.cb)}) + ${fx(w2)}(${fx(B.cb)}) = <b>${fx(bp)}</b>. ${why} Its CAPM required return is ${pct(req(bp))}.`;
     html += estNote(3, bp, v => fx(v), '');
     $('pFeedback3').innerHTML = html; P[3].fb = true; setHiddenN(3, false, true);
   });
