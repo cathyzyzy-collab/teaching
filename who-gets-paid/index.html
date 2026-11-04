@@ -164,6 +164,20 @@ details.tbl[open] summary { margin-bottom: 8px; }
 .notice p { margin: 0; font-size: 14px; }
 .notice p + p { margin-top: 6px; }
 .notice q { font-style: italic; }
+/* predict mode */
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 10px 12px; border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 12px; }
+.toolbar .note { flex: 1 1 200px; }
+.predict { border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); background: color-mix(in srgb, var(--accent) 7%, var(--panel)); border-radius: 12px; padding: 12px 14px; display: grid; gap: 10px; }
+.predict p { margin: 0; }
+.predict .guessrow label { font-size: 13px; color: var(--muted); font-weight: 600; }
+.predict input[type=number] { width: 90px; font: 500 14px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 3px 8px; }
+.fb-ok { color: var(--pos); font-weight: 600; } .fb-no { color: var(--neg); font-weight: 600; }
+.chart.masked svg, .chart.masked details { filter: blur(8px); pointer-events: none; user-select: none; }
+.chart .maskmsg { position: absolute; inset: 40% 10% auto; text-align: center; font-weight: 600; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.blurred { filter: blur(7px); pointer-events: none; user-select: none; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn:disabled:hover { background: transparent; }
+.btn.primary:disabled:hover { background: var(--accent); }
 footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 84ch; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
@@ -179,6 +193,16 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
   <section class="lesson" id="s1" aria-labelledby="h1">
     <h2 id="h1"><span class="num">1</span>The hourglass: pour the firm's value through its claimants</h2>
     <p class="lead">When the firm pays out (its debt comes due, it is sold, or it is liquidated), claimants are paid in priority order. Each cup must be full before a single dollar spills into the next one. Drag the firm's value and watch the cups fill.</p>
+    <div class="toolbar">
+      <button class="btn primary" type="button" id="modeBtn1">👁 Reveal answer</button>
+      <span class="note" id="modeNote1"></span>
+    </div>
+    <div class="predict" id="predictBox1">
+      <p><b>Predict first.</b> <span id="pQ1"></span></p>
+      <div class="guessrow row" id="pEst1row"><label for="pEst1">Optional: your estimate of what the unsecured bondholders recover</label><span class="amt"><input type="number" id="pEst1" inputmode="decimal" min="0" max="100" step="1" placeholder="e.g. 50">¢ per dollar</span></div>
+      <div class="row" id="pBtns1"></div>
+      <p id="pFeedback1" aria-live="polite"></p>
+    </div>
     <div class="grid2 wideR">
       <div class="controls">
         <div class="ctl big">
@@ -234,7 +258,7 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
 
     <div class="calc" aria-labelledby="hcalc1">
       <h3 id="hcalc1">Who gets what (table view)</h3>
-      <div class="tblwrap"><table class="data" id="tbl1"></table></div>
+      <div class="tblwrap" id="tbl1wrap"><table class="data" id="tbl1"></table></div>
       <p class="note">Recovered = paid ÷ owed, which is also the cents each claimant gets per dollar it is owed. Per-unit values assume $1,000 of debt claim per bond and $100 par per preferred share.</p>
     </div>
   </section>
@@ -243,13 +267,23 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
   <section class="lesson" id="s2" aria-labelledby="h2">
     <h2 id="h2"><span class="num">2</span>The payoff diagram: fixed claims vs. the residual claim</h2>
     <p class="lead">The same claims, drawn for every possible firm value. Debt rises dollar for dollar until it is paid in full, then goes flat. Common equity is $0 until every fixed claim is covered, then takes every extra dollar: the "hockey stick". It never drops below $0, because shareholders have limited liability.</p>
+    <div class="toolbar">
+      <button class="btn primary" type="button" id="modeBtn2">👁 Reveal answer</button>
+      <span class="note" id="modeNote2"></span>
+    </div>
+    <div class="predict" id="predictBox2">
+      <p><b>Predict first.</b> <span id="pQ2"></span></p>
+      <div class="row" id="pBtns2"></div>
+      <p id="pFeedback2" aria-live="polite"></p>
+    </div>
     <div class="grid2">
       <div class="chart" id="c2wrap">
         <div class="charthead"><h3>Payoff to each claimant</h3><span class="note">Hover to read · click to set the firm value</span></div>
         <div class="legend" id="leg2" style="margin:4px 0 2px"></div>
         <svg class="plot" id="chart2" aria-label="Payoff to debt, preferred and common equity at each firm value"></svg>
         <div class="tip" id="tip2" hidden></div>
-        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="tbl2"></table></div></details>
+        <details class="tbl" id="tbl2d"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="tbl2"></table></div></details>
+        <div class="maskmsg" id="mask2" hidden>Make your prediction to see the chart</div>
       </div>
       <div class="controls">
         <div class="ctl big">
@@ -261,7 +295,7 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
             <select id="swing"><option value="10">± $10M</option><option value="20" selected>± $20M</option><option value="30">± $30M</option></select>
           </div>
         </div>
-        <div class="tblwrap"><table class="data" id="tblSwing"></table></div>
+        <div class="tblwrap" id="swingWrap"><table class="data" id="tblSwing"></table></div>
         <p class="takeaway" id="swingTake" aria-live="polite"></p>
       </div>
     </div>
@@ -271,6 +305,15 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
   <section class="lesson" id="s3" aria-labelledby="h3">
     <h2 id="h3"><span class="num">3</span>Who wants the risky project?</h2>
     <p class="lead">A firm that owes its bondholders money must pick one of two projects. Payoffs arrive in one year; we compare expected (probability-weighted) payoffs and ignore discounting. Whose cup does each project fill?</p>
+    <div class="toolbar">
+      <button class="btn primary" type="button" id="modeBtn3">👁 Reveal answer</button>
+      <span class="note" id="modeNote3"></span>
+    </div>
+    <div class="predict" id="predictBox3">
+      <p><b>Predict first.</b> <span id="pQ3"></span></p>
+      <div class="row" id="pBtns3"></div>
+      <p id="pFeedback3" aria-live="polite"></p>
+    </div>
     <div class="grid2">
       <div class="controls">
         <div class="presets">
@@ -287,13 +330,14 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
         <div class="charthead"><h3>Expected payoff, split by claimant</h3><div class="legend" id="leg3"></div></div>
         <svg class="plot" id="chart3" aria-label="Expected payoff to bondholders and shareholders under each project"></svg>
         <div class="tip" id="tip3" hidden></div>
+        <div class="maskmsg" id="mask3" hidden>Make your prediction to see the chart</div>
       </div>
     </div>
     <p class="takeaway" id="take3" aria-live="polite"></p>
     <p class="takeaway warn" id="ll3"></p>
     <div class="calc" aria-labelledby="hcalc3">
       <h3 id="hcalc3">Outcome by outcome (table view)</h3>
-      <div class="tblwrap"><table class="data" id="tbl3"></table></div>
+      <div class="tblwrap" id="tbl3wrap"><table class="data" id="tbl3"></table></div>
       <p class="note">Bondholders get min(firm value, debt owed). Shareholders get max(firm value − debt owed, 0). Expected payoff = chance × payoff if it works + (1 − chance) × payoff if it fails.</p>
     </div>
   </section>
@@ -365,6 +409,11 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
   const eqPay = V => Math.max(0, V - totals().T);
   const perShare = eq => eq * 1e6 / st.shares;
 
+  // predict-mode state (see "predict mode" below)
+  const PM = { 1: { hidden: true, fb: false }, 2: { hidden: true, fb: false }, 3: { hidden: true, fb: false } };
+  let booted = false;
+  function clearFb(n) { PM[n].fb = false; const f = document.getElementById('pFeedback' + n); if (f) f.innerHTML = ''; }
+
   // ===================== 1. HOURGLASS =====================
   let disp = st.v, tween = null, flowTimer = null;
   function drawHG(V) {
@@ -403,13 +452,14 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
     el('text', { x: tx, y: bulbT + 60, class: 'sub' }, svg, 'pours down in order');
 
     // cups
-    const geo = [];
+    const geo = [], hide = PM[1].hidden;
     cups.forEach((c, k) => { geo.push({ x: xOf(k), top: tops[k], h: hC, frac: c.paid / c.owed, c }); });
     const eqCap = Math.max(1e-9, mx - T);
     geo.push({ x: xOf(n - 1), top: tops[n - 1], h: hE, frac: clamp(res.eq / eqCap, 0, 1), c: Object.assign({}, EQ, { paid: res.eq }), eq: true });
     const surf = g => g.top + g.h - g.frac * g.h;
     // streams: neck -> first cup, then each full cup spills over its left lip into the next
-    if (V > 0) {
+    if (hide && V > 0) el('path', { d: `M${cx0} ${bb + 3} L${cx0} ${bb + 14}`, class: 'stream' }, svg);
+    if (V > 0 && !hide) {
       el('path', { d: `M${cx0} ${bb + 3} L${cx0} ${Math.max(bb + 4, surf(geo[0]) - 3)}`, class: 'stream' }, svg);
       let cum = 0;
       for (let k = 0; k < geo.length - 1; k++) {
@@ -426,7 +476,7 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
       el('path', { d: d + ' Z' }, el('clipPath', { id: uid + 'c' + k }, defs));
       el('path', { d: d + ' Z', class: 'cupbg' }, svg);
       const fh = g.frac * g.h;
-      if (fh > 0.1) el('rect', { x: g.x, y: g.top + g.h - fh, width: cw, height: fh, fill: g.c.color, 'clip-path': `url(#${uid}c${k})` }, svg);
+      if (fh > 0.1 && !hide) el('rect', { x: g.x, y: g.top + g.h - fh, width: cw, height: fh, fill: g.c.color, 'clip-path': `url(#${uid}c${k})` }, svg);
       if (g.eq) {
         const cut = g.top + g.h * 0.32;
         el('path', { d: `M${g.x} ${g.top} L${g.x} ${cut} M${g.x + cw} ${g.top} L${g.x + cw} ${cut}`, class: 'wall open' }, svg);
@@ -439,15 +489,15 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
       const ty = g.top + (g.eq ? 26 : 16);
       el('text', { x: tx, y: ty, class: 'nm' }, svg, `${k + 1} · ${g.c.name}`);
       if (g.eq) {
-        el('text', { x: tx, y: ty + 19, class: 'val' }, svg, `${M(g.c.paid)} residual`);
-        el('text', { x: tx, y: ty + 37, class: 'sub' }, svg, `${money(perShare(g.c.paid))} per share`);
+        el('text', { x: tx, y: ty + 19, class: 'val' }, svg, hide ? '$? residual' : `${M(g.c.paid)} residual`);
+        el('text', { x: tx, y: ty + 37, class: 'sub' }, svg, hide ? '$? per share' : `${money(perShare(g.c.paid))} per share`);
       } else {
-        el('text', { x: tx, y: ty + 19, class: 'val' }, svg, `${M(g.c.paid)} of ${M(g.c.owed)}`);
-        el('text', { x: tx, y: ty + 37, class: 'sub' }, svg, `${pctS(g.c.paid / g.c.owed)} recovered`);
+        el('text', { x: tx, y: ty + 19, class: 'val' }, svg, `${hide ? '$?' : M(g.c.paid)} of ${M(g.c.owed)}`);
+        el('text', { x: tx, y: ty + 37, class: 'sub' }, svg, hide ? '?% recovered' : `${pctS(g.c.paid / g.c.owed)} recovered`);
       }
     });
     // hover targets for each row, drawn last so nothing covers them
-    geo.forEach((g, k) => {
+    (hide ? [] : geo).forEach((g, k) => {
       const hit = el('rect', { x: 0, y: g.top - 8, width: W, height: g.h + 16, fill: 'transparent' }, svg);
       const tipH = () => {
         const c = g.c;
@@ -458,6 +508,7 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
       hit.addEventListener('pointermove', e => { const tip = $('tipH'); tip.innerHTML = tipH(); const wr = wrap.getBoundingClientRect(); placeTip(wrap, tip, e.clientX - wr.left, e.clientY - wr.top + 14); });
       hit.addEventListener('pointerleave', () => { $('tipH').hidden = true; });
     });
+    if (hide) { svg.setAttribute('aria-label', `Hourglass of claims at firm value ${M(V)}. Amounts paid are hidden until you make a prediction.`); return; }
     svg.setAttribute('aria-label', 'Hourglass of claims at firm value ' + M(V) + '. ' + geo.map((g, k) => g.eq ? `Common equity gets ${M(g.c.paid)}` : `${g.c.name} gets ${M(g.c.paid)} of ${M(g.c.owed)}`).join('; ') + '.');
   }
 
@@ -530,10 +581,16 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
     $('v1').value = st.v; $('v2').value = st.v;
     $('v1Out').textContent = M(st.v); $('v2Out').textContent = M(st.v);
     flow();
+    clearFb(1); clearFb(2);
     if (animate) animateTo(st.v); else { if (tween) { cancelAnimationFrame(tween.id); tween = null; } disp = st.v; drawHG(disp); }
-    $('say1').textContent = sentence(st.v);
-    table1(st.v);
+    renderText1();
     render2();
+  }
+  function renderText1() {
+    const hide = PM[1].hidden;
+    $('say1').textContent = sentence(st.v); $('say1').hidden = hide;
+    table1(st.v); $('tbl1wrap').classList.toggle('blurred', hide);
+    question1();
   }
   function claimsChanged() {
     const mx = maxV();
@@ -667,6 +724,10 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
     $('tbl2').innerHTML = `<thead><tr><th>Firm value</th><th>Debt</th>${prefShown ? '<th>Preferred</th>' : ''}<th>Common equity</th><th>Per share</th></tr></thead><tbody>` +
       uniq.map(v => `<tr class="${v === V ? 'cur' : ''}"><td>${M1(v)}</td><td>${M1(debtPay(v))}</td>${prefShown ? `<td>${M1(prefPay(v))}</td>` : ''}<td>${M1(eqPay(v))}</td><td>${money(perShare(eqPay(v)))}</td></tr>`).join('') + '</tbody>';
     renderSwing();
+    const hide = PM[2].hidden;
+    $('c2wrap').classList.toggle('masked', hide); $('mask2').hidden = !hide; if (hide) $('tbl2d').open = false;
+    $('swingWrap').classList.toggle('blurred', hide); $('swingTake').hidden = hide;
+    question2();
   }
   function renderSwing() {
     const t = totals(), V = st.v, s = +$('swing').value;
@@ -696,7 +757,7 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
     { t: 'No debt', s: { d: 0, safe: 70, good: 120, bad: 10, p: 50 } },
   ];
   const pb = $('presets3');
-  P3.forEach(p => { const b = document.createElement('button'); b.className = 'btn'; b.type = 'button'; b.textContent = p.t; b.addEventListener('click', () => { Object.assign(s3, p.s); sync3(); }); pb.appendChild(b); });
+  P3.forEach(p => { const b = document.createElement('button'); b.className = 'btn'; b.type = 'button'; b.textContent = p.t; b.addEventListener('click', () => { Object.assign(s3, p.s); clearFb(3); sync3(); }); pb.appendChild(b); });
   const split = (V, D) => ({ V, debt: Math.min(V, D), eq: Math.max(0, V - D) });
   function calc3() {
     const p = s3.p / 100, D = s3.d;
@@ -733,6 +794,11 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
       ll = `Why limited liability matters: here the firm can pay its debt in full even if the risky project fails, so the $0 floor on equity never binds. Shareholders bear the whole downside and the project with the higher expected value wins.`;
     }
     $('ll3').textContent = ll;
+    const hide = PM[3].hidden;
+    $('c3wrap').classList.toggle('masked', hide); $('mask3').hidden = !hide;
+    $('take3').hidden = hide; $('ll3').hidden = hide; $('tbl3wrap').classList.toggle('blurred', hide);
+    if (hide) $('chart3').setAttribute('aria-label', 'Expected payoff chart, hidden until you make a prediction.');
+    question3();
     // table
     const pr = c.p, row = (name, prob, o, cls) => `<tr class="${cls || ''}"><td>${name}</td><td>${prob}</td><td>${M1(o.V)}</td><td>${M1(o.debt)}</td><td>${M1(o.eq)}</td></tr>`;
     $('tbl3').innerHTML = '<thead><tr><th>Project and outcome</th><th>Chance</th><th>Firm value</th><th>Bondholders</th><th>Shareholders</th></tr></thead><tbody>' +
@@ -785,10 +851,132 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
     });
     svg.setAttribute('aria-label', `Expected payoffs. Safe project: bondholders ${M(c.safe.debt)}, shareholders ${M(c.safe.eq)}, total ${M(c.safe.V)}. Risky project: bondholders ${M(c.risky.debt)}, shareholders ${M(c.risky.eq)}, total ${M(c.risky.V)}.`);
   }
-  [['d3', 'd'], ['safe3', 'safe'], ['good3', 'good'], ['bad3', 'bad'], ['p3', 'p']].forEach(([id, k]) => $(id).addEventListener('input', e => { s3[k] = +e.target.value; render3(); }));
+  [['d3', 'd'], ['safe3', 'safe'], ['good3', 'good'], ['bad3', 'bad'], ['p3', 'p']].forEach(([id, k]) => $(id).addEventListener('input', e => { s3[k] = +e.target.value; clearFb(3); render3(); }));
+
+  // ===================== predict mode =====================
+  // Each section has two states: predicting (answer hidden, the default) and revealed (everything live). One button switches.
+  const OK = '<span class="fb-ok">✓ Correct.</span>', NO = '<span class="fb-no">✗ Not quite.</span>';
+  const cap1 = t => t[0].toUpperCase() + t.slice(1);
+  function setButtons(n, opts) {
+    const box = $('pBtns' + n), key = opts.map(o => o.id + ':' + o.t).join('|');
+    if (box.dataset.key === key) return;
+    box.dataset.key = key; box.textContent = '';
+    opts.forEach(o => { const b = document.createElement('button'); b.className = 'btn'; b.type = 'button'; b.dataset.guess = o.id; b.textContent = o.t; box.appendChild(b); });
+  }
+  function showBox(n, extraHide) {
+    $('predictBox' + n).hidden = !(PM[n].hidden || PM[n].fb);
+    $('pBtns' + n).hidden = !PM[n].hidden || !!extraHide;
+  }
+
+  // Section 1: who is the last claimant to get any money at the current firm value?
+  const NAME1 = { sec: 'the secured lender', unsec: 'the unsecured bondholders', pref: 'the preferred shareholders', eq: 'the common shareholders' };
+  function answer1() {
+    const res = waterfall(st.v); let last = null;
+    res.layers.forEach(l => { if (l.owed > 0 && l.paid > 1e-9) last = l; });
+    if (res.eq > 1e-9) last = { id: 'eq' };
+    return { res, last };
+  }
+  function question1() {
+    const V = st.v, res = waterfall(V), owing = res.layers.filter(l => l.owed > 0), zero = V <= 0;
+    const owedTxt = owing.length ? owing.map(l => `${M(l.owed)} to ${NAME1[l.id]}`).join(', then ') : 'nothing to anyone';
+    $('pQ1').textContent = zero ? 'At a firm value of $0 there is nothing to pour, so nobody is paid. Drag the firm value above $0 to get a question.'
+      : `The firm is worth ${M(V)}. In priority order it owes ${owedTxt}; the common shareholders get whatever is left. Pour the ${M(V)} through the cups: who is the last to get any money?`;
+    setButtons(1, owing.map(l => ({ id: l.id, t: cap1(NAME1[l.id].replace('the ', '')) })).concat([{ id: 'eq', t: 'Common shareholders' }]));
+    showBox(1, zero);
+    $('pEst1row').hidden = !PM[1].hidden || zero || st.unsec <= 0;
+  }
+  $('pBtns1').addEventListener('click', e => {
+    const g = e.target.closest('button[data-guess]'); if (!g) return;
+    const { res, last } = answer1(); if (!last) return;
+    const parts = res.layers.filter(l => l.owed > 0).map(l => l.paid >= l.owed - 1e-9 ? `${NAME1[l.id]} ${l.id === 'sec' ? 'is' : 'are'} paid in full (${M(l.owed)})`
+      : l.paid > 1e-9 ? `${NAME1[l.id]} get ${M(l.paid)} of ${M(l.owed)}, ${cents(l.rec)} per dollar` : `${NAME1[l.id]} get nothing`);
+    parts.push(res.eq > 1e-9 ? `the common shareholders keep the residual ${M(res.eq)} (${money(perShare(res.eq))} per share)` : 'the common shareholders get nothing');
+    const lastL = res.layers.find(l => l.id === last.id);
+    const partial = lastL && lastL.paid < lastL.owed - 1e-9;
+    let html = `${g.dataset.guess === last.id ? OK : NO} The last to get money ${last.id === 'sec' ? 'is' : 'are'} ${NAME1[last.id]}${partial ? ', and only part of what they are owed' : ''}. At ${M(st.v)}, ${parts.join('; ')}. Each cup must be full before a single dollar spills into the next.`;
+    const est = parseFloat($('pEst1').value), un = res.layers.find(l => l.id === 'unsec');
+    if (isFinite(est) && est >= 0 && un && un.owed > 0) {
+      const act = un.rec * 100, off = est - act;
+      html += Math.abs(off) < 0.05 ? ` Your estimate of ${trim(est, 1)}¢ per dollar for the unsecured bondholders was spot on.`
+        : ` Your estimate of ${trim(est, 1)}¢ per dollar for the unsecured bondholders was ${trim(Math.abs(off), 1)}¢ ${off > 0 ? 'too high' : 'too low'} (they recover ${cents(un.rec)}).`;
+    }
+    $('pFeedback1').innerHTML = html; PM[1].fb = true; setMode(1, false, true);
+  });
+
+  // Section 2: if firm value rises by $10M from here, who gains?
+  const STEP2 = 10;
+  function question2() {
+    const t = totals(), V = st.v, pref = st.prefOn && t.P > 0;
+    $('pQ2').textContent = `The firm is worth ${M(V)} and owes ${M(t.D)} to lenders${pref ? ` plus ${M(t.P)} to preferred shareholders` : ''}. If firm value rises by $10M, to ${M(V + STEP2)}, who gains?`;
+    const opts = [];
+    if (t.D > 0) opts.push({ id: 'debt', t: 'Bondholders only' });
+    if (pref) opts.push({ id: 'pref', t: 'Preferred shareholders only' });
+    opts.push({ id: 'eq', t: 'Common shareholders only' }, { id: 'multi', t: 'More than one group' });
+    setButtons(2, opts);
+    showBox(2);
+  }
+  $('pBtns2').addEventListener('click', e => {
+    const g = e.target.closest('button[data-guess]'); if (!g) return;
+    const t = totals(), V = st.v, V1 = V + STEP2, pref = st.prefOn && t.P > 0;
+    const gains = { debt: debtPay(V1) - debtPay(V), pref: prefPay(V1) - prefPay(V), eq: eqPay(V1) - eqPay(V) };
+    const who = Object.keys(gains).filter(k => gains[k] > 1e-9);
+    const actual = who.length > 1 ? 'multi' : who[0];
+    const NM = { debt: 'bondholders', pref: 'preferred shareholders', eq: 'common shareholders' };
+    const moves = [`debt ${M(debtPay(V))} → ${M(debtPay(V1))}`].concat(pref ? [`preferred ${M(prefPay(V))} → ${M(prefPay(V1))}`] : []).concat([`common equity ${M(eqPay(V))} → ${M(eqPay(V1))}`]).join(', ');
+    let why;
+    if (actual === 'debt') why = `Until the ${M(t.D)} owed to lenders is covered, every extra dollar goes to the bondholders. The common shareholders stay at $0, the floor that limited liability gives them.`;
+    else if (actual === 'pref') why = `The debt is already paid in full, so the next dollars go to the preferred shareholders until their ${M(t.P)} claim is covered. Common shareholders still get $0.`;
+    else if (actual === 'eq') why = `Every fixed claim is already paid in full, so the residual claimants get every extra dollar: the steep part of the hockey stick.`;
+    else why = `The extra $10M crosses the point where a fixed claim is paid in full, so it is split: ${who.map(k => `${NM[k]} gain ${M(gains[k])}`).join(', ')}.`;
+    const ans = actual === 'multi' ? 'More than one group gains' : `Only the ${NM[actual]} gain`;
+    $('pFeedback2').innerHTML = `${g.dataset.guess === actual ? OK : NO} ${ans}. From ${M(V)} to ${M(V1)}: ${moves}. ${why}`;
+    PM[2].fb = true; setMode(2, false, true);
+  });
+
+  // Section 3: which project do the shareholders choose?
+  function question3() {
+    $('pQ3').textContent = `The firm owes ${M(s3.d)}. The safe project leaves it worth ${M(s3.safe)} for sure; the risky project leaves it worth ${M(s3.good)} with a ${s3.p}% chance, or ${M(s3.bad)} otherwise. If managers act for the shareholders, which project do they choose?`;
+    setButtons(3, [{ id: 'safe', t: 'The safe project' }, { id: 'risky', t: 'The risky project' }, { id: 'same', t: 'It makes no difference to them' }]);
+    showBox(3);
+  }
+  $('pBtns3').addEventListener('click', e => {
+    const g = e.target.closest('button[data-guess]'); if (!g) return;
+    const c = calc3(), dEq = c.risky.eq - c.safe.eq, dV = c.risky.V - c.safe.V;
+    const actual = dEq > 1e-9 ? 'risky' : dEq < -1e-9 ? 'safe' : 'same';
+    const head = actual === 'risky' ? 'They choose the risky project' : actual === 'safe' ? 'They choose the safe project' : 'It makes no difference to them';
+    let why;
+    if (actual === 'risky') why = dV < -1e-9 ? `They gamble even though the risky project lowers the firm's expected value (${M(c.risky.V)} vs ${M(c.safe.V)}): if it fails, limited liability means the bondholders, not the shareholders, absorb the loss.`
+      : Math.abs(dV) <= 1e-9 ? `Both projects have the same expected firm value, but with limited liability the shareholders keep the upside while the bondholders absorb the downside.`
+      : `The risky project also has the higher expected firm value (${M(c.risky.V)} vs ${M(c.safe.V)}).`;
+    else if (actual === 'safe') why = s3.d <= 0 ? 'With no debt they bear every dollar of the downside themselves, so they pick the higher expected value.' : 'They would bear enough of the downside themselves that the gamble does not pay.';
+    else why = 'Their expected payoff is the same either way.';
+    $('pFeedback3').innerHTML = `${g.dataset.guess === actual ? OK : NO} ${head}: shareholders expect ${M(c.safe.eq)} from the safe project and ${M(c.risky.eq)} from the risky one (${s3.p}% × ${M(c.g.eq)} + ${100 - s3.p}% × ${M(c.b.eq)}). ${why}`;
+    PM[3].fb = true; setMode(3, false, true);
+  });
+
+  function setMode(n, h, keepFeedback) {
+    PM[n].hidden = h;
+    if (!keepFeedback) clearFb(n);
+    $('modeBtn' + n).textContent = h ? '👁 Reveal answer' : '↩ Back to predict mode';
+    $('modeNote' + n).textContent = h ? 'Predict mode: the answer is hidden. Answer the question, or click Reveal answer.'
+                                      : 'Answer shown: everything updates live. Click Back to predict mode to quiz again.';
+    if (n === 1) {
+      stopPour(); $('pour').disabled = h;
+      if (h) $('pEst1').value = '';
+      if (!h && booted && !reduce) { disp = 0; flow(); animateTo(st.v); } else drawHG(disp);
+      renderText1();
+    } else if (n === 2) render2(); else render3();
+  }
+  [1, 2, 3].forEach(n => $('modeBtn' + n).addEventListener('click', () => setMode(n, !PM[n].hidden)));
+  // links: ?mode=reveal (or explore) opens every section revealed; no mode = predict mode
+  function readLink() { const q = new URLSearchParams(location.search); return !['reveal', 'explore'].includes(q.get('mode')); }
 
   // ===================== init =====================
+  const startPredict = readLink();
+  [1, 2, 3].forEach(n => { PM[n].hidden = startPredict; });
   claimsChanged(); setV(DEF.v, false); sync3();
+  [1, 2, 3].forEach(n => setMode(n, startPredict));
+  booted = true;
   let rz, lastW = window.innerWidth;
   window.addEventListener('resize', () => { if (window.innerWidth === lastW) return; lastW = window.innerWidth; clearTimeout(rz); rz = setTimeout(() => { drawHG(disp); render2(); render3(); }, 150); });
 })();
