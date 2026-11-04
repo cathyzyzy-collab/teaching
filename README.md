@@ -10,3 +10,5 @@ Apps (all listed at https://cathyzyzy-collab.github.io/teaching/):
 - [Yield Curve Time Machine](https://cathyzyzy-collab.github.io/teaching/yield-curve/)
 - [Beta and the SML](https://cathyzyzy-collab.github.io/teaching/beta-capm/)
 - [Bond Price and Yield](https://cathyzyzy-collab.github.io/teaching/bond-price-yield/)
+- [Triangular Arbitrage Game](https://cathyzyzy-collab.github.io/teaching/triangular-arbitrage/)
+- [Country Risk Premiums](https://cathyzyzy-collab.github.io/teaching/country-risk/)
