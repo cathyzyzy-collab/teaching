@@ -157,6 +157,7 @@ details.tbl[open] summary { margin-bottom: 8px; }
 .fb-ok { color: var(--pos); font-weight: 600; } .fb-no { color: var(--neg); font-weight: 600; }
 .chart.masked svg, .chart.masked details { filter: blur(8px); pointer-events: none; user-select: none; }
 .chart .maskmsg { position: absolute; inset: 40% 10% auto; text-align: center; font-weight: 600; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.blurred { filter: blur(7px); pointer-events: none; user-select: none; }
 .calc.masked .split, .calc.masked #excel, .calc.masked #keys { visibility: hidden; }
 footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 80ch; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
@@ -256,6 +257,19 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
   <section class="lesson" id="s2" aria-labelledby="h2">
     <h2 id="h2"><span class="num">2</span>Price risk: a 1-year or a 10-year bond?</h2>
     <p class="lead">Price risk is the concern that r<sub>d</sub> will rise and push a bond's value down. Both bonds pay a 10% annual coupon and have the same risk. Move r<sub>d</sub> and compare how far each seesaw tips.</p>
+    <div class="toolbar">
+      <button class="btn primary" type="button" id="modeBtn2">👁 Reveal answer</button>
+      <span class="note" id="modeNote2"></span>
+    </div>
+    <div class="predict" id="predictBox2">
+      <p><b>Predict first.</b> <span id="pTerms2"></span></p>
+      <div class="row" id="pBtns2">
+        <button class="btn" type="button" data-guess="short" id="g2short">The 1-year bond</button>
+        <button class="btn" type="button" data-guess="long" id="g2long">The 10-year bond</button>
+        <button class="btn" type="button" data-guess="same">Both change by the same %</button>
+      </div>
+      <p id="pFeedback2" aria-live="polite"></p>
+    </div>
     <div class="grid2">
       <div class="controls">
         <div class="ctl big">
@@ -270,12 +284,13 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
           <select id="mB" aria-label="Long bond maturity"><option value="10" selected>10 years</option><option value="20">20 years</option><option value="30">30 years</option></select>
         </div>
         <p class="takeaway" id="risktake" aria-live="polite"></p>
-        <div class="tblwrap"><table class="data" id="tbl2"></table></div>
+        <div class="tblwrap" id="tbl2wrap"><table class="data" id="tbl2"></table></div>
         <p class="note">Change = percent change from the price at r<sub>d</sub> = 10%, where both bonds sell at par.</p>
       </div>
       <div class="chart" id="c2wrap">
         <div class="charthead"><h3>Value at each YTM</h3><div class="legend" id="leg2"></div></div>
         <svg id="chart2" viewBox="0 0 560 320" aria-label="Price-yield curves for the short and long bond"></svg>
+        <div class="maskmsg" id="mask2" hidden>Make your prediction to see the chart</div>
         <div class="tip" id="tip2" hidden></div>
       </div>
     </div>
@@ -289,14 +304,28 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
   <section class="lesson" id="s3" aria-labelledby="h3">
     <h2 id="h3"><span class="num">3</span>Bond values over time: the pull to par</h2>
     <p class="lead">The same 10-year, 10% annual coupon bond, with its yield staying at 7%, 10% or 13% for the rest of its life. Each price moves toward $1,000 as maturity approaches. At maturity every bond is worth its par value.</p>
+    <div class="toolbar">
+      <button class="btn primary" type="button" id="modeBtn3">👁 Reveal answer</button>
+      <span class="note" id="modeNote3"></span>
+    </div>
     <div class="grid2">
       <div class="controls">
+        <div class="predict" id="predictBox3">
+          <p><b>Predict first.</b> <span id="pTerms3"></span></p>
+          <div class="row" id="pBtns3">
+            <button class="btn" type="button" data-guess="falls">Falls toward $1,000</button>
+            <button class="btn" type="button" data-guess="rises">Rises toward $1,000</button>
+            <button class="btn" type="button" data-guess="same">Stays the same</button>
+          </div>
+          <p id="pFeedback3" aria-live="polite"></p>
+        </div>
         <p class="takeaway" id="timetake"></p>
-        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="tbl3"></table></div></details>
+        <details class="tbl" id="tbl3d"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="tbl3"></table></div></details>
       </div>
       <div class="chart" id="c3wrap">
         <div class="charthead"><h3>Price by year</h3><div class="legend" id="leg3"></div></div>
         <svg id="chart3" viewBox="0 0 560 320" aria-label="Price of three bonds over time"></svg>
+        <div class="maskmsg" id="mask3" hidden>Make your prediction to see the chart</div>
         <div class="tip" id="tip3" hidden></div>
       </div>
     </div>
@@ -571,8 +600,15 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
     const pa = price(10, s2.rd, s2.a), pb = price(10, s2.rd, s2.b);
     const la = s2.a + '-year', lb = s2.b + '-year';
     $('capA').textContent = la + ' bond'; $('capB').textContent = lb + ' bond';
-    drawSaw($('sawA'), s2.rd, pa, { color: 'var(--s1)', pivot: 'Level at par: rd = 10%' });
-    drawSaw($('sawB'), s2.rd, pb, { color: 'var(--s2)', pivot: 'Level at par: rd = 10%' });
+    const hide = P[2].hidden;
+    drawSaw($('sawA'), s2.rd, pa, { color: 'var(--s1)', pivot: 'Level at par: rd = 10%', hide });
+    drawSaw($('sawB'), s2.rd, pb, { color: 'var(--s2)', pivot: 'Level at par: rd = 10%', hide });
+    $('risktake').hidden = hide; $('tbl2wrap').classList.toggle('blurred', hide);
+    $('c2wrap').classList.toggle('masked', hide); $('mask2').hidden = !hide;
+    $('predictBox2').hidden = !(hide || P[2].fb); $('pBtns2').hidden = !hide;
+    $('g2short').textContent = 'The ' + la + ' bond'; $('g2long').textContent = 'The ' + lb + ' bond';
+    const ex = Math.abs(s2.rd - 10) < 0.001 ? 13 : s2.rd;
+    $('pTerms2').innerHTML = `Both bonds pay a 10% coupon and sell at par when r<sub>d</sub> = 10%. If r<sub>d</sub> moves to ${pct(ex)}, which bond's price changes more, in percent?`;
     const ca = (pa / PAR - 1) * 100, cb = (pb / PAR - 1) * 100;
     const t = $('risktake');
     if (Math.abs(s2.rd - 10) < 0.001) t.innerHTML = `At r<sub>d</sub> = 10% both bonds sell at par. Move r<sub>d</sub> and watch which seesaw tips further.`;
@@ -599,9 +635,10 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
     $('tbl2').innerHTML = `<thead><tr><th>r<sub>d</sub></th><th>${la}</th><th>Change</th><th>${lb}</th><th>Change</th></tr></thead><tbody>` +
       rs.map(r => { const a = price(10, r, s2.a), b = price(10, r, s2.b); return `<tr class="${r === s2.rd && ![5, 10, 15].includes(r) ? 'cur' : ''}"><td>${pct(r, r % 1 ? 2 : 0)}</td><td>${money(a, 0)}</td>${cell((a / PAR - 1) * 100)}<td>${money(b, 0)}</td>${cell((b / PAR - 1) * 100)}</tr>`; }).join('') + '</tbody>';
   }
-  $('rd2').addEventListener('input', e => { stopPlay(); s2.rd = +e.target.value; render2(); });
-  $('mA').addEventListener('change', e => { s2.a = +e.target.value; render2(); });
-  $('mB').addEventListener('change', e => { s2.b = +e.target.value; render2(); });
+  const clear2 = () => { P[2].fb = false; $('pFeedback2').innerHTML = ''; };
+  $('rd2').addEventListener('input', e => { stopPlay(); s2.rd = +e.target.value; clear2(); render2(); });
+  $('mA').addEventListener('change', e => { s2.a = +e.target.value; clear2(); render2(); });
+  $('mB').addEventListener('change', e => { s2.b = +e.target.value; clear2(); render2(); });
   $('play2').addEventListener('click', () => sweep($('play2'), r => { s2.rd = r; $('rd2').value = r; render2(); }));
 
   // ===================== 3. OVER TIME =====================
@@ -609,6 +646,11 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
   const B3 = [{ r: 7, color: 'var(--s1)', kind: 'premium' }, { r: 10, color: 'var(--s2)', kind: 'par' }, { r: 13, color: 'var(--s3)', kind: 'discount' }];
   function render3() {
     const val = (r, yr) => price(10, r, 10 - yr); // value at year yr, just after that year's coupon
+    const hide = P[3].hidden;
+    $('timetake').hidden = hide; $('tbl3d').classList.toggle('blurred', hide); if (hide) $('tbl3d').open = false;
+    $('c3wrap').classList.toggle('masked', hide); $('mask3').hidden = !hide;
+    $('predictBox3').hidden = !(hide || P[3].fb); $('pBtns3').hidden = !hide;
+    $('pTerms3').innerHTML = `At a 7% yield the 10% coupon bond sells at a premium today (above $1,000). If its yield stays at 7% until maturity, what happens to its price over the next 10 years?`;
     const series = B3.map(b => ({ name: 'Yield ' + b.r + '%', color: b.color, markers: true, pts: ticks(0, 10, 1).map(y => [y, val(b.r, y)]), at: y => val(b.r, y),
       label: `${b.r}%`, labelAt: [0, val(b.r, 0)], labelAnchor: 'end', labelDx: -10, labelDy: 4 }));
     const all = series.flatMap(s => s.pts.map(p => p[1]));
@@ -629,9 +671,38 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
       ticks(0, 10, 1).map(y => `<tr><td>${y}${y === 10 ? ' (maturity)' : ''}</td>${B3.map(b => `<td>${money(val(b.r, y))}</td>`).join('')}</tr>`).join('') + '</tbody>';
   }
 
+  // Sections 2 and 3: same two states as section 1, each with its own question and button.
+  const P = { 2: { hidden: true, fb: false }, 3: { hidden: true, fb: false } };
+  const RENDER = { 2: () => render2(), 3: () => render3() };
+  function setHiddenN(n, h, keepFeedback) {
+    stopPlay(); P[n].hidden = h;
+    if (!keepFeedback) { P[n].fb = false; $('pFeedback' + n).innerHTML = ''; }
+    if (n === 2) $('play2').disabled = h;
+    $('modeBtn' + n).textContent = h ? '👁 Reveal answer' : '↩ Back to predict mode';
+    $('modeNote' + n).textContent = h ? 'Predict mode: the figures are hidden. Answer the question, or click Reveal answer.'
+                                      : 'Answer shown: everything updates live. Click Back to predict mode to quiz again.';
+    RENDER[n]();
+  }
+  [2, 3].forEach(n => $('modeBtn' + n).addEventListener('click', () => setHiddenN(n, !P[n].hidden)));
+  $('pBtns2').addEventListener('click', e => {
+    const g = e.target.closest('button[data-guess]'); if (!g) return;
+    const ex = Math.abs(s2.rd - 10) < 0.001 ? 13 : s2.rd;
+    const ca = (price(10, ex, s2.a) / PAR - 1) * 100, cb = (price(10, ex, s2.b) / PAR - 1) * 100;
+    const ok = g.dataset.guess === 'long';
+    $('pFeedback2').innerHTML = `${ok ? '<span class="fb-ok">✓ Correct.</span>' : '<span class="fb-no">✗ Not quite.</span>'} The ${s2.b}-year bond's price moves more: at r<sub>d</sub> = ${pct(ex)} it changes by <b>${cb > 0 ? '+' : ''}${cb.toFixed(1)}%</b>, against <b>${ca > 0 ? '+' : ''}${ca.toFixed(1)}%</b> for the ${s2.a}-year bond. Its cash flows are further in the future, so a change in the discount rate hits their present value harder. That is price risk.`;
+    P[2].fb = true; setHiddenN(2, false, true);
+  });
+  $('pBtns3').addEventListener('click', e => {
+    const g = e.target.closest('button[data-guess]'); if (!g) return;
+    const ok = g.dataset.guess === 'falls';
+    $('pFeedback3').innerHTML = `${ok ? '<span class="fb-ok">✓ Correct.</span>' : '<span class="fb-no">✗ Not quite.</span>'} It falls: from ${money(price(10, 7, 10))} today to $1,000 at maturity, because at maturity every bond is worth its par value. A discount bond does the opposite (at 13% it rises from ${money(price(10, 13, 10))} to $1,000), and a par bond stays at $1,000.`;
+    P[3].fb = true; setHiddenN(3, false, true);
+  });
+
   const startPredict = readLink();
+  P[2].hidden = startPredict; P[3].hidden = startPredict;
   sync1(); render2(); render3();
-  setHidden(startPredict);
+  setHidden(startPredict); setHiddenN(2, startPredict); setHiddenN(3, startPredict);
   let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { render1(); render2(); render3(); }, 150); });
 })();
 </script>
