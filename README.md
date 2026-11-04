@@ -12,3 +12,4 @@ Apps (all listed at https://cathyzyzy-collab.github.io/teaching/):
 - [Bond Price and Yield](https://cathyzyzy-collab.github.io/teaching/bond-price-yield/)
 - [Triangular Arbitrage Game](https://cathyzyzy-collab.github.io/teaching/triangular-arbitrage/)
 - [Country Risk Premiums](https://cathyzyzy-collab.github.io/teaching/country-risk/)
+- [PPP Over the Decades](https://cathyzyzy-collab.github.io/teaching/ppp-decades/)
