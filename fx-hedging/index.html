@@ -1,0 +1,829 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Hedge or Gamble?</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: four numbered lessons. 1 sets up the exposure, 2 is the payoff chart, 3 replays real 90-day windows, 4 sums up. */
+:root {
+  color-scheme: light;
+  --bg: #eef1f1; --fg: #1a2328; --muted: #5b6a70; --panel: #ffffff; --line: #d5dcde;
+  --accent: #0f7c71; --cap: #f3f6f6; --neg: #a1402f; --pos: #1d6b3a;
+  --grid: #e3e8e9; --axis: #8a989d;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-cond: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #11171a; --fg: #e2e8ea; --muted: #9aaab0; --panel: #182024; --line: #29343a;
+    --accent: #5cc9bb; --cap: #1f292e; --neg: #e3826f; --pos: #6fcf8f;
+    --grid: #253035; --axis: #6f7f85;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #11171a; --fg: #e2e8ea; --muted: #9aaab0; --panel: #182024; --line: #29343a;
+  --accent: #5cc9bb; --cap: #1f292e; --neg: #e3826f; --pos: #6fcf8f;
+  --grid: #253035; --axis: #6f7f85;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+[hidden] { display: none !important; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 28px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); }
+header.top { display: grid; gap: 6px; margin-bottom: 22px; }
+header.top h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+header.top p { margin: 0; color: var(--muted); max-width: 76ch; }
+nav.steps { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+nav.steps a { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 999px; padding: 3px 12px; }
+nav.steps a:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+section.lesson { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px 22px; margin-bottom: 22px; display: grid; gap: 16px; min-width: 0; }
+@media (max-width: 480px) { section.lesson { padding: 16px 14px 18px; } }
+.lesson > h2 { margin: 0; font-size: 19px; font-weight: 600; display: flex; gap: 10px; align-items: baseline; }
+.lesson > h2 .num { font-family: var(--font-cond); font-size: 13px; color: var(--panel); background: var(--accent); border-radius: 999px; padding: 1px 9px; }
+.lesson > p.lead { margin: -8px 0 0; color: var(--muted); max-width: 82ch; }
+.lesson h3.sub { margin: 6px 0 0; font-size: 16px; font-weight: 600; padding-top: 14px; border-top: 1px solid var(--line); }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.gridW { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .grid2, .gridW { grid-template-columns: minmax(0, 1fr); } }
+
+/* controls */
+.controls { display: grid; gap: 14px; align-content: start; }
+.ctl { display: grid; gap: 4px; }
+.ctl .lab { font-size: 13px; font-weight: 600; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.ctl .lab b { color: var(--fg); font-size: 15px; font-variant-numeric: tabular-nums; }
+.ctl.big .lab b { font-size: 20px; color: var(--accent); }
+input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; margin: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.seg button { flex: 1 1 auto; font: 600 13px var(--font-body); border: 0; background: transparent; color: var(--muted); padding: 5px 12px; cursor: pointer; }
+.seg button[aria-pressed=true] { background: var(--accent); color: var(--panel); }
+.btn { font: 600 13px var(--font-body); color: var(--accent); background: transparent; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+.btn:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn:focus-visible, .seg button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+select { font: 500 14px var(--font-body); color: var(--fg); background: var(--cap); border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px; }
+.fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 14px; }
+@media (max-width: 400px) { .fields { grid-template-columns: minmax(0, 1fr); } }
+.fld { display: grid; gap: 3px; align-content: start; min-width: 0; }
+.fld label { font-size: 13px; font-weight: 600; color: var(--muted); }
+.fld input[type=number], .fld select, .fld input[type=date] { width: 100%; min-width: 0; font: 500 15px var(--font-body); font-variant-numeric: tabular-nums; color: var(--fg); background: var(--cap); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; }
+.fld .hint { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.fld .hint .btn { padding: 1px 8px; font-size: 12px; }
+.groupcap { grid-column: 1 / -1; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 4px 0 -4px; }
+
+/* calculation cards */
+.calc { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; background: color-mix(in srgb, var(--cap) 60%, var(--panel)); min-width: 0; }
+.calc h3 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.calc ol { margin: 0; padding-left: 20px; display: grid; gap: 3px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.calc p { margin: 0; font-size: 14px; }
+.formula { font-family: ui-monospace, Consolas, monospace; font-size: 13px; background: var(--cap); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; overflow-wrap: anywhere; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+
+/* charts */
+.chart { position: relative; min-width: 0; display: grid; gap: 6px; align-content: start; }
+.chart svg { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.chart .gridl { stroke: var(--grid); stroke-width: 1; }
+.chart .axisl { stroke: var(--axis); stroke-width: 1; }
+.chart .tick { font: 500 11.5px var(--font-body); fill: var(--muted); font-variant-numeric: tabular-nums; }
+.chart .axtitle { font: 600 12px var(--font-body); fill: var(--muted); }
+.chart .ref { stroke: var(--axis); stroke-width: 1.25; stroke-dasharray: 4 4; }
+.chart .reflab { font: 500 11.5px var(--font-body); fill: var(--muted); }
+.chart .region { font: 600 11.5px var(--font-body); fill: var(--muted); }
+.chart .series { fill: none; stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
+.chart .cross { stroke: var(--axis); stroke-width: 1; }
+.chart .dot { stroke: var(--panel); stroke-width: 2; }
+.chart .badge { fill: var(--fg); }
+.chart .badgetx { font: 600 11px var(--font-body); fill: var(--panel); }
+.chart .bar { stroke: none; }
+.chart .barhi { fill: none; stroke: var(--fg); stroke-width: 1.5; }
+.tip { position: absolute; pointer-events: none; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; font-size: 12.5px; line-height: 1.45; box-shadow: 0 4px 14px rgba(0,0,0,.12); white-space: nowrap; font-variant-numeric: tabular-nums; z-index: 2; }
+.tip i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+.tip i.none { border: 1.5px solid var(--axis); width: 9px; height: 9px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--muted); }
+.legend span i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: 3px; }
+.charthead { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; }
+.charthead h3, .charthead h4 { margin: 0; font-size: 15px; font-weight: 600; }
+.note { margin: 0; font-size: 13px; color: var(--muted); }
+.belist { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 13.5px; }
+.belist li { display: flex; gap: 8px; align-items: baseline; }
+.belist .bn { flex: none; display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--fg); color: var(--panel); font: 600 11px var(--font-body); }
+
+/* tables */
+.tblwrap { overflow-x: auto; }
+table.data { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+table.data th, table.data td { padding: 5px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.data th { font-size: 12.5px; color: var(--muted); font-weight: 600; vertical-align: bottom; }
+table.data th:first-child, table.data td:first-child { text-align: left; }
+table.data tr.cur td { background: color-mix(in srgb, var(--accent) 10%, transparent); font-weight: 600; }
+table.data td.wrapok { white-space: normal; }
+table.score td:first-child { white-space: normal; min-width: 104px; }
+table.score th { white-space: normal; }
+@media (max-width: 480px) { table.score th, table.score td { padding: 5px 5px; font-size: 13px; } }
+td.neg { color: var(--neg); } td.pos { color: var(--pos); }
+.tag { display: inline-block; font: 600 11px var(--font-body); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--line)); border-radius: 999px; padding: 0 6px; margin-left: 4px; vertical-align: 1px; }
+details.tbl summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--accent); }
+details.tbl[open] summary { margin-bottom: 8px; }
+details.tbl .tblwrap { max-height: 360px; overflow: auto; }
+
+.takeaway { margin: 0; padding: 10px 14px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); border-radius: 0 8px 8px 0; font-size: 14.5px; }
+.verdict { margin: 0; font-size: 15px; }
+.warn { margin: 0; padding: 8px 12px; border-left: 3px solid var(--neg); background: color-mix(in srgb, var(--neg) 8%, transparent); border-radius: 0 8px 8px 0; font-size: 13.5px; }
+.notice { display: grid; gap: 12px; counter-reset: n; }
+.notice .takeaway b.h { display: block; margin-bottom: 2px; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stats > div { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; display: grid; gap: 2px; align-content: start; min-width: 0; }
+.stats .k { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.stats b { font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) { .stats { grid-template-columns: minmax(0, 1fr); } .stats b { font-size: 17px; } }
+footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 88ch; display: grid; gap: 6px; }
+footer.note p { margin: 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head><body>
+<div class="wrap">
+  <header class="top">
+    <h1>Hedge or Gamble?</h1>
+    <p>A US firm will receive or pay foreign currency in 90 days, so it has <b>transaction exposure</b>. It can remain unhedged or use a forward hedge, a money market hedge or a currency option hedge. Compare what each one pays for every possible future spot rate, then replay real 90-day windows since 1999.</p>
+    <nav class="steps" aria-label="Sections"><a href="#s1">1 · The setup</a><a href="#s2">2 · Payoff chart</a><a href="#s3">3 · Replay history</a><a href="#s4">4 · What to notice</a></nav>
+  </header>
+
+  <!-- ===================== 1. SETUP ===================== -->
+  <section class="lesson" id="s1" aria-labelledby="h1">
+    <h2 id="h1"><span class="num">1</span>The setup: one foreign-currency cash flow in 90 days</h2>
+    <p class="lead">All exchange rates are direct quotes: dollars per unit of foreign currency. Interest rates are entered as annual rates and turned into 90-day rates (annual × 90/360), like the "90-day interest rate" in the Ch. 11 problems.</p>
+    <div class="grid2">
+      <div class="controls">
+        <div class="ctl">
+          <div class="lab"><span id="posLab">Position</span></div>
+          <div class="seg" role="group" aria-labelledby="posLab">
+            <button type="button" id="posRec" aria-pressed="true">US exporter: receivable</button>
+            <button type="button" id="posPay" aria-pressed="false">US importer: payable</button>
+          </div>
+        </div>
+        <div class="fields">
+          <div class="fld"><label for="cur">Currency</label>
+            <select id="cur"><option value="EUR">Euro (€)</option><option value="GBP">British pound (£)</option><option value="JPY">Japanese yen (¥)</option></select></div>
+          <div class="fld"><label for="amt" id="amtLab">Amount due in 90 days (€)</label>
+            <input type="number" id="amt" inputmode="decimal" min="1" step="1000"><span class="hint" id="amtHint"></span></div>
+          <div class="groupcap">Market rates today</div>
+          <div class="fld"><label for="spot">Spot rate S ($ per €)</label>
+            <input type="number" id="spot" inputmode="decimal" min="0" step="0.0001"></div>
+          <div class="fld"><label for="fwd">90-day forward rate F</label>
+            <input type="number" id="fwd" inputmode="decimal" min="0" step="0.0001"><span class="hint"><span id="fwdHint"></span> <button type="button" class="btn" id="fwdCip">Set F to IRP value</button></span></div>
+          <div class="fld"><label for="ih">US interest rate i<sub>h</sub> (annual %)</label>
+            <input type="number" id="ih" inputmode="decimal" step="0.01"><span class="hint" id="ihHint"></span></div>
+          <div class="fld"><label for="if" id="ifLab">Euro interest rate i<sub>f</sub> (annual %)</label>
+            <input type="number" id="if" inputmode="decimal" step="0.01"><span class="hint" id="ifHint"></span></div>
+          <div class="groupcap" id="optCap">Put option on euros (example values)</div>
+          <div class="fld"><label for="strike">Exercise (strike) price X</label>
+            <input type="number" id="strike" inputmode="decimal" min="0" step="0.0001"></div>
+          <div class="fld"><label for="prem">Premium p per unit</label>
+            <input type="number" id="prem" inputmode="decimal" min="0" step="0.001"><span class="hint" id="premHint"></span></div>
+        </div>
+        <div class="row"><button type="button" class="btn" id="reset">Reset to latest data</button></div>
+        <p class="note" id="defNote"></p>
+      </div>
+
+      <div class="calc" aria-labelledby="hcalc">
+        <h3 id="hcalc">What each choice gives you in 90 days</h3>
+        <div class="tblwrap"><table class="data" id="lockTbl"></table></div>
+        <div><p><b id="mmTitle">Money market hedge on a receivable</b></p><ol id="mmSteps"></ol></div>
+        <div class="formula" id="irp"></div>
+        <p id="irpVerdict"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 2. PAYOFF ===================== -->
+  <section class="lesson" id="s2" aria-labelledby="h2">
+    <h2 id="h2"><span class="num">2</span>Payoff chart: dollars in 90 days at every future spot rate</h2>
+    <p class="lead" id="lead2"></p>
+    <div class="row">
+      <span class="note" id="flatLab">Flat hedge on the chart:</span>
+      <div class="seg" role="group" aria-labelledby="flatLab">
+        <button type="button" id="flatF" aria-pressed="true">Forward hedge</button>
+        <button type="button" id="flatM" aria-pressed="false">Money market hedge</button>
+      </div>
+      <span class="note">The other one stays in the tooltip, the scoreboard and the table.</span>
+    </div>
+    <div class="gridW">
+      <div class="chart" id="c1wrap">
+        <div class="charthead"><h3 id="c1title">Dollars received in 90 days</h3><div class="legend" id="leg1"></div></div>
+        <svg id="chart1" role="img" aria-label="Payoff chart"></svg>
+        <div class="tip" id="tip1" hidden></div>
+        <ul class="belist" id="beList" aria-label="Break-even points"></ul>
+        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="tbl1"></table></div></details>
+      </div>
+      <div class="controls">
+        <div class="ctl big">
+          <div class="lab"><label for="st">Suppose the spot rate in 90 days is S<sub>T</sub> =</label><b id="stOut"></b></div>
+          <input type="range" id="st">
+          <span class="note" id="stNote"></span>
+        </div>
+        <div class="tblwrap"><table class="data score" id="scoreTbl"></table></div>
+        <p class="note">Real cost of hedging (Ch. 11): <span id="rchDef"></span> A positive number means the hedge did worse than remaining unhedged.</p>
+        <p class="takeaway" id="take2"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 3. REPLAY ===================== -->
+  <section class="lesson" id="s3" aria-labelledby="h3">
+    <h2 id="h3"><span class="num">3</span>Replay history: which strategy would have won?</h2>
+    <p class="lead" id="lead3"></p>
+    <div class="grid2">
+      <div class="controls">
+        <div class="ctl big">
+          <div class="lab"><label for="win">Start of the 90-day window</label><b id="winOut"></b></div>
+          <input type="range" id="win" min="0" max="1" step="1" value="0">
+          <div class="row"><label class="note" for="winDate">or pick a date:</label><input type="date" id="winDate" style="font:500 14px var(--font-body);color:var(--fg);background:var(--cap);border:1px solid var(--line);border-radius:8px;padding:3px 6px"></div>
+        </div>
+        <div class="ctl">
+          <div class="lab"><span>Jump to a window</span></div>
+          <div class="row" id="presets"></div>
+        </div>
+        <div class="ctl">
+          <div class="lab"><span id="fsLab">Forward rate for this window</span></div>
+          <div class="seg" role="group" aria-labelledby="fsLab">
+            <button type="button" id="fsCip" aria-pressed="true">Estimate from interest rate parity</button>
+            <button type="button" id="fsOwn" aria-pressed="false">Enter my own</button>
+          </div>
+          <div class="fld" id="ownBox" hidden><label for="ownF">My 90-day forward rate ($ per €)</label><input type="number" id="ownF" inputmode="decimal" min="0" step="0.0001"></div>
+          <p class="note" id="fwdNote3"></p>
+        </div>
+        <div class="ctl">
+          <div class="lab"><label for="pp">Option premium (assumed, % of spot)</label><b id="ppOut"></b></div>
+          <input type="range" id="pp" min="0" max="5" step="0.1" value="1.5">
+          <span class="note" id="optNote3"></span>
+        </div>
+      </div>
+      <div class="chart" id="c2wrap">
+        <div class="charthead"><h3 id="c2title">The spot rate during the window</h3><div class="legend" id="leg2"></div></div>
+        <svg id="chart2" role="img" aria-label="Spot rate during the selected window"></svg>
+        <div class="tip" id="tip2" hidden></div>
+        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="tbl2"></table></div></details>
+      </div>
+    </div>
+    <div class="tblwrap"><table class="data score" id="replayTbl"></table></div>
+    <p class="verdict" id="verdict3" aria-live="polite"></p>
+
+    <h3 class="sub" id="hdist">Every 90-day window since 1999: what hedging trades away</h3>
+    <p class="note" id="distLead"></p>
+    <div class="stats" id="distStats"></div>
+    <div class="grid2">
+      <div class="chart" id="c3wrap">
+        <div class="charthead"><h4><span class="sw" style="background:var(--s1)"></span>Unhedged: 90-day change in the spot rate</h4></div>
+        <svg id="chart3" role="img" aria-label="Histogram of 90-day changes in the spot rate"></svg>
+        <div class="tip" id="tip3" hidden></div>
+      </div>
+      <div class="chart" id="c4wrap">
+        <div class="charthead"><h4><span class="sw" style="background:var(--s2)"></span>Forward hedge: locked-in rate vs. spot at the start</h4></div>
+        <svg id="chart4" role="img" aria-label="Histogram of forward premiums"></svg>
+        <div class="tip" id="tip4" hidden></div>
+      </div>
+    </div>
+    <details class="tbl"><summary>Show both histograms as a table</summary><div class="tblwrap"><table class="data" id="tbl3"></table></div></details>
+  </section>
+
+  <!-- ===================== 4. NOTICE ===================== -->
+  <section class="lesson" id="s4" aria-labelledby="h4">
+    <h2 id="h4"><span class="num">4</span>What to notice</h2>
+    <div class="notice" id="notice"></div>
+  </section>
+
+  <footer class="note">
+    <p id="source"></p>
+    <p>Simplifications: no bid–ask spreads; one borrowing rate equals one deposit rate in each currency; the option premium is paid today and, as in the Ch. 11 tables, its interest cost is ignored; options are European (exercised only at day 90). Forwards and option prices in section 3 are estimates or assumptions, not market quotes. Historical windows overlap (a new one starts every trading day), so their counts are not independent observations.</p>
+  </footer>
+</div>
+
+<script>
+const DATA={"start":"1999-01-04","m0":"1999-01","fx":{"EUR":{"sid":"DEXUSEU","k":10000,"n":7260,"last":"2026-10-30","d":"11812,-52,-124,36,-118,-20,14,150,-9,-98,,19,-35,2,5,-16,11,-96,-86,-24,-68,25,11,-33,-23,13,4,31,-28,-21,,-93,41,-7,-148,-38,-44,-21,96,-73,-104,40,-43,-64,19,56,-26,88,-29,4,-6,-15,100,-25,-67,-8,3,3,-50,-128,-27,16,76,-26,0,-76,132,-54,51,-49,56,-62,-1,-62,-29,-80,22,-18,-14,36,-44,59,-33,-25,-27,7,22,131,55,2,6,-67,-54,-40,24,22,0,-31,-11,-53,16,-6,-116,-32,-17,,27,-92,-2,-28,-31,142,12,27,39,-100,4,-122,31,39,-45,0,-7,56,76,-75,-36,-27,-74,8,,5,-25,-26,-12,-47,37,39,5,-17,0,217,106,-17,-12,154,-24,17,75,-25,-33,19,86,27,-23,-76,58,-92,-24,-68,-11,-32,-20,138,11,-101,-47,-45,-20,19,-15,136,1,107,-84,,-24,9,-47,-141,-2,8,-23,33,-19,9,52,40,-85,51,-35,78,104,30,75,-15,-10,11,17,-91,,107,21,41,88,-24,-30,-68,43,-130,-12,-88,-46,-13,-1,-24,12,-21,-45,-40,-37,38,35,,-121,0,-3,91,-106,16,14,-66,-85,,-39,-37,-23,-18,-36,-7,236,-30,41,-102,-3,-38,-53,-1,103,-81,-22,27,-13,82,-34,8,-68,-23,-21,46,85,154,26,-11,-30,-42,70,-41,-11,-142,,-7,-6,18,-33,-81,22,-30,-121,-125,-8,-26,37,119,-127,23,79,52,-49,-18,-64,51,8,21,-13,,210,-43,-86,-168,-94,-26,57,-81,-1,-15,-43,16,108,-25,-11,-4,52,14,-16,16,-7,-95,83,33,-79,-31,-90,70,-20,-14,28,59,-67,10,-2,3,-40,-27,40,-14,-73,-108,7,3,17,-131,-48,-134,6,31,-52,-177,16,46,-3,73,74,-76,59,58,-85,-132,31,-6,90,-4,64,-24,238,,4,14,-21,125,39,99,30,-52,-22,18,75,-29,-60,118,-26,-65,-102,-57,-40,24,62,0,71,30,-19,,22,-21,-43,37,-24,-96,-62,35,-23,-29,-85,55,51,-29,77,22,-82,-85,20,-38,-91,-95,33,30,-86,-28,86,-31,-9,98,8,9,-84,-41,-62,2,61,-4,-22,-36,-42,-46,115,,-117,-174,38,-76,-40,-28,44,-23,-45,-49,-9,-52,96,235,-55,77,-10,21,11,-31,-65,-15,-41,-5,,2,33,-71,-76,-79,18,-116,15,-6,-36,0,-94,1,135,26,54,98,10,20,-30,-1,-24,15,51,-18,-34,-3,-38,-16,-30,-28,-35,,-41,118,47,30,117,71,110,-71,73,14,-53,-67,4,-20,103,123,-52,-27,156,54,118,,62,12,-47,131,,77,8,-25,87,-49,-89,-10,133,-34,,-112,-68,140,-83,11,15,-131,-39,-6,-32,83,44,76,-27,38,-91,27,-147,83,20,-83,-7,-140,105,,-66,-19,-8,26,-2,35,84,79,49,-51,24,-39,7,34,-15,-152,-15,-87,-117,56,69,-84,-89,45,29,-45,-28,-75,-13,30,106,83,-37,26,12,-130,-28,66,-34,-26,-48,2,93,123,-72,-14,26,39,-87,-50,63,-12,-34,43,-18,-68,-3,-53,-33,-11,40,54,-14,-54,-12,-105,-59,-28,7,,-30,29,-121,-3,-3,55,-52,54,-1,-80,54,57,62,30,-18,-52,-52,38,26,41,12,-2,-151,4,-19,22,,-107,95,9,83,57,-84,-3,22,0,152,-11,23,-37,76,45,-32,-16,1,2,41,20,30,-41,-27,3,108,54,43,42,89,24,27,-38,-12,79,-28,-50,-18,4,-5,57,-64,,-222,29,46,101,-56,,81,20,110,-1,35,77,-55,-156,36,87,9,-50,-82,60,-10,32,-40,27,,-18,-32,-110,70,-1,17,-29,-40,-38,-81,-13,32,40,-44,116,23,-67,51,-7,-74,12,24,-89,25,,-124,18,-16,36,-68,51,-51,,-11,41,1,51,16,79,-61,1,-42,60,-11,-21,20,41,31,68,-4,-21,-22,-25,-108,-91,,5,65,-21,79,,130,-39,-46,-15,-6,-43,43,-20,30,-22,-79,-34,44,,-6,-2,-54,-127,-50,38,5,-54,19,72,-13,21,-3,37,51,-10,-38,-17,17,,34,-59,7,45,-44,-31,-40,16,-6,53,-6,73,23,-43,16,-9,11,46,7,3,-21,31,0,-45,-23,-1,-41,-15,6,89,-24,22,-25,26,-55,43,1,35,-37,10,28,55,13,-5,-16,20,18,63,2,48,-26,60,-30,101,33,-18,-108,48,28,-9,-85,52,31,101,7,-22,74,-32,-13,,65,28,60,-34,51,34,-33,66,-8,-3,-1,28,-33,8,-6,41,61,102,59,81,-94,133,60,-29,37,-53,-24,,-86,139,69,-48,37,-23,168,15,-9,-11,89,-58,-165,12,52,-115,-103,100,-83,47,39,-36,-206,98,-85,61,64,9,80,-51,20,-61,4,17,-99,29,5,83,6,9,-23,,153,-36,-12,-68,-26,-65,-28,37,-18,-20,-38,104,28,22,-17,-7,-18,-42,17,107,-20,-17,29,-50,-5,-20,72,-7,-7,,-44,14,-106,-10,24,50,-10,-30,25,76,8,-16,46,90,-18,41,-20,118,47,,-34,-45,-26,48,1,24,-83,-40,-18,-29,-24,-18,,37,-5,41,31,-10,92,7,-15,10,106,37,-16,57,-13,-37,51,-51,88,,53,53,49,25,,-124,57,51,-50,28,20,68,0,36,5,-7,91,,17,52,38,58,13,-5,28,-85,-37,22,114,-33,-14,-27,-61,7,-31,118,-35,,-91,36,77,-34,-4,-1,15,-34,16,56,48,84,30,17,48,-34,-5,-153,-145,-119,18,-34,23,-68,99,29,4,31,54,138,4,-139,-29,-25,-90,63,38,81,-52,22,28,71,35,-25,-25,109,-17,90,1,-41,11,170,58,-38,71,83,-14,113,45,59,-58,-1,-41,85,144,-1,22,-7,86,,67,-111,93,-69,-22,-42,6,162,-175,48,-57,78,3,63,13,-31,-102,-32,-62,-68,-50,94,-163,-6,79,78,-56,-21,,-162,-76,46,79,-86,-6,-65,-24,-45,75,107,-21,159,-43,72,-16,-31,-99,-136,21,85,12,8,33,-69,28,-45,13,-68,6,-117,-21,-13,-128,-105,21,1,13,-10,90,,-114,-27,54,174,51,66,5,-9,121,-3,-138,73,1,106,122,19,-15,12,-2,96,72,58,9,-121,110,78,21,-110,117,,-88,-72,13,-35,41,5,129,-10,38,-71,-73,-16,21,-85,-155,43,-24,-56,88,10,,132,64,32,1,149,16,-14,18,-145,17,133,,77,-39,128,9,-16,80,60,12,-14,-51,120,6,38,53,-5,4,35,-9,58,,-23,44,36,76,,-5,87,94,-108,107,81,-51,-67,-9,-138,-193,,189,33,100,-107,-58,91,-23,-231,63,-26,135,-9,54,88,-22,55,88,-8,-56,,97,-36,-127,-122,6,123,-189,-59,-3,-10,-219,-124,137,176,-30,57,-202,42,-77,52,27,-73,195,-123,99,-57,-98,-43,-78,49,61,90,66,-249,-101,81,82,-83,14,-34,-145,17,-26,111,-6,-109,-57,8,-59,49,76,-97,115,30,-38,139,89,-75,-205,-51,-16,93,-110,73,135,-38,44,-89,83,-31,129,-5,172,-57,,-7,40,-45,53,62,-47,-176,13,-99,62,66,-133,34,78,-8,-18,-2,80,-25,48,-69,55,-21,149,,-17,94,6,-2,21,-107,83,-12,64,-6,-54,-153,49,-151,13,-79,-10,24,-38,2,17,6,-7,222,-11,45,-84,2,130,-21,-4,-30,69,-44,-128,-97,-9,-6,-59,24,134,-4,-15,-112,,41,71,25,93,-31,17,-124,10,20,-2,92,-3,37,-42,51,-1,2,109,-17,-126,42,-18,-12,132,,-98,-49,122,85,42,-5,112,-5,17,144,-25,-33,34,-13,-5,-38,84,96,55,-2,-6,-5,,48,-29,35,52,-49,77,-11,42,72,,126,-2,-27,49,-40,122,41,6,-185,22,-50,85,-29,149,-142,8,101,-19,13,101,45,89,-4,-53,55,-85,-62,-181,-3,-105,-125,47,52,120,-74,-101,,-63,-7,-77,90,-8,-87,127,-49,1,16,-32,-2,-56,-32,-154,10,14,85,-18,117,5,8,89,-8,,155,-22,-3,-10,79,-85,-62,3,114,-41,139,42,25,56,-119,-31,108,-50,-62,-146,45,-205,-48,-3,-77,36,31,25,-73,-58,4,26,38,6,60,-99,45,-99,109,109,-3,46,13,-25,-84,-20,-26,-22,3,-62,32,47,0,-104,7,38,-74,-97,-61,-15,14,16,-32,-75,22,13,14,-85,51,,-219,-117,34,-39,41,9,43,-104,-89,-92,3,68,-17,151,-100,-6,-4,-76,34,64,-74,23,-3,-141,,-40,1,10,6,132,134,-110,-1,-52,40,-76,45,67,-34,-25,-47,41,73,8,66,14,128,46,-56,34,-14,-2,89,-6,-66,-20,-52,-112,-31,88,-22,26,72,13,-76,-44,126,117,91,,-55,-44,-39,33,-145,-25,19,-66,-2,-61,24,31,-55,-76,-41,-25,5,4,38,-144,4,66,149,-18,,-100,25,-102,135,-33,-101,49,-6,-24,40,101,-17,66,-59,-94,3,69,-96,-143,-33,-22,-25,-8,,-73,28,-23,34,35,-7,3,62,,-75,80,-18,4,-88,-3,88,-3,-62,108,-6,145,-43,115,-76,47,-16,-148,-32,67,-26,,-1,19,-29,-4,,138,111,10,47,-84,-1,72,-100,68,,-30,10,27,-9,175,11,-35,-23,-99,-39,67,-66,8,-79,-50,3,-39,28,-43,-15,-10,-11,-2,24,,6,-7,18,-41,-22,65,-26,104,25,-26,-114,26,6,-34,56,83,20,106,46,-29,-89,16,-111,50,-19,63,-48,102,7,-15,134,14,-56,-107,-18,34,-18,0,-1,161,7,71,-19,14,33,39,52,61,99,-17,37,-5,45,49,-13,27,52,56,33,-62,-9,-95,73,-45,100,-6,-97,30,-38,,129,-35,-9,88,41,-125,-29,-151,-12,-49,-13,57,-15,7,-46,-9,97,-83,-60,32,35,-57,2,245,14,,-67,31,65,-71,3,-48,-33,-32,-112,-29,60,79,45,-54,-54,52,104,16,16,14,20,-19,115,-27,-28,49,-123,-8,-22,53,76,6,-60,104,-110,-10,-34,7,17,-16,57,-32,40,,-23,-23,-30,-84,26,-6,15,28,-88,23,12,18,29,66,-49,-60,12,-2,-10,57,-17,-40,0,-87,,-59,6,-10,-35,16,46,-48,78,19,-69,21,26,78,56,-8,56,-2,9,-75,10,91,-31,60,26,-51,2,-4,0,15,-13,14,104,,153,39,42,-16,115,55,11,0,-20,-11,-81,8,10,-18,-41,-79,-22,121,-11,-8,-44,,1,-7,33,39,,89,-117,-75,-89,18,-28,-55,-36,22,,-8,30,-6,26,-11,68,-61,16,-71,39,6,44,23,-61,-27,36,51,14,-29,-43,62,102,14,-3,,-3,-8,8,30,-5,87,-16,-57,9,-88,14,40,-19,-11,68,13,28,22,58,-8,-8,14,54,-57,34,21,-26,5,38,0,-11,1,62,-46,-13,69,0,48,34,32,19,5,31,-4,-21,42,25,-57,35,35,-60,-2,-32,21,29,-84,17,-37,7,25,59,-81,-28,17,-54,7,18,-53,23,,31,-64,34,-13,48,38,-34,-36,-97,0,-34,-30,16,54,36,15,10,-27,39,12,18,-35,33,54,107,-12,,-23,34,-3,91,43,19,12,-3,-3,26,3,20,-14,7,-113,19,-83,34,30,-29,11,92,4,-42,61,-107,-15,-62,-43,-102,-77,90,-24,15,52,25,85,0,-19,49,-27,-7,0,-35,63,28,75,22,43,67,-19,-37,12,9,81,142,-16,10,42,-2,12,81,10,-66,-28,-7,26,0,-62,65,71,-60,48,-51,43,83,-28,-125,110,-11,62,91,15,19,44,-33,46,-12,86,112,24,-26,,-67,72,-31,13,6,129,42,0,-4,37,-45,-67,16,-78,-31,102,-93,-28,26,50,-12,0,-111,-158,-64,23,-48,9,8,48,,91,101,117,-115,,135,-2,50,-102,33,-54,77,47,90,-35,-199,47,-74,,-7,-35,163,-64,116,-22,15,59,10,-19,-194,9,-152,10,1,86,-23,66,39,,68,-79,150,12,-3,67,243,40,15,8,15,72,74,-23,36,-40,166,89,20,161,19,-142,-225,30,-53,201,166,37,-39,46,-190,3,49,68,-22,-8,99,-60,52,31,-26,177,-54,-182,139,129,-112,-230,-34,14,-44,-36,-110,-27,60,57,-178,39,38,89,-27,-42,25,99,-75,151,105,-69,81,,-53,-103,-101,33,-10,-96,-1,107,171,-13,-245,89,-144,-50,104,47,-17,0,124,-134,99,-21,168,11,-1,30,91,-161,,-62,7,91,27,127,16,9,-76,14,-6,22,-66,-103,-51,30,60,-159,-29,30,-22,2,-101,-59,-68,-294,-89,-53,-10,-39,-161,35,16,-45,174,-75,3,-143,24,1,-16,,-147,-33,-129,-87,-147,47,-153,-81,233,3,-20,60,167,2,313,40,-82,-12,-47,-215,-300,-23,-204,-38,-308,141,31,-34,-175,,187,-91,-151,46,-148,-212,-267,43,-239,-193,30,375,-1,-168,37,302,18,-283,21,-17,,-202,-32,205,-5,-36,-95,-70,6,359,140,-202,,-134,-60,90,-55,171,-186,288,-5,87,270,55,315,146,548,-60,-423,77,14,-2,,98,170,-147,-166,,27,-370,-131,273,-4,-219,-148,-149,-24,-80,150,,-298,-76,85,-106,274,36,85,-256,-184,4,202,-153,-19,36,190,-98,-73,-71,57,,-308,-24,128,15,57,-5,-11,33,-102,-82,-31,58,-42,109,-38,116,22,25,92,106,-25,138,620,-164,3,-45,15,21,-254,-160,115,-38,235,-11,-84,-81,6,-139,-6,211,-77,-95,15,-167,-127,75,34,36,229,-141,-75,263,-80,23,98,10,-62,98,83,126,18,-26,-4,-69,-36,105,157,39,201,,-13,-68,24,178,66,78,-76,-7,-197,-106,130,-31,110,-53,-256,94,-28,128,20,-152,189,-20,-62,103,2,-38,166,-168,-27,-53,27,-113,174,-100,47,-2,145,-1,5,91,-15,24,46,-53,-1,3,-182,33,213,137,-16,-9,-34,-177,-37,-2,74,68,-67,-128,-13,187,-27,70,15,30,-120,42,86,-4,-119,11,32,0,,219,76,-5,18,27,4,81,37,-31,-12,103,-43,-56,-14,-32,-97,77,-98,58,57,97,-69,102,-62,,124,60,46,-56,58,-42,104,-6,26,-88,-120,-58,56,-64,73,-170,178,21,-22,164,-39,,-95,21,91,-147,160,-85,-35,98,-31,148,,-122,31,106,-41,22,-196,-65,-79,-16,-9,-115,44,-131,63,-260,-36,38,-76,98,26,,25,-36,-40,16,,87,-17,2,-90,43,179,-13,-31,-14,-102,,-107,-175,12,48,-8,-83,-10,-60,-123,34,51,-48,-148,-151,91,96,-73,-82,-15,,117,-119,-60,-25,52,-53,39,-100,184,-144,48,167,-160,37,5,-27,72,16,79,-101,106,-19,-136,-73,1,4,-188,-3,54,67,-56,117,43,-82,-1,-108,-14,-4,108,119,5,74,-126,-53,-29,-12,-63,-85,62,-24,-106,-100,113,59,-119,-146,-147,-201,32,140,-146,-73,-74,-178,-91,59,-41,53,205,-169,-127,-55,146,-1,,-103,-60,-13,-195,-39,36,50,66,-34,200,50,-4,42,-5,25,-82,7,-22,44,-16,-129,104,173,113,,69,-52,89,-44,-66,146,36,138,26,44,-58,-87,85,-29,109,0,15,66,5,105,65,-81,-1,125,-41,-146,-196,-33,-99,71,52,-18,-35,-150,-24,12,-23,65,48,-79,18,109,11,61,,-162,4,-19,23,159,124,-6,71,-33,28,62,249,-41,132,-1,108,55,-37,153,-66,146,90,-3,2,,-77,118,102,-68,-20,-151,122,24,-69,82,-113,-85,141,-35,-6,138,-12,210,-191,-106,-62,-137,,-28,-85,-98,38,63,36,-42,-224,-38,,-107,-151,-56,113,79,139,-92,48,-81,-36,36,147,6,-89,-100,-51,-31,7,-42,12,,45,-24,61,86,,102,-65,-135,-144,-83,1,33,88,298,-36,,71,96,-52,138,72,-9,44,0,-81,108,78,-14,-125,-70,-27,130,1,-51,-117,-46,20,53,65,61,,-12,97,36,-37,36,20,56,78,36,-7,-64,-6,-83,41,111,-7,-46,99,120,43,28,-88,76,-56,-40,-14,5,88,32,6,9,103,-46,150,17,1,22,-13,-21,-232,108,194,72,-40,31,49,34,126,36,49,5,-16,-276,-88,-194,57,-89,-40,-88,78,-64,115,-16,-82,-157,92,-5,-14,199,,89,55,-5,178,16,55,-88,-53,-169,3,105,-252,-66,171,-6,79,4,-237,23,93,86,60,95,-15,,-38,-141,20,-98,-217,-20,153,15,-26,-114,114,32,184,-6,-9,138,-122,-70,85,-186,30,88,-162,0,83,1,-49,37,9,213,-31,15,-116,88,-24,47,-29,-22,83,47,-75,-29,-123,-80,,-204,59,-111,-281,-31,45,30,148,-75,-147,61,27,-278,72,-2,90,22,11,-190,-168,13,34,80,104,,145,148,-75,131,-91,-51,56,-103,201,59,-21,-73,334,-8,-217,-271,127,-59,17,-17,41,-189,4,,25,-101,-19,17,-1,4,-25,-153,,-103,90,9,110,34,-101,77,-66,-11,-62,44,-180,-94,-122,41,12,-8,59,-36,5,-5,,34,-148,26,21,,88,-131,-147,-60,22,37,-96,132,-136,,58,85,112,11,87,-31,-26,174,40,-69,-70,126,-12,-61,24,114,9,44,-110,24,-62,-62,23,39,,106,-4,57,155,-53,42,-93,-39,-118,24,-112,35,107,-148,33,-32,-84,45,101,71,-20,-32,4,69,65,8,-36,-35,69,-9,12,-211,-62,25,-2,-19,36,67,-89,-15,56,-1,10,80,-83,78,3,22,16,-19,-3,-72,-7,-56,-39,-37,-61,5,-22,-90,-78,-39,-21,12,48,-34,-166,14,-65,,-30,-83,-41,56,75,-58,98,33,-86,22,-27,119,12,25,-55,114,11,-117,-41,-65,-9,-14,-24,235,-84,36,,-236,-101,16,-44,-11,-45,33,35,-33,27,-4,-81,-50,-64,70,148,90,-120,65,-16,-150,241,32,0,-58,-86,20,41,-10,-41,68,-41,28,129,0,111,-50,-19,50,-26,-41,81,,-12,37,23,170,-1,63,36,18,230,-17,-74,14,-117,42,-81,36,-93,22,-18,44,51,-42,92,58,,-183,12,40,18,4,86,97,-27,-84,41,-92,-25,12,-20,-32,73,-21,-21,-89,-58,28,-59,-19,-25,,1,24,43,-68,91,8,2,,143,7,-26,-17,30,57,56,15,-4,-109,-26,-12,62,46,39,57,35,55,36,-36,-58,13,,49,0,-8,-34,,9,-85,-63,52,-31,10,142,133,16,-27,-37,51,-53,,1,4,70,78,3,25,80,20,108,-165,42,-41,-146,-16,48,36,-2,-114,28,,25,-37,-146,-38,6,-118,50,-25,-91,8,23,-29,108,-106,22,9,-74,25,102,-120,-68,62,-22,68,-115,-23,-76,60,-26,41,-21,11,7,173,-19,84,-32,64,-30,-12,59,-92,23,-6,-16,-38,-15,7,20,66,78,24,-126,46,-45,18,92,-72,-150,26,-12,-112,41,-80,47,45,-46,80,-24,,-50,74,98,-54,110,-23,13,160,-6,-8,44,76,-40,16,11,66,-3,-190,-101,-22,-11,-74,10,-6,50,-43,-12,,-174,32,-89,72,200,2,-9,105,-50,-16,64,51,19,16,6,35,-7,4,16,-65,51,-11,39,33,63,-54,-26,-65,9,7,58,27,78,-58,-6,30,-23,18,-61,-98,-32,,-32,48,-92,46,94,0,41,14,-39,74,7,-6,176,-5,-2,-30,46,-52,53,-2,-1,58,50,-60,-13,13,-69,22,24,,-65,-4,174,29,-21,106,8,24,-16,-8,-16,1,-177,-106,28,-46,60,-140,-33,,71,28,12,12,40,9,-78,19,77,-45,53,8,,43,-54,52,-49,109,26,36,39,33,-46,-28,33,-9,18,-100,7,28,-25,,14,76,50,-37,,-109,-64,30,-18,-32,5,73,-17,35,-78,-4,-46,,6,-14,134,0,-1,-17,1,-114,-49,23,-16,12,85,10,30,10,-62,77,21,,68,4,-72,32,22,5,-81,56,82,-43,-32,3,114,20,12,-13,37,23,-3,3,-14,-3,-126,-1,1,-7,9,-34,1,24,27,-43,-53,-4,41,57,14,76,6,-74,-18,14,12,-16,-26,14,10,14,10,6,-36,62,-3,-3,20,40,-7,-53,-101,-3,-49,7,-6,-4,8,-14,-45,-5,-24,,-10,-22,12,32,-34,18,-5,-1,21,-50,-46,-11,24,-34,56,-35,24,53,-34,7,-5,50,-28,21,59,-9,-25,-46,,-6,10,16,-30,-2,22,-47,-43,0,-15,9,-54,-8,6,-37,9,-30,-32,12,46,-22,-48,-11,7,50,-27,-28,10,9,16,-34,-38,-36,0,-47,-31,-17,3,-14,-28,,-26,12,-210,30,-8,-39,-1,28,19,-4,25,-18,-45,-78,-6,29,-70,-40,-62,17,-75,-10,52,-153,75,34,57,0,-47,,24,118,34,-57,28,-59,-66,0,17,37,35,15,-140,-92,-43,67,-66,-74,8,3,,31,20,18,-47,87,14,-22,-132,33,45,31,,-65,52,-100,-86,128,-128,-12,123,10,-28,87,-14,34,-98,-115,-56,17,-72,8,,,-9,-5,-73,,-86,-97,18,-116,-9,19,2,-53,27,-208,-81,,42,25,-170,-135,11,80,-28,-34,-18,47,125,-44,14,-102,-14,0,-16,110,-2,,-13,-53,50,-20,-26,-39,56,-151,-15,-7,22,-142,-64,-151,-9,-139,-131,39,-91,51,30,38,-22,171,136,-20,78,-67,-28,-73,-77,27,106,116,18,-158,-32,-147,-73,-16,90,-76,146,38,-17,-5,-29,74,73,16,87,195,-12,32,-49,29,171,-62,-42,-99,98,132,-4,60,-74,-203,-72,47,-93,,-157,12,26,80,-81,217,155,-14,-163,124,52,23,-71,42,-12,-28,6,160,-69,43,-188,-12,18,-40,24,-26,-70,6,,-14,-124,120,-47,125,-130,-5,-50,-67,-50,2,77,-43,92,0,136,-57,-29,-112,114,-66,-9,-85,54,36,36,48,156,-54,-34,-32,-50,33,139,156,224,-170,-20,-151,-67,22,69,-21,-138,13,,65,-17,97,76,-31,-47,44,8,46,-154,-71,27,92,-60,44,10,-84,38,76,-76,66,-17,33,81,,19,55,-19,-58,-40,39,-14,-205,-124,35,1,14,-103,79,-16,-80,-85,8,-123,21,-81,,82,-46,-14,-74,4,108,-86,-58,50,-36,,-20,-34,58,-47,329,-18,-44,36,108,-36,54,23,-114,26,-133,43,73,58,-103,80,,28,-67,-4,-53,,-56,-60,19,98,25,-7,-41,25,0,102,,-58,2,-75,-19,18,14,21,85,-120,56,20,143,148,-68,39,130,-78,140,-127,,-95,0,-48,35,-109,-2,5,5,-94,-64,-21,-2,103,62,-6,24,-6,140,18,-73,5,-37,241,-24,-32,-32,-54,-11,1,46,-6,126,60,-5,1,-12,56,-44,20,6,-17,-114,-19,33,27,53,-45,-29,-62,35,44,4,3,116,75,-8,-22,-82,17,-19,-16,58,-64,-86,34,9,-61,-62,-7,-15,-47,9,30,-44,,-5,30,-8,173,24,-4,50,-71,-48,1,-76,33,-81,98,62,-56,24,87,-247,-102,30,63,-85,113,,-65,-3,-12,-27,7,29,38,-3,-50,17,-62,-7,9,-48,12,4,4,106,74,8,49,-55,-36,-54,-2,32,61,-3,4,27,78,-14,71,-8,-12,-6,-52,18,-37,-55,-32,-4,48,-36,,79,1,18,-42,16,12,29,-25,-86,19,-7,-7,64,-6,47,-62,-8,44,-6,-28,2,-16,-38,-2,,-94,-48,24,-53,15,-3,-31,-32,-68,22,2,26,-12,30,28,80,77,-25,27,-83,-4,-82,-70,,-159,3,-27,-43,-56,-3,21,-58,,35,-19,50,-48,56,32,57,-6,41,-133,-84,65,29,21,-281,81,-12,-54,35,27,-3,,9,-69,97,66,,-136,60,122,-38,16,-4,-71,165,-41,,70,-13,-52,,110,9,-6,-73,20,-9,113,-36,44,-10,-61,-41,18,-50,-8,-47,-26,20,63,-46,,-63,4,31,-6,44,-6,-54,-50,38,34,-4,-35,39,81,3,-25,-15,108,4,12,56,-10,-13,19,76,-30,-96,-30,-28,-43,9,-3,-10,-35,-10,8,-3,19,-5,35,46,1,51,-64,152,95,-69,-8,31,17,-2,10,47,29,-68,-53,-2,-4,57,53,93,62,-4,60,46,-38,-23,43,-48,,13,53,-22,56,-20,16,-30,-19,-27,14,-10,83,-125,42,-34,-36,19,5,48,0,104,64,56,-9,-44,,-31,73,-13,0,34,-19,-26,67,18,108,-60,116,21,-13,14,-24,24,98,72,-27,62,19,-126,34,-64,24,3,60,-25,-50,-33,33,12,66,-52,40,-1,73,99,52,-98,-33,-16,,33,32,85,13,-77,4,-70,-12,73,-21,42,18,-52,23,-117,-80,-25,29,37,-68,14,1,-54,26,,72,43,-7,-3,-27,-56,21,67,-72,-8,4,36,-102,-120,46,22,-30,54,-56,-16,-23,14,57,,8,108,30,-22,27,-58,0,48,,147,-25,-33,-20,40,12,-62,-28,-32,2,-29,41,-77,37,16,0,26,18,59,-9,-33,,28,35,50,70,,28,-20,34,-25,-66,-51,36,77,95,,114,-15,9,0,-8,47,113,98,-66,-70,38,38,54,-36,-28,-37,-100,-43,-12,41,96,33,86,-40,,-94,-34,12,-28,-2,-57,-28,5,98,16,85,-18,-83,12,-8,80,-36,-41,-41,49,-58,-3,42,50,80,-30,-59,-54,23,-32,-27,31,-62,44,46,18,46,-64,2,51,-28,35,-44,-54,-66,10,-48,-65,-5,-34,-74,-32,2,-24,-19,-64,-11,44,55,25,-112,-76,10,-23,-7,15,-90,36,-63,,-115,113,6,9,17,-24,106,37,-42,29,-10,-8,-150,-18,-10,-29,15,8,30,64,-19,-87,-6,95,-73,49,,44,41,6,-16,-6,-30,-25,43,-46,-19,-41,104,-6,-18,-7,-23,6,58,-12,-40,-54,-15,-33,33,1,-32,-167,-3,-45,-19,56,22,28,96,61,-28,58,51,44,-21,-53,-50,,-30,54,4,-52,32,-13,35,46,-16,31,6,-8,59,-5,34,-3,-12,-88,-48,-55,-7,-35,-17,-6,,-20,59,24,-6,35,-1,-53,-46,19,-46,13,-91,-15,14,2,-26,-32,64,-18,16,18,47,-43,-91,,-37,24,12,78,46,-57,2,,-61,4,-55,5,96,-59,33,-11,,29,16,-22,-54,48,-4,-58,39,25,58,10,-30,,,6,4,33,11,,-99,42,11,58,-24,80,-7,-38,,-87,16,-22,-24,,-3,31,-68,85,31,-14,-6,36,20,-36,-32,-26,-23,-31,-49,39,-28,-4,-16,,60,,10,4,3,29,-4,9,-3,-48,-28,20,-106,29,-17,50,34,-6,22,11,9,6,9,-79,42,-44,-30,-14,-8,-18,-24,56,-26,1,45,16,-12,-4,42,0,-11,4,-56,5,12,-45,-21,-52,14,12,35,45,-62,2,11,-19,28,22,13,-9,-25,1,-30,-12,4,-12,-2,16,25,,-20,-41,4,9,57,30,6,52,30,-13,5,-6,-35,-58,18,-39,18,70,44,65,-7,4,-18,2,-67,-6,-26,,-59,-8,2,50,1,-7,6,-48,20,-4,-8,-6,-58,-15,15,-35,21,6,-18,-68,50,85,-1,40,-26,12,-10,-30,-38,-38,-15,5,-4,6,-9,59,-36,-18,-10,-25,-70,,-21,57,13,4,14,-14,-41,73,0,-68,57,-2,-15,-42,-13,8,-50,-11,4,-37,27,19,40,-17,10,-35,29,40,21,,-3,39,54,26,-10,-7,-20,-20,-17,13,23,6,32,14,-25,-74,6,-31,-26,,-2,-13,12,30,33,-4,-12,4,-38,-20,3,-10,,17,56,14,-13,28,-52,15,23,2,23,13,11,9,-35,15,-52,15,-7,,18,72,43,10,,-61,7,14,-49,-21,-11,13,19,-8,30,-29,-38,,3,-11,-44,-15,-7,-11,-4,28,50,-20,-19,-37,-27,-29,-34,1,-24,-45,-9,,-24,-21,3,58,2,11,19,90,24,163,11,-45,72,117,101,-78,-62,-199,-15,73,-168,-138,-134,-17,78,34,41,190,34,-41,-2,-82,-72,-65,11,78,-22,67,20,-45,65,-62,-69,43,-9,-20,-25,-14,-17,31,7,17,81,64,-87,-67,-38,9,39,-36,46,-27,-37,16,88,33,43,-27,-59,,76,-1,100,38,16,43,80,76,-25,-4,55,7,23,-125,17,-11,-40,-3,-27,71,62,-50,-51,-6,22,0,22,-22,,70,-8,30,-31,20,46,42,0,27,5,4,53,92,36,12,115,-17,37,21,31,-72,16,132,-42,-80,-20,8,32,22,15,36,59,-30,-36,-87,28,15,-5,11,77,49,-1,-109,-8,-12,,-31,21,70,-49,43,-28,-11,-12,34,-120,-34,-26,-11,-48,42,57,6,29,-46,78,-6,-12,-13,66,,-82,18,-54,16,71,36,46,-46,20,-28,18,-83,-93,-11,-13,90,6,79,77,-75,-1,,4,10,20,18,7,-26,14,-31,48,34,,,40,91,54,59,-10,-4,-27,-31,38,-6,33,13,17,83,-22,-6,-58,22,,,19,39,28,-50,,24,41,-5,-25,-13,-83,-1,-9,-3,-57,,27,,17,36,-41,9,-46,21,13,-65,-50,5,-51,61,10,61,26,-5,-1,,-19,-65,36,58,19,-13,1,86,-136,-39,25,-6,-28,-131,-65,36,15,78,-26,-35,-22,10,21,-17,23,-60,-41,-54,21,-19,-55,19,29,-9,47,42,38,14,-7,10,32,35,-10,16,48,17,-12,-21,57,14,-4,19,12,-80,29,-45,-11,46,116,5,-1,-95,-4,71,14,48,13,9,-47,32,23,-29,-10,0,,47,-28,-91,51,27,-20,4,-11,-72,25,-6,-1,-208,-39,37,1,40,-23,13,-2,-33,-57,9,-9,,-32,-13,37,21,-3,-45,13,-20,4,-6,-28,23,-28,-10,49,21,-22,77,-22,9,-14,-18,-3,-77,-12,-27,15,-1,60,-20,-62,-12,-9,-3,42,14,12,3,33,1,5,50,8,26,,-35,-31,9,-6,-12,15,-13,-47,-30,-5,-5,15,-4,-20,-13,-21,-69,-35,21,24,-13,-63,15,11,,-31,27,23,3,15,23,11,0,-11,-23,-19,10,85,-133,39,-10,3,-38,8,36,-1,-72,,-74,-22,-88,-11,36,-40,-58,5,-69,,106,-41,26,36,-17,2,-26,-35,83,-45,27,-14,-31,-6,48,-32,21,-26,52,-4,,9,-15,23,-19,,-28,6,39,-28,51,-30,35,68,33,-50,,-78,10,-10,10,-36,-27,-4,-138,19,52,27,60,126,30,-21,-18,19,52,-83,-98,57,18,-17,-37,,15,-26,-162,107,-37,-121,-1,-49,-141,-52,21,188,-62,-70,42,-5,22,114,-66,4,-26,-21,5,-21,-8,127,59,-70,-50,-51,-71,-8,-13,-26,1,-23,22,-78,16,-27,4,68,-18,-49,-87,-42,-112,-49,37,-16,11,7,-32,65,-13,-28,6,-161,34,10,112,-38,93,-28,109,76,-86,67,-16,,22,-85,87,-12,-22,-2,43,-84,-135,-85,-20,-28,143,-58,,75,35,-80,36,62,-67,-57,-8,-60,,-155,-81,-14,19,-90,-19,12,-53,61,71,78,-21,-20,28,-14,-95,-8,55,39,68,-76,-48,75,-51,37,19,111,1,-81,-71,-12,-10,-50,-75,-103,40,-9,-8,39,2,18,47,-115,80,,-116,28,14,90,83,-132,-4,-2,22,-10,-9,-114,-39,-122,-96,-7,65,93,9,26,168,-111,-60,-21,,-28,-65,88,-41,104,-1,-62,43,32,19,85,109,-83,-51,-49,-14,4,-116,136,102,92,-52,139,,161,35,23,-54,8,-111,38,88,,38,-16,-30,-33,175,23,-27,3,8,47,-2,-5,85,25,-17,-28,14,11,-36,-11,33,,33,-32,46,30,,-139,61,-98,97,140,-22,3,83,-12,,-18,34,-17,21,34,8,28,-35,-9,10,-9,59,1,-93,-103,-17,29,27,-91,48,4,-39,1,-6,,-21,-34,-40,-38,51,6,72,-79,21,78,-121,-24,28,82,74,-11,-187,87,25,75,47,23,98,-128,27,55,-18,73,-27,19,60,-33,9,-14,-73,66,81,67,-74,-65,43,-5,17,3,54,-59,84,-35,23,-70,27,52,-40,17,-6,-67,13,-50,-60,18,-8,-36,-54,43,-13,-35,-13,-33,-12,,9,-68,98,-28,-3,-26,7,78,-31,-2,45,67,74,-8,,-25,51,2,-66,23,51,-57,-23,39,-1,,-51,5,91,27,1,131,71,43,-1,-13,-28,-60,-15,-37,-33,28,-80,41,-19,-49,-32,8,89,-36,-49,24,41,-59,-35,6,-24,-30,1,13,-42,16,-36,-39,23,41,75,-87,-52,,-60,-13,-10,5,35,-18,11,-77,13,22,-11,31,-51,-4,-69,-18,-63,68,6,-84,-47,65,9,69,,22,2,-67,-51,44,47,-61,38,22,54,-51,-12,-51,60,28,-52,-30,80,115,14,-60,28,-5,,-10,161,-8,-2,28,66,-22,-52,,63,3,70,-38,-61,-30,-54,-37,3,4,-48,1,43,3,204,-91,14,57,-20,33,18,,27,79,-41,-11,,-105,-48,48,0,19,-41,25,-17,16,,-77,-24,5,24,8,-66,72,-64,29,-59,37,11,10,-78,-51,15,18,5,8,-8,-54,15,26,8,,45,4,-3,13,27,2,-14,-36,25,30,-1,52,28,0,-13,-10,26,-56,0,-2,-27,-3,5,-44,20,-8,-8,-20,-10,-58,36,58,38,-24,12,3,-119,-15,-75,-3,-16,16,16,-5,0,40,-8,34,-35,31,-33,-4,26,64,9,-12,-12,16,2,23,22,42,15,-6,-8,-6,-19,-9,25,,27,-68,26,9,44,-12,-13,18,-76,-56,-18,110,-87,-57,24,16,,-31,-14,33,-22,-23,26,3,17,9,62,,29,7,-22,10,47,32,10,-27,48,-20,-25,-8,-25,-2,8,-2,-40,-10,14,-34,125,43,-31,-1,-11,11,3,26,70,-38,10,74,36,37,-29,62,-12,-4,-33,-41,-26,,-17,38,15,-10,-44,-17,-13,29,44,38,-5,-2,31,12,-29,20,-7,41,-25,-14,-78,-17,-35,-54,15,-6,-19,-26,17,,-43,-26,-36,17,-34,-15,-26,27,7,6,-21,66,-9,-7,36,36,-188,60,-82,,-112,-31,-5,-10,34,-8,-57,-46,-76,79,3,94,,-28,-63,34,9,44,-8,7,-58,-4,6,-16,14,-6,-37,-112,73,-21,-21,,35,0,-37,-35,,-90,31,105,-28,-56,-15,-60,-29,83,-10,21,-16,,136,-3,0,95,-23,-65,-11,4,-20,-123,102,40,-51,-39,-17,34,46,36,70,,-41,-51,69,-20,23,20,16,-100,-12,94,38,234,50,41,-22,90,-2,-66,13,50,5,-50,-29,-42,-12,10,-23,19,26,-30,4,68,184,-38,-102,0,128,152,133,33,-68,92,-18,26,118,-42,-116,13,18,6,9,-47,-70,51,-15,30,3,-99,21,-164,70,30,-17,-48,95,18,89,-62,69,,-24,-40,84,-23,85,-59,51,16,-43,28,-2,67,88,-21,24,-46,-14,,-1,18,70,12,97,7,46,6,14,-32,,-25,-26,0,-19,8,-24,-53,10,-32,48,60,44,-1,17,-35,-121,-75,-64,-39,124,13,12,67,-6,19,-53,66,42,-71,64,-41,-7,-11,-44,108,-43,-13,-46,61,23,,-42,23,-28,111,-8,-28,-9,18,-18,58,76,-3,-65,-27,20,27,-58,-69,19,38,5,-12,-27,51,-40,-33,-68,-47,54,,-5,30,27,9,-18,-40,-4,0,14,10,23,5,-100,-23,-10,-40,-6,54,39,-33,,47,57,-32,-19,-19,-39,-6,-28,12,35,38,,9,23,-27,64,-1,-24,-9,13,11,106,-25,25,14,-22,-19,-8,29,26,4,,-14,-10,9,-29,,2,-23,-26,1,-35,-21,38,-26,9,-50,-6,,140,-34,33,33,115,94,-39,2,-58,-78,12,-16,-1,10,86,0,-14,-14,0,,-39,-21,-48,19,23,-15,15,-12,30,-132,-86,34,-53,21,-14,56,-82,-44,-78,43,38,-12,2,28,44,-9,-8,-28,-22,-66,64,96,-68,-23,22,26,115,20,17,-13,81,8,-16,18,-16,-33,-38,-10,14,13,-16,-20,34,26,-57,9,46,11,9,7,-47,-22,-33,-51,22,-47,18,-31,14,,17,11,18,30,-55,18,-37,24,-96,12,11,-6,-35,58,26,16,-22,-123,,-38,-49,-35,37,18,22,-8,-33,64,,-22,-3,-27,43,-1,-36,26,8,11,-7,-29,-3,6,-41,12,-9,25,-17,138,-3,-10,18,20,-26,38,-7,-9,-3,-9,50,10,-11,84,15,5,-19,8,-22,3,-56,19,-24,-1,31,-5,,9,0,2,-25,-55,-7,-4,-59,-15,5,-37,-38,-21,27,-33,-31,9,-113,27,-48,51,-75,5,1,,3,-73,81,27,-22,23,-13,-7,-13,-21,-34,-4,25,-2"},"GBP":{"sid":"DEXUSUK","k":10000,"n":7260,"last":"2026-10-30","d":"16581,-15,-19,-52,-90,-30,-67,185,37,-30,,50,-83,49,44,3,22,-100,-15,-13,-47,20,-55,20,-25,10,-25,-65,-46,67,,6,21,0,-83,-17,-100,-158,80,-33,31,77,-1,-69,8,12,63,119,3,65,-112,17,62,-12,13,-23,92,38,-96,-109,-65,-25,25,-77,-40,-8,-95,55,108,-15,59,8,-11,-21,9,-37,60,-61,43,53,-57,64,-29,-43,-20,-2,127,127,40,-27,-50,-85,-22,-3,-15,18,10,-28,-53,-102,-42,43,-58,-6,63,,130,-75,-20,19,-64,40,-49,1,83,-10,-125,-88,63,-1,-34,5,-108,46,60,-71,-41,-16,0,27,,-104,-86,-25,-62,43,8,69,30,-43,8,70,66,69,-55,125,-10,40,195,77,-62,40,15,-2,-51,-147,180,-73,-17,-33,-46,25,-32,176,-47,-57,-130,-81,11,9,-10,211,-63,68,-63,,29,128,147,-149,-93,-5,25,140,-28,8,80,53,12,53,27,30,-60,32,93,5,-30,35,-40,0,,15,-3,43,109,36,-12,-65,122,-181,47,-106,-48,-77,25,-21,41,-5,-65,-170,-55,60,40,,-119,99,-66,67,-81,10,45,31,-146,,-28,-38,-89,25,12,43,215,3,22,-25,-5,7,-122,-25,38,-53,-35,68,-43,101,-7,19,-8,3,-38,20,120,100,45,60,-91,-10,106,-15,17,-129,,27,58,100,-34,16,-38,-87,-32,-153,-28,-32,-90,-35,-110,2,188,10,-58,-134,-33,60,90,10,-66,,181,-118,-66,-73,27,-155,69,-84,45,-78,40,83,-40,-22,-11,-57,5,17,-42,-19,39,-20,125,80,-55,17,-2,52,0,58,-15,-65,-100,30,-2,45,9,-1,-21,-7,-89,13,24,-16,15,-13,8,-47,-188,-2,32,15,-170,-147,22,5,-162,-156,175,-97,-67,-103,-87,37,52,-179,27,-50,170,,75,18,-53,164,56,100,-10,-165,19,41,10,-107,80,62,-11,-54,-130,140,-100,-20,10,107,87,-64,5,,-15,0,23,-6,3,-72,-78,0,-70,25,-3,152,73,-27,50,-36,-38,-91,-42,9,-66,21,75,48,-48,-30,-12,60,20,-4,-68,4,-97,5,-103,16,-7,-61,-29,-100,-56,-45,90,,-83,-67,-75,-184,-73,-103,105,-65,-55,10,65,27,173,288,-28,60,7,28,152,-112,-110,-7,-56,-57,,39,136,115,-138,-142,-29,38,-42,26,102,-60,-155,-22,204,13,-25,-53,-12,44,-164,-10,-74,6,63,83,-82,-49,-29,2,-8,-62,-83,,-80,158,27,27,1,163,150,-113,-45,35,42,112,-74,30,155,98,-86,-57,117,-30,76,,17,112,-5,48,,22,68,-115,60,-21,-69,10,55,-187,,-103,48,32,-72,-33,65,-99,-11,-15,-20,45,-2,162,-83,58,-165,48,-193,50,23,-3,68,-88,15,,-69,-51,62,23,-30,-35,28,120,172,-38,-32,-43,55,8,-5,-157,-16,-61,-171,-28,48,25,-87,69,53,-55,62,-50,-112,10,105,45,-84,117,87,-110,-20,51,-37,6,-73,-30,109,62,-51,-12,32,-19,-16,-56,34,5,-23,40,38,-85,-106,-23,-9,-1,60,57,17,23,47,-102,-33,-142,104,,-20,64,-76,-15,-37,-10,-207,-6,-83,-87,51,128,96,51,-22,-26,-56,215,-27,-10,24,36,-120,7,91,-110,,-60,108,-25,17,23,-56,-70,16,26,123,30,100,-105,38,57,-15,-9,4,-8,78,-35,-27,-93,-6,-34,83,55,-56,68,94,59,27,-20,23,70,-60,-35,-13,71,14,62,-67,,-66,109,8,65,-41,,81,31,-19,-17,-26,79,-72,-95,69,76,53,-12,-42,94,-167,138,18,21,,-190,-115,-75,103,-48,8,27,-65,-68,-107,-51,49,43,42,177,21,-12,86,-5,-45,21,59,-110,34,,-149,4,-119,-32,-171,73,-26,,-59,30,12,98,-3,23,-38,-1,-52,86,65,27,23,75,14,93,41,-23,-57,-44,-79,0,,105,50,-65,68,,-92,-51,55,-70,41,-53,60,15,34,-32,-75,-27,17,,-70,-22,-44,-133,-22,58,28,-40,38,39,-27,-32,-21,59,61,85,-24,-13,30,,-13,-33,-16,48,-38,-38,-60,-36,61,38,-16,26,7,-18,-7,-74,11,43,38,18,-43,47,27,-24,-8,15,-32,4,8,157,-49,-8,-1,1,-40,35,20,17,-11,1,24,42,41,-7,16,-2,-6,60,5,47,-27,56,24,19,12,-1,-142,52,21,-18,-114,84,9,35,-14,-20,21,-44,32,,41,-18,55,-30,-3,-17,-31,19,11,6,76,19,4,26,47,86,5,109,5,69,-57,218,68,-40,62,-7,-32,,-62,142,117,18,62,-45,156,37,-11,3,100,15,-143,88,9,-119,-65,155,-100,-47,131,-44,-283,-28,-76,-43,82,-7,132,-82,12,-100,-6,29,-103,23,21,69,58,121,-8,,149,17,18,-63,-12,-41,-52,57,36,-145,-97,182,20,13,17,-10,60,-62,-15,152,8,-53,49,-14,-47,-74,26,30,-20,,-63,1,-18,-64,-43,45,36,-21,55,69,-17,-17,62,8,-93,80,-35,206,119,,-36,-29,-62,2,0,90,-130,3,25,-111,-182,-45,,113,2,132,-5,26,22,55,-86,45,56,96,9,58,37,-14,29,-145,88,,20,44,22,51,,-120,70,35,-25,8,-28,44,-49,40,-41,44,100,,-50,39,71,87,31,49,57,25,-34,-43,75,-25,-101,-70,-9,-82,-38,54,-104,,-184,36,-32,-61,-4,-133,79,-8,-61,18,65,183,46,-29,-13,31,91,-72,-236,-139,-58,24,22,-10,88,-41,35,-66,-3,117,-23,-108,59,-121,-97,7,55,157,-6,0,-8,35,8,-15,-141,176,47,156,-56,-9,-2,96,103,-83,40,80,-210,104,11,50,-3,71,99,-21,111,41,22,-69,30,,24,-50,134,-91,-21,-94,55,264,25,-170,71,152,7,-6,139,25,-42,-58,-96,38,-75,180,-147,-148,37,97,20,72,,-203,-189,-20,20,-3,-85,-252,-34,-59,-26,143,-32,112,20,88,74,-47,-58,-77,-45,35,5,-4,89,-90,-12,-40,54,-82,-42,-67,-19,50,-77,-90,-27,4,14,24,3,,-33,-8,53,106,-33,51,-12,40,125,-44,-147,173,111,160,157,88,-2,29,10,45,-22,47,83,-120,112,-114,-30,11,45,,83,-39,62,-39,28,-3,189,8,29,-20,4,32,37,-69,-170,16,-22,-87,15,29,,33,110,-39,44,113,-16,42,1,-75,33,107,,129,-10,82,-43,-48,70,64,96,16,-1,21,-16,60,105,58,2,-40,15,98,,-23,-20,81,56,,60,183,160,-52,145,134,39,-79,-23,-204,-209,,191,108,151,-243,-3,77,93,-258,103,-33,198,-45,43,81,121,117,153,60,-80,,215,-22,-102,-253,18,215,-144,-148,-34,105,-294,-194,58,178,43,-76,-395,8,-65,50,112,27,231,-93,215,17,-151,-252,5,59,120,117,164,-271,-153,234,36,-85,-3,36,-198,-258,-117,219,51,-141,-194,-36,-10,183,68,-205,31,-7,-24,187,25,9,-99,-119,-179,199,-159,-12,123,0,132,-117,170,28,227,7,227,-39,,29,22,6,-20,19,-25,-69,88,-205,-27,130,-16,79,27,-58,-93,-33,32,2,76,-204,36,34,140,,123,148,-5,-11,85,-100,24,-19,163,26,-178,-202,116,-149,72,-174,3,-48,9,90,-30,5,-17,228,-56,-16,-107,-70,222,-40,-104,-63,88,-100,-70,-208,30,-26,-18,4,106,-91,-24,-157,,-26,149,-29,126,-23,45,-229,137,12,-41,66,3,54,28,45,29,-135,120,-114,-149,1,-38,32,113,,-56,11,82,76,-38,29,148,110,-20,127,-35,-46,-3,25,-22,62,60,-5,102,22,25,-113,,76,-72,64,36,-66,86,-10,123,100,,152,-17,125,224,-72,150,48,36,-176,-98,-51,101,4,207,-71,15,92,-219,-138,68,43,133,-53,-159,63,-60,-102,-224,41,-124,-49,49,45,136,-100,-137,,-2,49,-22,20,38,-131,186,33,-16,0,-58,34,-21,45,-243,-37,12,126,-48,257,-23,-114,170,-1,,143,-26,38,45,100,-43,-82,-26,145,-84,133,-53,-6,28,-145,18,130,-24,-48,-218,23,-285,-3,-25,-27,95,64,72,-99,-56,40,14,-19,56,84,-66,88,-124,124,122,113,32,-93,47,-34,-77,7,50,25,-163,-49,90,48,-128,-84,-8,-93,-85,-120,-162,33,-19,-15,-121,42,0,24,-107,22,,4,-111,36,-37,90,111,48,-159,-81,-117,51,157,-13,60,-35,9,-22,-38,41,31,-95,-77,-150,-222,,-138,13,-165,-58,203,190,-199,31,-52,-10,-159,-61,168,-58,42,-40,23,109,46,102,33,80,-11,-49,115,-19,78,149,77,-60,8,-20,-127,-16,89,-26,-31,80,21,-60,-166,172,267,124,,17,-26,-6,12,-164,-22,30,-175,-34,6,5,51,-180,-129,-42,-69,-38,-19,76,-138,29,68,73,-129,,-110,43,-48,193,-124,-66,140,85,-20,19,144,-89,70,-55,-92,-59,125,-35,-210,-70,-25,0,47,,-113,17,-200,24,-43,18,-27,76,,-59,66,-18,118,-31,14,93,5,-52,164,40,186,-66,65,-91,68,-75,-97,-142,-7,-69,,-18,-82,35,-73,,216,184,-22,131,-52,0,-2,-31,103,,-87,-6,-4,45,179,43,-11,-44,-97,-45,132,-39,26,-181,-164,-18,-39,6,43,-16,-95,58,-47,49,,44,-22,97,-74,-39,130,-66,20,38,-39,-130,-3,7,-110,54,169,-19,92,15,-4,-104,24,-116,60,43,27,-141,92,-55,-4,170,-62,7,-97,-2,62,41,21,-19,206,46,133,-94,16,22,37,21,114,209,66,111,49,39,103,-4,48,16,194,69,-75,-17,1,58,-123,106,-52,-131,41,-153,,259,-93,-46,131,-31,-178,-23,-160,1,14,-42,93,-14,7,-83,-2,61,-154,-102,-14,47,-78,-51,383,-81,,-68,34,137,-93,11,-84,57,-40,-161,68,106,118,91,-94,-85,67,153,18,40,26,70,66,251,4,-25,12,-201,64,-50,46,51,-59,-132,160,-87,48,-45,0,84,-54,128,-18,26,,-124,-116,-47,-108,-25,117,20,119,-103,-10,55,66,76,42,-11,-47,-88,-120,-30,145,12,-34,-67,-60,,-164,20,-10,-7,55,128,-59,85,68,-118,35,27,104,92,57,59,7,-3,-77,-44,131,-41,10,53,-96,-78,-63,19,34,27,21,161,,170,53,112,12,201,101,-6,-42,-54,-64,-64,-12,103,8,-17,-108,-80,208,-18,-26,-52,,-2,-2,55,-35,,150,-238,-55,-138,80,15,-66,105,138,,28,115,-5,44,13,75,-172,28,-105,-6,25,-6,75,-24,-62,93,6,-113,-74,-38,-31,185,-96,-33,,48,-23,47,68,-8,30,-48,-34,-121,-223,35,45,-15,18,-27,31,15,28,58,37,120,16,76,-40,62,-30,-53,16,58,101,-5,-25,-48,-53,-47,110,68,-17,60,78,154,-20,-12,18,-30,11,14,-139,82,15,-7,-83,-32,53,13,-42,61,-130,-9,-21,59,-88,-26,7,-60,73,111,-27,-7,,-31,-67,50,7,118,19,-26,-117,-141,29,64,-22,-32,69,57,62,53,-13,51,-13,35,-32,57,41,98,7,,-54,5,47,82,72,-32,56,30,81,79,-44,76,19,41,-115,-23,-198,-52,126,-55,37,80,-133,-91,166,-97,-52,-96,-123,-77,-94,-1,2,-17,103,119,64,35,-69,117,-22,5,0,-56,112,21,41,5,31,-5,-36,-211,-147,53,10,149,76,14,-53,-10,76,154,47,-19,-48,23,44,0,-105,101,-90,-2,79,-92,60,70,27,-205,216,-4,-6,29,95,62,106,41,2,-21,60,186,59,-193,,-182,-143,-103,-3,-2,174,-67,0,-21,117,-28,35,-46,-75,91,-81,-289,1,0,168,-70,107,-99,-198,-29,-28,-209,-110,12,-59,,59,74,22,-86,,-19,-91,24,-54,28,-167,1,27,-9,88,-33,106,-215,,48,-62,218,69,55,0,23,15,-208,90,-151,-22,-184,53,13,136,-4,90,-95,,-102,-106,209,54,0,79,176,-44,-15,-14,4,85,134,55,38,-125,170,100,-17,-286,208,-358,-35,3,26,145,22,78,-207,-35,-81,53,134,-14,-92,-165,36,16,-35,109,-189,129,152,57,-152,181,-208,-70,117,75,-161,100,-98,7,-77,68,-225,21,-57,130,-146,-19,37,92,-108,233,-36,116,33,,-67,55,-47,34,-127,-16,-102,15,132,63,-215,103,-179,29,141,-93,26,159,8,-128,98,-35,201,65,-32,24,-5,-100,,-128,-12,127,-35,118,30,111,-41,43,-53,-6,-38,80,-189,48,63,-138,5,-4,-63,-137,-74,-53,-40,-246,-49,-139,-323,33,-64,22,-18,-52,155,-214,43,-200,-69,-54,-74,,-337,-58,-106,-2,-144,129,-125,-50,399,-19,-75,93,291,111,187,74,-56,-96,-6,-356,-240,0,-149,85,-360,212,-282,-85,-188,,445,-50,-189,64,-173,-297,-663,7,-550,-159,119,707,-28,-105,-310,240,61,-342,-26,-149,,-627,-213,61,170,12,53,-306,27,361,172,-131,,130,-508,109,-166,8,-185,225,-55,54,123,-79,404,42,137,-354,-249,-49,-44,-88,,27,-109,-196,224,,-99,82,175,477,-64,49,-412,-299,89,-15,135,,-714,-295,112,-182,302,188,169,-55,151,-185,166,78,161,142,161,-332,-237,-119,174,,-198,11,72,26,220,-145,-143,77,-66,-287,45,108,-18,-14,-353,83,-60,31,161,119,-73,-44,610,-149,61,234,-145,-88,-172,-177,152,102,298,101,-89,32,-52,-69,12,196,76,83,-81,-131,-246,156,-192,139,62,-19,-71,195,-3,82,104,114,-36,-44,71,55,95,-75,30,27,87,192,169,93,129,,46,130,-112,204,288,67,-110,-232,-156,-41,291,67,213,-24,-255,178,-153,76,168,-194,1,142,-150,162,35,-81,72,-126,-62,-106,-72,-131,274,-116,-6,115,145,-22,-87,164,-75,20,123,-130,54,-9,-98,104,230,243,-24,45,-203,-105,-182,14,37,42,-51,-206,95,137,-61,9,-86,13,-195,-23,119,-17,-146,101,85,24,,134,45,92,46,-107,-152,65,21,-256,-38,152,24,-336,-101,-57,14,80,-54,-72,48,-22,-5,191,-194,,0,78,275,101,50,-20,230,-15,-244,0,-17,41,184,-80,-69,-27,188,-6,21,135,-40,,-138,114,138,-27,-12,-98,-129,70,-22,94,,-177,-85,217,15,-63,-63,-86,-127,-60,15,-21,49,-51,135,-234,-52,0,-127,-1,-14,,60,-109,158,117,,-58,-100,7,-104,81,153,35,107,32,-80,,130,-83,-73,-94,116,-127,95,38,-233,-85,44,-53,-152,-144,31,29,-73,68,-5,,63,-28,-122,-145,40,-13,-32,-231,38,-265,-34,184,-93,84,-55,-57,-26,75,136,-145,149,104,-49,-233,57,-4,-153,-30,22,63,121,96,104,-93,87,-54,16,26,99,-3,48,68,-19,-70,-132,112,22,-29,-5,103,-181,-125,143,5,-66,-107,-1,-245,-150,241,-28,-97,-196,-102,-169,51,-90,-5,122,-29,-85,49,168,-77,,181,-32,-25,-123,5,-76,163,89,-129,225,57,11,-32,-19,39,24,102,34,-1,113,-17,-134,179,53,,1,-1,-22,-62,-79,159,109,92,-87,-67,33,-54,82,142,65,48,73,-20,123,183,44,-54,-27,119,-34,-169,-88,-115,7,99,-93,33,-7,-97,17,-61,-11,114,-46,-55,-115,114,-79,59,,-137,198,-65,-61,79,93,82,-29,23,-71,-13,98,74,106,22,-43,4,-81,98,20,66,-12,27,21,,-152,44,149,35,-120,-168,118,-104,-76,71,123,-89,163,75,30,-40,70,202,-71,-61,-100,21,,101,-108,-183,60,69,-49,-29,-108,-50,,-158,-59,21,25,7,113,-43,122,-10,-59,76,73,-87,-182,-1,-132,41,-59,-72,10,,-18,-21,102,-71,,98,96,-89,-7,70,23,45,88,154,4,,126,-9,-116,122,-2,-177,68,19,-67,204,82,43,-8,-70,22,-20,-2,43,-146,37,105,-65,109,73,,-116,92,-115,-28,169,62,2,-45,-16,-46,-40,38,-139,-30,148,-117,-36,115,44,89,111,-141,-87,-73,-62,-41,55,10,84,-3,153,32,-10,37,45,-123,22,65,-25,-96,86,90,167,-55,-20,-32,65,106,55,-1,-154,-12,-97,-10,-79,-7,81,-122,-111,61,-34,-58,31,43,-120,83,92,69,148,,-55,-48,-66,72,-35,82,-63,1,-128,54,80,-170,-88,56,20,26,-101,-154,8,-13,44,54,-3,3,,15,-87,-31,63,-98,8,171,14,24,-125,111,4,162,18,-34,107,-35,-19,117,-177,9,119,-98,54,-8,-160,-25,59,56,103,37,167,-102,55,-92,57,-134,-86,32,77,-119,-10,-90,11,,-236,-6,73,-151,-56,-9,-32,35,-6,-128,44,-99,-261,117,78,128,-33,37,-61,-150,-71,33,-38,230,,-34,163,-28,79,-30,-124,145,-73,219,41,8,-89,176,49,11,-195,28,-15,67,-2,52,-118,-23,,-36,-81,-48,31,-18,-121,-16,-135,,-44,71,87,80,-7,-106,97,-109,111,-56,7,-45,-69,-83,41,28,17,143,6,-13,-52,,56,-193,-92,151,,118,-17,-158,-49,5,53,-164,0,-24,,55,54,74,56,42,13,-25,136,10,-26,64,95,-36,-34,53,59,-71,18,-90,32,-89,19,85,18,,-17,-119,23,169,-24,42,64,2,-101,18,-150,26,76,-145,-62,121,-50,-17,176,49,-37,-9,-41,57,75,33,-117,56,74,37,-56,-87,-57,55,2,-43,56,47,-88,14,66,89,38,65,-21,33,11,42,51,-14,-4,-28,-8,-37,44,-33,-29,31,-81,36,-91,-92,-110,-35,2,-15,-84,7,-50,,-18,-98,-127,-22,-1,-27,120,82,-124,82,47,-5,-24,121,11,67,18,-117,-51,-27,65,-71,-46,183,-7,23,,-171,-51,27,-1,26,-107,125,85,-22,23,83,-89,-118,9,-42,204,45,-34,-8,-90,-96,150,-25,33,1,-36,56,11,2,-6,52,-41,10,81,12,82,-67,-15,28,11,-45,70,,25,18,15,94,-7,62,40,14,119,19,-12,-32,-21,53,-52,33,-87,72,-85,10,44,-109,88,31,,-209,20,21,47,-6,32,64,-24,-138,25,-96,83,104,-21,-73,58,28,31,-106,-59,8,-10,4,-67,,-27,-36,16,1,42,19,9,,96,-18,14,-31,29,1,77,-7,5,-36,-35,37,35,29,-2,9,64,53,19,-7,-101,-54,,5,-12,51,105,,-7,-104,-115,44,-40,-16,101,3,-51,12,-80,-18,-115,,-14,-14,-59,10,-113,65,42,63,-112,-7,-85,3,57,102,-146,-14,-110,-42,16,,-86,-131,-38,-7,-144,13,9,58,-159,51,14,-62,-4,-106,-28,-21,48,114,85,-11,5,15,47,59,-55,-28,-44,72,9,39,-119,27,58,138,-79,60,-2,88,-30,-53,-4,-61,27,-28,8,5,-9,176,45,18,42,39,-59,44,-25,-70,95,-61,-168,-43,-33,-60,104,-129,50,-53,-132,82,6,,-65,60,86,-22,164,-45,88,209,-43,-2,31,110,1,-12,23,-84,32,-188,-96,31,14,-86,-97,-25,37,-76,93,,-354,22,-95,98,192,-19,-20,34,62,9,67,106,-12,13,-34,35,-13,-111,-67,-32,132,70,20,147,41,-48,-32,-24,80,42,48,44,13,0,-98,-2,-10,-40,-8,-32,-20,,76,99,-50,40,91,7,76,12,42,66,-26,64,78,-22,45,-60,74,-68,123,44,29,16,-55,-100,13,7,-146,32,-30,,29,-70,262,18,-35,72,-50,15,-28,-27,-72,19,-10,-146,28,94,36,-11,-74,,-79,117,44,30,3,0,40,5,56,-65,41,80,,106,-8,51,-64,-24,-1,76,21,-35,-63,-32,17,-57,134,-6,-27,1,15,,54,66,31,52,,-133,-17,-12,9,40,-2,11,-91,71,-75,-40,94,,40,102,41,-121,97,-7,-20,-74,-37,-143,-7,8,37,50,24,49,110,65,93,,-40,22,-78,-10,11,55,-48,45,57,-38,-47,64,14,-18,-92,-5,-23,72,-47,15,-71,55,-118,-13,-7,16,59,61,10,38,-36,-5,-51,11,22,127,8,30,-45,5,-16,69,15,-17,0,41,-65,29,13,2,17,54,17,-35,5,106,-12,-20,-95,22,-33,-54,7,36,-5,25,22,-10,-37,,-22,-91,10,45,-8,-3,-6,49,-2,4,-45,42,58,100,35,-23,-14,95,-32,-4,-39,15,32,-2,89,42,18,-13,,-24,-1,3,-8,-14,-29,70,-18,-27,-35,-2,-9,-22,-55,-9,19,-52,-36,-14,-57,9,33,-41,16,-71,9,19,-110,-2,-8,34,-100,13,-44,-15,11,-15,3,6,6,,-83,-51,-102,-37,-171,-53,46,91,18,0,47,39,43,-58,26,30,-26,-31,-59,8,-42,-4,-76,-178,67,43,-4,55,-74,,-119,29,106,21,51,-3,-64,-33,61,35,24,-8,-126,-24,-13,5,-7,-122,-18,13,,-42,-98,-60,-12,3,22,13,-11,29,13,73,,-149,105,-92,49,7,-107,25,69,-5,23,16,-65,73,-84,10,-53,9,-101,32,,,-25,49,5,,-217,-127,-60,-101,45,33,17,-2,68,-73,-29,,30,-44,-66,-30,66,108,-31,-122,-17,1,102,80,84,-46,-30,35,-20,148,14,,-45,81,21,-66,80,-31,65,-75,15,-68,20,-125,-37,-166,34,-11,-141,-38,-152,45,-56,-58,43,194,13,-66,45,-71,34,-86,58,-27,19,74,43,-102,67,-185,-91,10,132,-8,141,19,-29,31,83,20,129,59,93,157,-157,-191,-19,60,66,-21,232,138,92,63,18,6,-93,-156,21,128,-188,,-86,-74,-33,-5,-99,144,20,16,-100,13,103,147,-37,94,-15,65,71,174,-1,-58,-72,-70,47,11,25,-37,-110,-3,,5,-176,-90,22,128,15,66,37,-20,23,-37,-37,67,-84,-19,81,22,7,-43,53,-31,9,-8,-83,-54,79,26,67,-44,30,-27,60,-13,43,10,33,-33,-205,-82,-49,1,-22,-31,-56,-59,,186,-18,94,-31,-3,-71,147,10,64,-67,-150,-113,11,-82,36,-40,-52,46,54,-51,62,88,1,-1,,-73,203,30,-34,30,-1,-7,-64,-59,21,-49,7,-23,149,-17,-24,-27,-141,-165,53,-14,,96,2,-4,10,-4,117,-128,-74,-68,52,,-69,4,30,-147,161,12,-24,-76,168,8,37,-83,-86,-31,-137,38,-8,-95,52,80,,-60,-89,38,-86,,-60,-22,-38,-47,-56,41,-161,67,-61,-120,,-118,-4,31,110,-63,97,-81,90,-167,183,32,177,4,-112,-53,58,0,-25,12,,-170,27,16,10,-186,-117,-108,5,-70,59,22,111,93,74,30,-31,11,70,120,-102,-158,-66,390,24,-112,-185,-106,32,-12,119,31,109,-9,-177,75,-130,13,-80,23,135,4,-21,-75,69,59,120,-21,-37,52,102,119,-57,27,44,41,-123,-68,11,-47,-30,45,26,-28,-83,42,74,130,-7,-95,-69,179,71,-21,-29,,-114,-135,24,102,-71,114,-18,-79,-125,-119,-93,55,-110,210,403,-20,14,118,-1161,-422,77,216,-268,39,,-260,-100,5,12,48,251,-57,152,-138,85,-156,56,37,-125,39,3,-39,57,119,-61,117,9,-192,-74,-27,-32,-12,-38,-26,-60,145,-7,135,-86,72,46,57,-59,-9,-79,-5,45,144,26,,130,-90,-38,-44,56,-129,20,11,-125,-39,-77,4,114,-133,19,27,-9,-5,24,-175,-94,-1,-98,-213,,-216,-23,6,-12,-3,124,-31,-23,-46,-6,-40,70,-61,-18,57,6,97,139,92,-143,-31,102,49,,-54,-47,28,0,-123,147,-50,34,,4,-51,94,-24,115,89,23,-2,-102,-30,16,87,8,21,-317,89,-59,-61,-10,-47,-49,,9,-39,15,100,,-81,43,116,-101,-147,-2,-47,93,-13,,190,-79,10,,166,46,89,-41,-48,-53,107,58,-102,-37,-54,36,57,-27,-14,8,-45,0,12,-49,,37,-9,92,-49,-26,-46,-109,-51,-18,-6,-34,-57,14,-8,76,-66,54,148,2,-7,114,-3,50,-35,92,-80,-92,78,48,-58,-42,51,-2,-88,20,66,16,22,9,56,182,20,41,-47,0,53,2,51,49,-21,4,-5,-6,40,-8,-3,0,-54,-5,37,-5,32,65,9,-12,-22,-49,19,-159,,63,47,-11,-9,32,-16,40,-2,-202,-79,81,69,-40,10,-35,-115,39,-8,68,5,59,145,48,11,-44,,-17,33,-87,4,-33,38,32,158,-21,-32,10,-60,-8,60,18,2,17,59,72,10,30,-92,-108,-15,-53,29,-19,10,-13,-113,-2,28,-41,56,-69,-47,15,71,54,10,-3,-46,84,,41,60,21,117,-38,107,-62,180,180,-93,32,47,12,-45,-74,-35,-21,34,-33,-134,-17,17,-136,-69,,152,-5,-36,130,-19,-103,1,-2,-2,22,-77,128,-71,-73,87,86,-24,-189,-1,78,7,-44,25,,-32,27,37,32,25,19,-9,59,,45,-3,-102,205,70,-1,-40,-15,-68,50,-65,-4,-40,42,75,-124,82,-42,52,-36,7,,-10,34,47,79,,67,-74,17,23,4,-48,-5,30,146,,85,50,65,-32,87,24,230,66,-85,-137,82,66,57,-121,-104,-71,-70,34,-121,26,72,63,106,-6,,-34,-75,-7,40,-27,-46,-112,-39,14,87,30,2,-64,39,35,89,-41,5,-32,113,-19,51,34,53,85,-75,-51,-81,-2,5,36,8,-85,97,48,25,33,50,11,77,-31,-74,-34,-160,-80,22,-34,-14,-142,-34,-140,-1,-41,-34,32,-46,46,-80,62,46,-83,-34,29,-31,-58,27,-104,43,-63,,-63,38,-7,69,-44,46,69,-2,-21,-20,30,-38,-45,-50,-36,-75,41,38,7,15,-30,-104,-44,102,-64,41,,54,34,-60,64,-25,-3,-22,20,-75,-111,-63,127,-9,30,15,-31,-1,22,-15,-5,-85,-14,-74,10,-77,-10,-101,-12,-19,-53,37,13,30,95,50,-80,28,33,-5,120,-9,-33,,-131,70,30,1,92,-11,14,75,-20,62,12,4,75,-170,61,34,20,-78,-51,-21,-48,9,21,87,,38,67,-13,-39,14,42,-73,-76,-16,-71,8,-84,-71,-1,-19,-76,48,195,-9,55,56,68,-28,-138,,53,-20,-262,90,3,-33,-33,,28,5,-80,37,23,-17,-30,-23,,58,-28,-191,-34,134,-23,-65,36,38,25,-19,31,,,-5,-49,72,64,,-165,35,107,17,-33,40,4,68,,-75,101,78,-42,,57,119,-47,149,-18,-12,-84,73,-41,-26,-121,9,10,-33,-71,25,-22,-72,64,,179,,24,7,-8,193,66,-44,-52,-36,-45,7,-41,-97,85,6,129,51,-3,-55,40,-72,-118,146,-16,12,-23,-104,-56,112,-109,146,-109,-62,38,0,52,-32,18,19,-56,-13,-33,0,-20,-40,4,-46,29,-6,106,61,-59,107,-46,-41,-38,-1,23,-75,-40,-43,-75,-80,-5,29,-73,-8,34,,-32,-37,-12,1,1,54,31,7,27,-56,40,-31,-15,-77,-33,-21,78,75,3,25,-7,-24,-23,30,-60,-45,-31,,-62,-3,-40,44,42,4,-30,-115,30,56,6,-25,-26,49,-27,-84,-151,-88,72,-75,-13,33,-16,9,-20,-53,-15,-3,1,44,40,-14,15,-11,108,11,-29,56,-40,-51,-31,,-80,104,147,-38,69,-13,-26,28,105,-39,70,-15,3,8,-61,47,-112,-20,-31,-7,-63,71,77,-81,13,-116,9,167,301,,54,117,-1,51,79,-35,-62,-76,23,27,45,-33,67,11,-44,-36,2,-43,-39,,65,-15,39,22,64,-39,-8,-3,-86,56,-35,31,,58,-3,66,93,70,-38,30,21,-2,-43,216,-19,-214,-38,-44,2,-119,38,,52,83,50,129,,-141,-37,72,-36,-17,-41,-9,-77,35,12,46,-47,,18,89,-32,-33,-17,-58,16,94,89,-189,23,-29,-65,-27,11,26,33,73,-12,,-22,-83,-57,89,-43,81,-83,-45,-98,13,36,9,103,71,90,-167,-46,-346,-135,-128,-261,-257,-98,81,-251,292,-21,377,220,32,62,-60,-14,-152,70,45,51,64,27,33,99,-94,-90,70,-36,-201,66,37,-34,86,17,-9,173,-93,-79,19,-102,2,87,-106,-31,-74,-31,-65,82,44,2,-30,-49,,159,-106,94,-5,152,59,69,8,95,-9,42,22,-123,-108,16,43,-60,-96,-68,85,84,-99,-26,-69,-58,90,105,-5,,13,90,21,21,40,-40,-68,40,35,-71,108,78,-7,30,32,96,63,24,61,98,-80,6,82,6,-104,39,-5,-30,35,26,-3,123,-37,-1,-92,-20,58,50,43,112,34,41,-101,-52,-33,,-191,-28,-165,-58,88,-10,114,-25,-5,-156,-68,24,-11,-33,159,-18,74,-20,27,44,-27,-31,30,59,,-35,55,-106,14,67,-47,192,-53,-51,-18,46,-70,-107,43,-29,146,-29,95,46,-25,97,,-92,34,21,50,52,-74,69,6,50,28,,,-40,54,-44,148,-11,-132,5,34,-99,-96,127,110,69,106,-112,-143,-5,161,,,-63,65,93,57,,-111,69,-27,-42,32,-61,115,-6,59,-91,,28,,94,-36,-17,61,-41,39,-4,-51,-28,8,13,49,24,58,54,-28,33,,55,-62,108,69,52,15,14,-1,-158,-9,24,16,21,-182,-7,74,15,81,-55,-59,26,-4,50,-66,-16,-61,-72,-1,72,-1,-64,66,30,0,82,-58,-92,-18,-5,7,1,48,-9,45,151,-22,-19,-85,-6,45,18,9,39,-118,75,-40,40,-33,120,153,-4,-68,-48,63,31,57,-15,13,-24,-11,-24,6,43,16,,-20,9,-78,76,4,-33,-22,41,-51,2,-43,37,-194,-99,98,6,56,-70,-8,-4,-50,-39,-26,15,,-3,0,-25,75,44,-39,7,-5,-64,-95,-75,80,55,-1,80,55,0,82,-53,-27,19,7,17,-56,-21,-12,26,-33,24,-8,-110,10,-76,-48,92,-1,7,-11,57,-11,-11,43,35,37,,-70,-31,94,-8,-3,4,-11,-52,-30,-99,7,6,76,-64,31,-175,-98,31,102,30,38,-71,65,-4,,-25,40,39,72,-30,81,14,-9,-71,32,-1,-33,65,-118,-7,-67,47,-165,-3,72,-12,-81,,-58,32,-15,59,1,-15,-62,-24,-56,,-10,-31,-39,56,-3,-71,18,-16,0,-48,74,-29,-8,-11,111,-56,-47,31,92,65,,28,-6,43,25,,-31,75,29,-34,44,-16,55,76,26,-54,,-82,37,17,-80,-115,48,21,-131,32,22,66,60,37,-59,-10,19,-12,96,-35,-85,23,46,39,-39,,12,-42,-195,47,12,-101,47,-39,-112,-99,-14,59,-52,-45,-19,21,31,63,10,32,57,-46,-29,10,-102,34,24,3,-38,2,-15,-19,-22,-28,1,-2,41,-20,14,-47,-10,46,-13,-194,-150,-81,-70,-104,122,-42,-13,-23,-153,10,-9,-22,4,-119,44,28,198,-72,108,-12,79,-27,-5,43,31,,11,-152,85,-61,48,50,-37,-46,-181,-160,-159,46,284,-140,,76,3,-40,33,32,-105,-49,11,-114,,-116,-25,87,42,-129,-2,14,-92,30,132,33,-33,-21,51,23,-6,-9,99,57,95,-60,-86,9,-80,37,-9,156,-15,-98,-42,0,-60,-60,-160,-58,92,-42,1,-25,-60,-67,-4,-106,41,,-33,-76,16,111,101,-175,38,-92,-53,-16,2,-75,-61,-348,-218,50,79,216,86,138,174,-171,-142,-17,,52,-72,248,-136,219,-120,-75,56,4,3,174,146,-41,-1,-58,-55,7,-284,96,184,132,-199,281,,51,162,-1,-77,90,-117,95,160,,62,-61,-45,-34,290,40,-123,33,-8,41,76,-26,90,33,-202,-38,12,-34,-74,-40,22,,-22,2,26,17,,-107,93,-161,162,142,-51,-30,57,12,,70,105,-3,8,-4,-47,51,-4,9,-6,-49,-16,-48,-187,-64,4,80,64,-96,75,21,-126,-13,-6,,99,-47,-48,-68,88,57,-59,-92,54,52,-191,-20,85,121,117,-14,-114,79,30,116,-62,37,90,-97,53,63,-28,55,1,34,95,-29,-13,-34,-64,51,62,60,-114,-58,60,23,6,-29,38,-59,88,-15,111,-87,-20,72,33,70,-17,-15,-4,-113,-37,62,-32,-19,-51,40,-39,-2,-55,-43,17,,61,-7,140,-68,-28,-22,33,96,32,-90,122,85,66,53,,-83,5,13,-49,23,28,-115,-20,92,-14,,15,11,117,-1,64,92,104,16,-35,-24,-156,-49,5,-26,48,54,-60,0,-13,-107,-38,-3,66,-6,-40,-14,11,-32,-3,54,4,4,-15,-1,-4,-18,-81,-64,22,22,112,-59,-73,,-11,-85,-13,-9,53,-52,11,-78,-18,11,-10,-4,-90,-42,-39,-50,-35,90,-9,-84,-61,88,14,84,,33,16,-90,-75,59,8,-56,-5,8,82,-65,-30,-27,38,6,-22,-8,48,199,17,-95,5,-22,,-11,215,-52,-8,7,75,35,-72,,133,12,100,-23,-50,42,-49,-43,-1,-7,-43,11,-1,-22,240,-58,-77,119,-91,8,52,,-11,88,-54,0,,-111,9,51,48,26,-46,10,-18,34,,-89,9,21,-10,51,-67,93,-54,20,-39,2,50,-6,-100,-95,57,40,-9,8,3,-25,-44,18,10,,55,-21,25,29,3,12,-23,-38,20,49,11,45,39,56,-45,-21,13,-50,-7,-6,-23,0,-43,-67,45,-18,1,3,3,-92,31,59,34,-36,22,21,-132,-9,-78,9,-29,6,22,-68,-56,93,0,60,-20,79,-39,-26,19,43,25,-40,-32,2,23,35,25,70,24,21,5,2,29,-22,29,,40,-72,25,-1,57,-10,-14,15,-59,6,-8,118,-79,-79,4,10,,-28,-26,39,-7,-52,28,-13,10,29,87,,41,22,-42,55,78,66,0,-28,50,-35,-51,-11,5,9,-41,-20,-11,-25,12,-68,26,-33,-70,23,23,25,10,52,21,14,43,78,43,50,17,103,-12,50,-34,-15,-54,,-29,39,23,-29,-53,-18,-38,54,59,62,-38,35,80,26,46,25,-38,90,-34,5,-117,-11,-157,-7,-27,13,-13,-27,17,,13,-83,8,14,-42,-11,-25,20,14,3,24,7,-156,103,-17,73,-118,88,-80,,-172,-24,-3,-77,35,3,-28,-53,-70,38,-7,131,,21,-60,38,35,42,-10,39,-25,5,-48,-86,61,28,-22,-166,57,-58,-1,,-6,51,-50,-2,,-145,43,111,-31,-133,-63,-88,-57,30,26,32,-65,,150,-7,23,149,-17,-46,2,18,-6,-58,98,29,-81,-39,-11,38,21,84,81,,5,-43,72,4,-7,12,44,-68,-37,120,15,138,30,24,-9,39,22,-25,-28,71,-1,-18,4,-77,17,35,-59,74,-21,-46,27,51,139,-186,-198,40,2,169,111,125,47,24,12,20,106,-9,-120,53,22,64,2,-53,-71,10,1,85,-25,-57,31,-124,86,23,-11,-35,100,14,76,-21,85,,-6,-43,27,-21,81,-29,50,14,-52,31,-55,48,33,5,6,-84,-45,,-6,26,125,10,128,-34,2,6,-105,33,,-18,-63,10,-16,-66,-66,-41,30,-13,26,59,24,44,-42,-95,-36,-54,-65,-54,39,31,19,51,74,10,-30,95,63,-40,33,-44,-25,-46,-33,111,-37,-6,-17,48,-5,,-119,56,-7,102,7,-17,15,20,-21,62,45,7,-109,-68,21,13,-68,-99,53,29,10,31,-51,58,-5,-35,-51,-78,31,,-22,75,29,0,-5,-29,-19,-49,-25,33,-51,-37,-96,-6,9,-106,7,56,58,-8,,-26,83,-58,23,-27,-75,2,21,-4,78,54,,11,-10,-43,148,21,-31,-3,-1,20,88,-77,29,49,-39,-1,-10,78,28,20,,-13,5,-17,-33,,34,46,-30,-23,-44,-17,53,-30,9,-58,-3,,88,-42,59,101,109,83,5,8,-66,-75,47,-42,-108,55,61,-3,-10,-22,12,,-104,-4,-90,54,9,22,21,-48,-49,-62,-63,40,-50,78,-3,65,-61,-49,-110,62,43,-22,38,-58,82,-2,-10,-20,-60,-102,-7,147,-90,-39,33,5,199,4,17,-1,104,6,-29,16,-14,-30,-7,-10,23,35,-40,-20,87,41,-86,41,21,15,13,26,-123,-8,-40,-148,88,-19,40,-34,32,,-2,-6,7,38,-25,30,-46,6,-81,-13,42,3,-55,77,12,12,-38,-172,,21,-57,-32,56,7,32,4,21,84,,5,3,-10,47,12,-39,1,114,-12,-39,-26,-46,4,-65,31,-40,7,-23,175,7,-36,22,6,-6,42,28,-10,-5,-14,59,8,-21,65,31,5,-13,13,-49,5,-45,-5,-23,-24,33,-15,,21,7,-17,-8,-30,-15,-28,-104,25,-1,-45,-73,-36,33,7,-45,55,-71,38,-17,64,-68,-2,18,,26,-100,102,73,-24,71,14,-10,-6,-24,-34,-12,70,23"},"JPY":{"sid":"DEXJPUS","k":100,"n":7260,"last":"2026-10-30","d":"11215,-100,163,-109,-17,-269,324,139,-21,94,,-43,-31,30,90,-85,23,159,74,-36,-91,-297,34,-43,111,124,4,3,25,-38,,376,95,79,118,-65,110,45,-264,-56,109,68,121,182,-93,-84,-33,-156,-27,-58,-129,4,41,-62,-48,109,-12,-67,70,225,-52,32,-167,176,41,140,-126,60,-49,24,-95,-10,-115,15,-118,13,19,158,8,-58,-13,110,-110,13,17,71,80,-3,-14,1,-10,28,-10,81,97,63,-3,121,-30,-25,-33,-69,-85,-76,-39,,-13,39,36,49,-68,-143,-68,-35,-71,226,23,-60,-56,101,180,-60,37,-22,-55,2,-49,13,5,14,,81,25,38,-20,-15,-84,-80,-9,49,-180,-24,-69,-98,-76,15,-43,-6,-98,-49,-19,59,-90,-22,62,77,-93,66,66,-10,-83,-65,-188,-116,30,29,-20,-35,65,-15,-55,-183,5,-11,85,,83,7,-299,100,-281,-86,-155,132,184,-52,-157,-82,15,-4,193,7,66,2,-174,127,61,58,13,-29,,-110,117,-49,-153,-50,57,66,-20,-15,-46,-52,-59,89,-84,-10,-4,85,-52,185,-56,-91,-28,,76,-46,95,-36,38,28,-126,-67,42,,-243,24,-63,57,32,-14,55,-71,58,-40,-17,86,21,7,-50,23,-55,-66,-53,20,122,-85,9,-14,28,-17,-46,139,68,142,-2,11,81,-33,33,-23,,-37,-10,6,-49,56,35,-2,-94,224,18,34,73,-48,-38,121,84,-48,-37,25,-34,10,63,89,61,,16,7,-16,3,-181,71,-278,27,43,-6,-154,69,-44,-18,-95,-47,73,5,47,40,41,-14,68,-20,-12,-123,-30,-7,-280,209,51,-33,-22,55,104,58,-109,-10,-64,-93,40,35,51,43,-22,5,75,-10,162,91,-26,51,-97,36,50,58,-28,-86,27,74,27,-22,-83,-181,13,-30,86,-10,-30,,-74,130,100,-59,-71,-180,-14,36,92,-13,14,10,-37,-30,-48,-32,8,-110,19,107,-13,-2,-42,105,-50,,127,46,44,-71,-17,143,-9,-39,65,-23,-10,-31,119,-16,38,-2,-13,48,5,-21,-70,-41,18,45,-35,-65,71,-2,84,-52,-45,-7,-5,10,-19,-132,-13,28,-72,-25,27,19,-88,,10,20,-98,93,-6,96,18,14,8,-46,15,-25,-27,144,-31,0,-19,15,31,91,-15,63,1,-49,,-91,-27,-5,9,63,-15,-37,77,49,-59,-37,-3,31,39,24,16,-67,-9,-81,-24,-4,27,-16,42,-13,45,60,33,-22,93,50,-13,,122,-68,-47,105,-35,22,-8,-7,-58,28,59,-52,73,90,2,13,-49,49,3,-40,57,,87,58,42,-27,,38,-47,121,72,-22,67,-38,130,20,,-48,107,-57,-55,-61,33,123,-127,25,-49,-92,64,-106,32,-66,-11,133,9,127,5,-32,-65,-98,-21,,11,88,8,-38,48,-43,108,5,173,2,-21,99,-35,20,92,-43,77,126,62,-28,16,89,22,-120,17,18,-37,83,209,121,-134,-3,-105,-30,82,-37,34,-131,64,49,-97,-132,-48,65,-84,40,13,92,63,-19,-165,-20,-53,-14,29,32,59,46,-21,62,14,33,-91,99,-76,-12,-240,-24,60,,-65,17,-139,25,37,77,8,-44,69,142,-28,15,-47,155,23,-23,33,110,-15,-23,-20,43,38,10,-51,26,,129,8,-42,10,-147,4,65,69,-55,-54,-74,-76,134,-19,-36,19,-54,189,-18,-13,-115,-26,39,-2,-63,-17,-106,49,-86,-168,19,26,35,-81,0,-7,29,-1,36,-69,-39,-65,,74,127,19,-88,101,,-155,-72,-143,21,-27,-2,-141,84,79,26,11,180,-46,104,51,-11,-4,-26,,-17,23,114,-64,1,33,-22,13,-3,130,38,3,-14,27,-91,-1,47,-67,-19,4,-57,-10,-107,27,,120,22,73,27,60,-65,57,,125,-24,-3,-88,53,-60,68,38,12,43,83,61,-4,29,-20,92,30,43,23,35,93,42,,89,68,-17,-26,,98,-26,-74,-9,160,9,-1,-44,-34,-69,63,36,51,,134,27,39,-17,-104,8,-67,122,-29,-106,119,-18,-23,128,-115,-80,41,-97,50,,69,31,51,-42,4,46,28,-67,-61,-115,11,-146,-378,114,-13,59,76,-49,16,217,103,-70,26,102,58,-68,-17,0,9,62,8,-75,-35,-57,-46,-24,-28,80,54,-14,-76,-49,-86,66,-60,-1,-13,-136,-22,-5,32,-100,57,-81,6,53,84,-28,-47,-20,97,-74,27,-216,-39,-181,33,68,-13,,-33,-3,-127,105,-44,26,45,-6,15,11,96,8,-52,-87,12,19,-52,-71,-210,5,62,-207,-45,47,19,9,-36,,42,-153,-81,9,-132,11,-67,-35,53,78,-129,49,113,-102,54,191,109,3,-13,-67,-12,28,188,-77,67,-89,-130,23,-255,75,23,102,31,-30,131,-32,1,-123,0,3,42,,-164,89,33,14,37,93,86,4,82,67,47,-115,-1,168,77,-55,-66,-13,27,-112,99,48,-17,-2,142,-18,-71,9,40,,62,-36,50,72,-81,38,-92,60,-63,-50,-109,36,-13,-62,30,-62,38,-96,-154,,-15,71,17,-8,78,50,87,40,-8,-52,-43,32,,51,189,-19,42,15,-130,-33,30,-20,-71,-204,57,-1,-15,-26,-34,25,-50,,-15,-20,-154,37,,111,-1,-79,112,-83,22,-13,-41,-107,-5,11,-14,,69,-42,-32,-3,84,3,-54,109,74,51,-72,3,15,47,85,-6,11,-81,-8,,-148,-28,-47,60,-100,-64,5,39,64,-29,3,-64,-10,-75,8,52,11,113,28,-14,45,123,-8,137,-73,-66,10,-35,40,-211,18,92,38,50,36,-50,64,-97,89,-17,-10,-16,-74,42,83,-87,65,-50,42,9,-20,-107,-51,54,-46,-70,-143,14,55,-26,-38,-40,-22,7,57,19,46,2,-36,,23,161,-28,105,-98,75,-67,-99,122,-72,-43,1,-3,-20,33,41,20,34,-35,-84,41,-42,178,40,15,-42,-82,-39,,-16,50,-73,-16,11,-26,-30,100,63,-47,-5,99,-57,48,-43,60,36,77,-13,-42,47,-52,38,-142,11,-66,17,54,7,10,19,-17,-103,-65,0,-15,6,25,-30,-73,,-56,-11,73,29,-58,-15,80,-6,31,3,-114,-28,-72,-128,-204,-30,5,16,-6,-73,36,-82,-2,31,-9,-100,-26,-21,-77,,72,27,-20,21,65,-53,-74,64,-36,-85,-5,-15,9,183,110,-160,31,24,-86,-131,,57,-22,10,55,-87,95,-7,-12,52,33,-61,,42,8,-79,-65,2,-41,-55,7,110,-17,-50,-21,8,-18,50,2,-54,4,-15,,-11,-25,7,13,,-18,-85,10,-1,-2,37,-6,-23,-19,4,77,,30,-33,-76,13,-6,-59,-4,57,-25,-25,-23,17,-1,5,11,-13,-18,5,18,,20,57,72,174,-61,-11,88,60,-33,-33,134,-2,49,68,70,-92,-16,-15,-7,-34,-153,-77,-158,37,-13,-21,-40,-17,-13,-41,9,-143,-48,85,81,54,-70,90,35,-95,146,157,5,-89,81,-7,112,30,-47,-83,93,37,11,41,-3,-32,-152,108,272,173,-36,-46,104,5,-20,-4,-129,41,-109,57,-45,-51,-93,-59,,27,-17,86,13,-166,16,-3,-41,76,106,-156,56,-52,-98,-8,43,-36,-154,72,13,23,125,-119,36,,64,-86,38,-55,3,113,-24,39,-75,-49,10,172,-42,43,-3,101,69,10,-49,-31,-48,69,24,-148,52,22,-1,36,-47,-3,-57,-36,-37,-2,15,16,75,-65,-22,33,-84,62,-10,95,,-115,-10,47,-36,80,-73,94,-59,22,-10,7,59,-14,33,41,35,-58,-70,25,68,8,13,-19,-171,,35,-1,-18,-46,9,-87,-20,-73,-1,-81,2,4,-58,-5,37,-12,-9,-18,-42,-3,0,134,,-138,0,-18,-117,5,-143,40,22,-48,,-36,3,43,-26,33,-55,12,6,200,19,52,-78,92,-157,34,-8,-27,32,-38,-24,-6,-68,16,106,-108,-43,15,144,-32,92,6,-61,-90,-116,29,-5,,-14,16,79,-46,-18,149,-126,25,30,10,38,12,50,-85,98,97,19,-15,6,-81,-47,115,-22,29,,-154,81,45,-20,-96,12,34,31,-56,76,-71,-64,28,-22,108,-47,-44,47,13,40,-11,77,50,6,90,27,-16,-11,35,71,15,24,-23,-18,-47,47,-94,86,-53,-26,-37,-20,3,-100,-18,36,-5,-1,-133,43,9,-39,-36,52,61,-1,21,94,46,-12,13,-10,38,74,-45,-26,27,22,-7,,9,45,-11,-47,-98,-22,25,63,93,113,-20,-4,-26,-25,59,-90,37,-10,43,17,50,38,64,77,,-7,46,1,9,-41,-82,114,6,18,-70,133,47,-295,51,61,71,0,4,-9,-13,-84,-23,12,92,-22,20,-140,-75,-37,-15,-3,26,91,14,-93,8,52,-45,-5,68,96,-65,-68,-50,,1,39,43,-80,22,94,-58,21,90,-8,24,-21,30,54,24,91,-5,-13,15,88,16,-61,-18,28,,39,15,61,-94,83,85,-24,1,45,-75,-40,103,-67,38,84,27,13,45,99,-63,-47,41,54,,83,5,24,-36,40,-18,19,-46,,89,-40,23,18,96,15,6,-1,11,-66,27,-64,21,-330,-26,-77,23,100,39,-85,-17,,69,55,24,2,,-154,-3,-35,-151,21,-2,-68,35,12,,140,-48,-28,35,-75,-13,119,54,89,39,-67,97,41,69,-1,-93,68,-3,-102,-1,-20,50,-2,52,,42,-34,-151,-13,-90,-15,36,-11,39,100,30,14,6,111,-6,-165,-6,-17,-124,36,98,-51,88,-10,-88,61,57,-39,7,34,-38,15,13,59,35,-5,-14,-5,23,-97,7,-17,-9,-58,-198,-10,-11,-70,-23,-73,20,18,2,-101,-90,-24,-76,-29,23,-28,-14,53,29,87,-14,-27,145,-88,66,,-40,8,17,-77,4,156,9,87,-33,28,89,-21,21,6,14,-24,-26,118,32,12,-12,16,-25,-166,41,,73,-47,-120,-1,18,126,4,88,75,36,-36,-25,-49,31,65,-45,-130,-81,-30,52,-42,73,-106,64,16,13,45,59,35,-57,-25,-27,35,7,75,-18,-5,93,-16,-23,15,28,-14,,-117,69,-43,59,68,25,-35,0,25,30,-42,-31,-53,-31,-2,73,37,31,15,-33,18,18,-33,120,,79,-19,4,28,-56,-62,46,-74,38,59,-7,-12,-51,-101,-23,-56,19,11,94,34,-96,30,18,-45,67,-42,34,6,-39,43,-16,-139,,-68,19,2,15,-74,-22,4,-39,9,6,110,79,13,28,18,23,30,-21,46,-13,64,,3,-17,19,7,,-19,75,-30,-51,-28,96,7,97,-13,,28,-10,78,-10,34,-2,-77,20,56,28,-11,-68,-35,35,-68,1,30,54,40,18,-53,-44,-131,-26,,87,89,31,-20,-34,-209,-34,-80,-71,-81,49,-9,94,80,-64,-55,-63,93,-49,81,-26,51,-4,3,2,-4,-97,92,-19,13,114,-11,-6,67,-5,-21,29,-37,28,57,-88,-69,9,45,-34,5,10,88,9,-15,33,28,28,-17,-20,-7,-9,57,-18,18,-15,52,56,-21,48,-10,5,-6,26,,7,-31,28,34,-38,-23,-41,26,28,16,-2,61,60,58,12,-28,21,8,41,-25,-35,-97,49,38,-107,8,,42,45,7,-115,-6,37,-51,-9,46,-53,23,-91,16,-74,-24,-119,-58,-15,72,-42,64,-92,-39,44,128,-107,-69,47,-26,-102,-316,-22,68,-7,53,86,31,-7,-135,82,29,2,0,38,-106,18,-176,-14,54,27,113,-6,-38,82,46,-203,142,-68,-44,118,10,-79,94,-8,91,-15,24,0,15,19,54,-21,-13,-76,1,-98,-49,-108,58,-71,15,-8,68,3,55,-40,-13,-20,-3,-122,-63,-176,,-59,107,-60,27,-100,0,-151,0,-37,0,47,174,-44,108,-58,-76,117,20,67,-12,17,59,-10,109,-15,-3,27,-47,98,50,,-37,-8,-107,-122,,-201,-12,-120,72,19,11,-2,-27,-93,-111,20,-26,-19,,-6,-134,126,63,-66,43,17,-51,-44,43,21,-19,7,52,-70,78,73,-18,-30,,-17,47,-37,-62,90,-15,-135,-74,-145,-62,-90,132,-89,-41,-89,107,-49,-180,-38,-332,135,111,-55,61,137,-70,-95,75,-16,14,192,100,-56,-46,87,-7,-72,-12,-62,-22,46,7,82,234,-118,-68,85,65,-3,13,-90,113,-49,129,-21,-58,74,-141,-86,82,58,79,-59,-75,69,-89,-32,69,-81,,76,71,83,-6,-105,88,-30,101,-67,73,113,-42,117,-2,27,-16,2,-10,-53,47,-13,53,-100,-101,-11,-44,14,92,,76,-20,-23,-9,-89,4,-140,-14,118,93,-1,37,57,-6,27,-40,70,-2,-7,-51,64,-3,119,5,65,-1,-30,-107,104,73,-41,-39,30,-163,153,-77,72,-11,-16,-87,,16,-67,-42,-80,95,-81,76,-120,85,-184,-56,-40,14,233,-83,-55,23,45,-42,-96,84,12,-76,46,-450,104,-257,94,-123,,273,-70,-101,94,34,-131,-180,-103,-496,64,240,180,-1,81,67,153,-153,-91,11,-19,,-242,41,71,37,35,-63,-177,44,127,-116,-7,,0,-175,-7,-39,-47,-60,59,-33,50,-98,-70,-58,-70,-214,197,-33,59,50,11,,-3,-45,17,42,,33,208,100,-150,-155,-90,-133,73,-37,31,70,,-10,-239,84,8,53,-26,-12,90,6,3,-77,44,148,94,-48,-82,1,-11,129,,33,164,28,-22,76,197,73,122,-81,-57,99,118,-102,-44,99,-48,-65,12,18,13,68,-77,-423,233,112,56,-16,77,-48,-55,171,-22,55,46,71,6,-76,48,-13,-18,-104,29,-8,-8,-92,31,-46,-26,-80,-51,-8,48,179,48,-12,-36,-16,40,1,-156,-86,-84,-13,-73,116,5,-94,-19,-52,,36,20,175,-121,98,-81,0,65,181,38,-96,53,-30,34,-14,-177,-61,71,-21,-25,-58,6,83,-102,65,58,-1,-51,5,-95,11,-221,-11,-46,41,29,106,-50,49,44,-116,41,98,11,46,-72,53,54,-113,69,18,-43,58,209,-42,-129,22,-70,-82,-31,39,-85,25,48,-13,-19,-3,-68,-2,-73,27,-66,11,21,,-54,-36,1,-156,55,10,5,15,16,56,-79,37,-29,-133,-49,92,-77,24,-11,-6,-79,-1,-32,125,,2,-27,95,34,-1,11,21,38,46,8,8,-97,34,-91,6,-26,66,-51,-59,6,-10,,58,-85,-27,13,-5,-41,-5,24,-56,-93,,-78,-75,50,51,107,167,-43,-103,-58,37,103,-58,126,-39,83,12,48,72,-15,17,,-12,38,71,42,,-53,-107,105,78,-61,-80,-95,43,-35,-24,,34,10,-98,-18,5,-49,-22,67,30,42,-41,72,-200,14,7,13,43,-6,18,,46,33,64,51,-83,-107,2,-121,-1,44,-33,-52,59,130,-2,-41,73,-2,-14,-1,-2,-1,4,4,-48,22,165,80,-13,9,24,51,43,68,-23,-47,-22,-43,12,-7,-43,23,3,-101,15,110,-4,-23,117,-12,-105,106,9,8,44,-10,-28,-208,-55,172,-56,10,-23,-76,14,44,-136,-109,14,28,-60,39,43,10,,35,105,12,-50,17,-70,24,-50,68,8,-55,14,-47,-13,39,-59,-77,-42,-5,-12,-84,10,-107,27,,-14,-39,128,4,5,-29,35,-118,-101,37,45,8,-30,31,-11,68,-26,-75,-44,-1,-54,38,-43,-58,63,0,-52,47,37,-87,18,-20,-4,36,-47,-100,40,5,49,-43,-57,38,-33,30,,-70,10,-2,30,-60,-48,258,9,5,-3,-38,-99,-5,-8,-7,-35,-21,-8,-23,3,-16,-37,-45,-49,,-12,7,-37,-12,-16,44,-46,2,32,-87,67,27,-56,-51,18,14,61,-80,74,-21,1,138,,-9,46,51,-26,49,-15,-3,-60,52,,70,26,-78,44,-47,-80,-3,34,112,-31,2,-30,-5,52,19,-8,-43,4,-20,-59,,-6,-70,-31,-23,,-11,40,126,-7,-11,-26,58,-7,-57,27,,-33,-63,99,-39,-19,-9,-8,76,-100,-6,-49,34,-34,51,41,-48,55,64,41,-20,47,-6,-48,-3,,-28,-55,-72,9,18,-8,-24,79,-6,-23,57,9,20,-121,-12,-83,-65,-143,240,-3,-11,-6,-12,30,55,71,60,-22,129,-7,67,61,-28,1,-41,-79,-20,-36,-10,-70,-2,17,-77,11,1,0,67,-103,-26,-8,-21,-33,-57,39,15,9,3,-3,1,6,57,-2,41,-14,17,31,-16,-52,-69,,54,-47,16,-60,-19,2,-34,20,19,-10,34,21,-1,-60,16,-11,-9,39,-13,57,-4,-5,-16,17,,33,-24,36,-62,-27,-84,-54,12,-8,7,-19,-15,-29,-3,-13,-27,-5,-12,-69,-31,26,-26,214,-53,-95,-37,-75,27,11,-6,3,-30,6,-6,31,-18,19,60,-76,34,-21,-25,31,-2,,69,-9,4,-12,-16,-27,-17,-1,19,-41,4,-14,-7,-1,5,25,-9,17,36,-38,20,0,-22,13,,-11,64,-42,48,-56,-5,4,12,-81,0,-22,17,-25,-8,225,31,-24,-8,21,-11,-27,-2,-19,,-56,-3,3,-4,-5,4,10,34,,25,39,-19,-28,2,28,-11,-4,-4,-2,-9,29,-1,22,-21,-22,31,-20,24,13,0,,-30,15,-27,-73,,-31,1,50,-12,-18,-4,6,-14,14,,-10,1,42,-26,-5,86,35,-66,-79,-40,6,-23,2,41,0,34,2,52,15,-5,87,-17,55,56,,40,57,-9,67,-46,2,66,6,40,-13,-57,20,44,109,-38,45,112,-50,6,-3,31,0,-112,-15,49,31,-41,-46,13,-25,2,44,-29,-77,-20,-42,-6,-1,12,-53,26,57,28,3,-44,5,12,-55,-30,-67,36,2,17,-52,4,-9,-15,27,-5,-3,26,23,-106,-12,17,67,-65,14,17,,-20,-51,-64,-8,9,27,54,56,-20,3,-6,-9,-6,-64,30,-3,62,64,34,-102,-4,37,-48,46,-39,35,,18,-34,5,-22,26,-41,-9,-40,24,-25,-19,-11,-11,-19,2,3,31,-35,-10,9,3,38,-43,54,-27,20,-40,10,48,7,36,25,-9,2,-24,-73,19,2,-17,22,-17,-25,,5,-1,62,-82,10,-46,8,-45,81,46,-9,-19,-10,-13,-27,1,-13,-16,30,8,1,56,-13,22,,-43,3,18,-13,45,16,-18,50,2,58,-5,3,22,-41,18,-23,36,20,39,-36,11,-43,-11,-28,,-4,78,96,12,-10,54,64,,-2,-23,12,-39,22,48,-30,-38,54,-11,8,0,5,68,44,-2,18,30,32,1,-23,71,,81,44,6,52,,46,-18,122,-46,-37,59,26,106,12,-69,-1,77,49,,-128,-18,160,100,-31,-8,40,23,126,3,77,22,-32,-52,72,-30,25,-29,54,,-10,-1,-57,39,0,-197,50,48,102,-6,7,25,136,100,12,-16,4,16,-90,-34,-7,66,-45,-58,-14,-12,16,-36,14,-86,13,-47,316,74,204,12,59,-19,-44,-98,-14,-12,48,106,1,14,-4,3,-158,25,-57,-24,68,114,25,-35,-10,39,245,10,34,26,-22,76,-44,-18,116,-186,-68,,109,-116,15,-23,-165,97,-99,-140,-56,168,-206,-146,-107,5,53,33,2,296,-70,22,17,-44,97,81,41,81,-61,,112,13,1,-98,-130,59,65,-67,33,90,-30,-70,16,45,-65,-132,-44,22,33,95,-26,-50,-69,-113,-69,21,20,162,9,-34,-21,34,-82,54,87,4,7,-134,35,81,-24,,121,18,47,-104,51,67,-14,-84,14,-40,18,-12,29,5,-62,0,-14,33,-65,-1,-24,-69,-28,12,-18,-8,29,86,33,,16,32,-105,-8,37,4,-90,8,10,24,39,5,-4,68,-16,-2,0,-4,47,,62,-34,62,24,-13,10,-12,93,34,41,-32,80,,27,59,-68,12,-66,106,34,-42,-42,73,17,-37,-28,55,98,-9,-1,20,,46,33,-5,25,,-41,-38,-8,16,33,-13,-68,-75,49,62,-10,0,,-18,22,-71,-124,-15,54,-60,63,-55,-117,51,-24,46,48,-18,49,-15,-28,-38,,49,-1,2,39,-27,-24,16,-24,-4,-72,82,14,71,35,-15,-5,-44,-62,-66,16,-25,17,85,-1,-17,11,-2,-20,82,6,54,30,12,-55,-35,-92,-27,-42,13,25,-21,70,-8,21,13,4,-34,8,-22,34,11,-43,16,4,-28,-49,15,-6,8,36,10,-45,-31,6,-24,0,18,32,12,,26,-36,-20,19,53,12,27,-25,6,2,-15,-43,-11,23,-24,36,-2,-32,30,-24,23,-38,-9,-27,-11,23,25,43,,-35,-31,17,-44,7,25,4,7,-39,7,-3,20,-4,32,-1,1,30,78,-15,-30,2,30,-43,-28,-15,23,8,26,-4,-25,35,32,50,42,19,-1,16,-14,-20,22,,110,-22,34,-28,71,67,44,11,37,-6,-27,67,111,27,-8,-6,10,-22,62,2,32,-36,-120,160,-62,-78,11,-41,-17,,-68,-109,-8,74,15,-17,62,84,-10,-35,29,10,84,315,183,-48,118,25,-14,5,,64,21,89,-8,32,94,44,-40,65,-40,-39,,110,-56,96,72,-15,171,-49,-202,-37,90,-118,-47,-47,36,120,72,28,84,-23,,,12,-123,51,,35,-56,-138,126,-1,-85,-34,-16,-138,17,50,,103,-62,6,-12,58,-76,12,57,-87,-11,15,10,-18,176,-46,62,106,-166,-2,,29,20,-35,-16,20,25,-25,48,36,34,-59,29,46,71,24,3,30,-22,-11,13,-2,-36,-2,-62,-54,16,-53,-36,14,96,-15,-34,12,-78,9,131,-40,36,-3,3,-106,-3,-5,-16,25,18,45,-21,-71,14,-32,3,103,35,4,-38,-45,32,4,27,-25,-71,11,16,46,76,70,-22,39,,163,68,42,-20,66,-45,-13,50,102,-50,-92,-144,90,-39,15,1,86,-138,-17,58,43,53,-61,29,-142,-40,92,12,,-61,-37,-162,68,153,60,4,50,15,-4,24,-31,15,-20,-14,-50,28,34,52,-44,4,2,84,-24,-33,28,35,-103,45,-5,6,6,-29,-56,-143,-355,135,-84,182,43,-6,-132,6,20,-115,,67,122,-23,-5,-74,38,32,28,-105,61,-42,8,-58,120,-92,-6,5,-23,-16,94,-18,-28,4,36,,-50,-59,-95,134,-10,29,12,59,70,-33,-58,27,58,-44,0,50,32,19,149,-16,18,,-38,9,18,37,3,-80,9,22,-55,23,,14,38,-34,64,-46,4,21,-31,-114,-42,-50,-37,109,22,87,-155,-21,-5,0,-62,,-2,14,16,-33,,-97,-35,-41,-54,-26,-26,30,28,-3,-125,,88,-128,123,76,18,-5,40,-29,244,1,-79,-235,-117,24,-129,-90,-77,-231,124,,94,24,-52,-120,70,-95,-81,134,108,-88,104,-13,-28,38,-31,-102,48,4,56,-7,-71,81,-239,8,24,20,81,1,41,24,4,-73,-18,-36,-88,-92,-63,-165,38,-40,58,67,-1,-44,9,31,35,-10,209,-42,15,3,-271,-165,-42,-14,78,20,-66,173,83,-74,25,41,-25,13,63,16,71,-105,53,22,-48,12,,89,-120,-80,-187,45,-3,-62,-14,52,-99,-5,-15,-182,15,12,24,0,134,-364,-60,105,-3,9,-22,,-97,-46,-38,-9,201,206,-62,130,24,36,13,52,-67,24,-20,-119,82,-79,-254,-6,-144,52,-26,66,79,-57,-69,19,-45,1,-74,-4,-17,17,1,-5,30,8,62,93,79,46,-16,96,,-190,-56,56,58,-90,18,19,-9,12,-54,-16,-104,18,24,-70,2,21,91,-27,33,112,87,49,-60,,-6,112,-86,48,-14,-16,-50,62,4,24,5,17,72,26,-33,-48,-137,-5,-15,158,38,-14,172,,174,64,22,48,87,61,-14,160,,59,-81,42,156,0,-58,34,-12,-48,66,101,17,-8,-20,326,-58,-114,126,-7,-31,-26,,30,14,-134,46,,90,-30,-192,139,-78,-33,52,-239,116,,-207,44,190,,-240,73,-3,110,46,-130,-114,57,-81,-6,-10,-18,-40,150,-2,57,55,-17,-81,-50,,62,-2,-78,-42,-25,5,160,79,15,-68,7,59,13,31,-41,2,3,-164,-35,-8,-69,-84,6,-9,-55,8,49,31,5,-45,-22,46,-18,-26,19,-121,-20,-31,-60,-17,-6,66,28,-26,66,114,64,-39,31,34,28,28,36,-7,21,135,-17,-25,-47,24,-30,-178,-64,65,-32,49,38,-32,-40,,-62,3,53,-75,0,-115,20,56,51,-89,40,-96,150,18,50,12,12,-22,-10,22,94,-24,14,8,92,,-12,8,82,-2,12,-101,20,-73,10,-87,-12,-9,-50,-8,47,53,-48,-75,-49,-5,10,-31,64,0,-2,-70,-67,-31,42,94,38,-92,-56,-43,51,-26,20,-10,-2,-20,118,-14,3,,-115,-19,-49,-54,131,98,57,8,18,64,1,1,80,-29,-37,52,60,-10,-2,-4,20,4,-10,-6,,-53,20,3,-44,-22,60,62,-40,96,16,26,-22,2,10,-56,37,41,-20,41,-35,0,-28,-22,,22,-12,-35,-26,-91,51,-3,-84,,-8,-54,13,62,55,-42,92,-4,-44,38,85,-21,28,-43,-63,12,-28,58,31,13,-12,,-10,8,-43,-16,,-51,10,50,40,-10,-51,-109,-13,-12,,-49,7,7,-32,59,-69,-131,-45,-32,74,-22,41,19,90,-31,-91,35,-53,-56,28,-113,-59,-64,-26,,113,41,-68,-32,32,51,-85,29,-126,32,6,-9,14,66,-22,12,-47,-10,3,-27,59,-12,-96,-51,17,72,58,-3,-7,-21,46,11,92,-45,3,24,-52,52,22,-26,-17,17,16,18,102,41,30,-3,-18,16,41,20,-83,10,-2,2,52,-15,-27,26,73,-3,54,-5,37,-14,-89,-75,5,,-73,42,-31,76,17,-3,37,-8,-47,49,28,19,3,14,-14,-42,12,-9,-7,-36,30,42,4,33,2,-19,,5,-11,30,46,28,89,-3,-9,50,3,16,-124,-38,-9,-25,18,-26,4,90,-16,-24,-36,31,-24,-23,-6,-24,-1,27,-30,27,-35,-16,10,6,60,8,-13,-5,76,-63,-19,,46,3,-60,31,-9,45,-25,63,17,-12,33,-9,37,4,0,26,4,46,10,48,-30,53,-40,-23,,-43,-42,-45,-24,-20,34,5,-10,41,26,-66,46,-4,-89,84,27,10,-7,30,13,16,-6,55,-10,,20,-27,-24,-70,-22,12,40,,-23,75,26,12,-54,12,0,-61,,-47,14,36,45,-13,38,-31,-39,-42,-39,-81,-20,,,-69,33,-44,-64,,-48,-115,22,33,-5,-19,-9,5,,38,12,17,78,,-45,10,28,-12,-40,16,21,-73,71,41,3,-24,-5,6,64,10,36,-18,-14,,14,,4,-2,37,-31,16,46,51,-21,30,-32,-6,-49,10,17,-15,48,-14,-16,-3,3,-55,-110,33,41,-12,16,14,61,3,16,7,16,-24,-39,-16,56,52,0,-5,5,-6,-2,2,-8,-5,-22,1,20,-40,-22,21,-11,-42,-52,-22,-57,1,-38,50,-10,31,1,6,64,-32,-70,-20,,11,-25,43,-101,-27,-9,-10,-12,7,41,-4,-10,2,0,12,-17,-3,-84,3,-19,-44,72,9,11,58,-44,-14,,71,17,6,-34,-15,-29,-11,46,-25,-36,4,13,15,2,50,11,17,-20,-8,-30,-164,-62,43,-83,42,-74,8,122,-81,33,22,16,-15,17,-8,-114,70,-20,6,64,-20,,-42,40,68,-16,34,20,39,24,15,-18,18,5,-17,-5,-48,-15,46,-11,38,6,-41,-49,-45,15,15,0,37,48,61,,31,-12,-20,-7,13,-1,8,-2,13,27,-19,5,-79,7,40,57,-27,56,-28,,-5,-26,-50,47,-19,-2,8,-14,14,28,16,27,,9,-38,-56,34,-18,-3,-7,14,-6,49,12,36,-12,6,-35,22,-6,-1,,29,-20,-62,-18,,-24,-49,42,17,50,44,3,43,12,-11,22,0,,-21,-2,-54,-8,-36,22,-2,-40,-25,9,82,33,15,-8,-4,1,22,-19,-4,,3,137,69,-12,-118,-33,13,-21,-203,-10,-74,6,-78,-125,-279,119,110,86,148,-151,177,104,163,122,6,8,-1,-198,-129,-10,-53,-48,80,68,58,-14,-27,-32,1,-80,-51,34,30,-20,17,0,12,-16,-21,-22,-39,-16,27,-18,6,-30,-45,29,14,120,-37,-41,17,18,-2,64,-43,23,-19,,14,15,-12,10,-21,104,28,12,68,-122,-80,-41,-58,69,-3,2,-9,-48,11,-5,-40,39,38,-2,52,6,-27,5,,-5,3,-14,-12,-50,45,-2,-28,13,1,15,-39,36,-35,-104,-50,-26,3,-1,73,33,-24,-43,8,40,-7,71,29,4,-40,-52,-56,30,10,7,2,50,-27,29,-112,54,16,15,-1,20,,-37,26,-4,-2,-49,-18,-56,-17,-33,25,36,29,8,17,-9,18,-10,-5,-17,34,-6,33,1,-26,,-17,-47,30,3,1,14,-98,30,-10,8,-42,-11,36,-15,26,-30,-11,-72,-35,226,-22,,-20,-55,-7,-34,-48,13,-4,61,19,-22,,,-1,2,12,-75,39,-15,13,14,2,-42,18,-37,-10,-46,22,9,18,-10,,,32,-34,-19,-12,,0,-49,55,59,5,27,-7,-18,-25,14,,6,,-29,19,2,-9,40,22,33,33,12,-4,38,1,-25,-57,5,8,19,,94,-5,-14,-11,-52,15,70,31,42,4,7,17,66,66,68,-28,-6,-14,43,24,-10,21,-25,-12,-18,-6,20,32,42,18,46,42,0,6,-59,-25,-16,-42,39,-21,-24,-26,-15,0,-69,-2,2,8,-23,18,44,25,13,39,-25,26,-7,-10,-65,18,-17,100,3,-19,-20,-16,-25,3,15,-13,14,15,71,2,,-40,16,69,-86,-17,22,14,-12,26,23,14,-24,40,-7,1,53,11,5,-13,-28,3,52,51,-28,,-62,-4,-80,36,18,0,-33,2,8,-68,47,30,-12,42,-21,-67,42,-53,17,-48,-13,35,31,47,3,29,-7,-11,-61,-49,33,33,-17,2,1,-10,35,6,-25,7,14,-2,-2,-37,,53,15,-56,17,1,-28,-26,27,27,-47,-14,26,58,55,25,36,50,-33,-53,-3,45,-6,17,65,,154,-20,10,72,-9,5,-3,-49,-21,16,49,-44,-37,65,16,-41,28,-43,-18,-30,-28,102,,1,6,66,-29,-11,-41,88,29,36,,-188,29,-53,-40,28,-22,43,30,22,-30,-17,6,21,20,-16,-11,-11,66,11,20,,43,-10,22,20,,10,85,-21,-13,-17,-47,24,-64,-68,-17,,71,-32,-20,-36,10,6,45,114,-26,1,-45,-41,52,34,-13,53,-18,40,7,-19,-8,-23,-38,5,,-14,18,33,17,-51,-24,72,8,-102,76,23,23,18,103,92,19,29,-3,72,-2,151,36,106,-10,127,-64,-64,-53,116,10,78,22,10,51,124,-30,26,41,39,46,178,-79,86,16,-112,-29,107,250,-110,34,-9,-12,44,-6,2,-16,-1,-210,113,-8,16,-109,-60,24,-8,-122,75,-8,-9,,139,156,-26,88,84,98,153,0,13,-7,77,-39,-285,349,,111,-20,-133,50,4,93,31,-81,-60,,63,-6,33,17,113,-61,66,160,-37,-34,-29,22,-22,-182,60,-10,69,-286,-120,-145,52,186,-90,205,-60,22,-237,8,91,-44,125,102,-11,172,56,-121,56,-9,24,167,-1,-4,124,10,,292,144,-34,-161,-3,189,-137,64,-53,30,30,50,-198,102,127,26,-56,30,26,-21,-18,41,21,25,,36,132,28,131,25,52,54,5,-347,241,-91,-135,-48,166,95,-52,-100,107,-96,-58,-126,77,-437,,-135,-107,23,86,-42,192,-66,-153,,-55,-54,-39,103,-376,-66,166,12,-10,-12,-5,107,-233,-19,297,-137,32,-579,128,-2,44,,65,84,-111,-135,,-98,117,157,-136,-63,67,33,-283,-190,,33,27,3,149,72,-62,-43,76,-46,40,-17,-90,-82,262,169,-139,-10,-29,52,121,34,117,-27,26,,66,-10,3,156,-18,-9,-27,102,-75,-16,97,28,-77,-136,-192,120,-152,20,-100,-42,68,40,-168,-35,85,-52,172,2,4,-40,-75,-49,56,44,164,-12,-38,-88,137,77,-40,68,-69,18,13,-45,-24,32,195,136,-89,-115,-155,109,-2,32,-63,-6,117,44,55,89,99,-83,98,9,40,67,72,,-70,-5,-104,102,-12,3,31,-115,52,37,28,-67,116,133,,-36,63,80,89,-23,45,23,49,-25,3,,6,-47,-188,-65,-105,-230,-7,60,18,2,82,63,136,-56,-28,-50,62,-31,146,116,-13,-79,-63,66,72,41,82,54,36,10,41,35,-101,111,-47,-117,113,63,2,-39,-7,-26,52,,143,2,-52,57,-124,66,33,-28,66,-20,17,-6,-32,82,50,16,58,-30,25,37,-64,-33,-34,59,,-46,55,54,-9,-5,14,15,6,-7,-7,6,10,50,-84,-59,245,-50,-48,-112,41,70,30,27,,52,-81,32,-48,-77,-156,-38,179,,-10,-68,-148,-2,48,-87,15,11,-10,-306,78,153,-96,-28,-364,27,124,58,15,-161,44,,-12,-43,-97,-16,,97,166,104,-7,-63,46,133,35,-117,,215,138,-24,6,-26,60,-124,38,25,-29,6,-145,-8,236,25,-76,1,121,13,-1,135,-22,-31,15,,-47,42,33,-26,43,-33,22,-78,30,24,-30,-97,-109,-91,-31,83,4,46,95,-1,160,93,-7,-24,7,16,-23,0,-13,50,-17,12,-1,-7,19,-5,117,29,-7,113,32,4,0,-6,22,4,30,41,210,-91,83,11,-388,-92,100,74,83,26,17,32,33,-148,23,32,52,-1,41,56,-15,,0,72,-99,56,-115,-117,134,-23,60,35,39,-144,89,51,52,1,,96,68,26,-3,100,2,18,67,-2,-5,,-75,4,63,33,-315,-70,1,68,-201,41,41,-30,-106,-263,58,-11,10,-24,-334,-32,-308,-303,116,231,-34,-59,105,-57,-11,205,-78,-171,-72,-51,78,-111,-35,-25,21,51,97,,-13,-151,-88,-130,79,-64,-56,52,-158,13,98,16,95,102,-31,18,64,27,-208,65,41,239,77,187,-56,9,98,-64,56,,10,49,41,-54,89,64,170,-94,21,113,26,-32,-80,59,-92,-6,262,-145,-55,,215,55,68,-137,19,-44,104,-72,7,-44,-80,-280,,-28,-115,-14,106,1,-41,146,81,29,-27,167,44,-77,59,373,-162,93,25,,72,-28,-47,11,,28,-45,34,28,49,-30,-33,-17,44,-135,-116,86,,-81,113,-62,-42,-136,143,-43,-80,49,-23,-12,-223,-29,-74,42,65,225,-144,-93,,-46,-12,-204,-14,8,-48,4,67,84,-48,-135,1,-92,-77,2,33,84,-61,80,5,93,53,-118,14,176,-97,92,28,-71,-36,-50,58,-394,-11,203,-94,-193,-75,-77,-61,14,-54,-23,-11,-141,6,177,0,111,-105,-41,34,285,-96,-54,-122,71,199,-31,294,-34,-121,-93,41,-103,-27,-104,21,-128,,176,67,-95,9,-142,117,-102,96,100,-50,54,-43,-84,40,10,90,-46,,134,55,-157,69,-125,40,-57,-59,18,120,,90,95,-28,-7,83,40,106,-67,47,0,-128,-91,19,37,85,68,12,50,153,-254,-97,40,-24,10,35,29,-19,-55,44,-69,76,-4,-53,116,-153,79,-31,45,-77,-8,,133,-26,66,-179,74,-35,14,-20,68,-58,-71,-20,166,-19,0,0,88,107,-26,-95,-60,-81,19,-2,269,115,155,33,-111,,-17,-56,-46,-42,26,113,7,93,10,27,-95,-23,226,-12,8,-58,56,-114,9,93,,65,-24,24,56,24,119,78,-83,36,-64,8,,-21,-89,64,-75,-27,40,59,96,-52,-118,66,-52,-49,80,-7,190,-50,-60,-50,,80,-53,16,54,,-8,-40,38,3,17,117,8,91,-93,37,-48,,-13,27,20,-79,-369,-85,57,-72,146,116,20,91,30,19,-102,-180,-135,-29,13,,80,88,51,3,-69,136,64,-17,-8,143,21,-76,65,6,44,-48,123,38,33,-24,-27,45,-129,107,-56,20,30,45,51,-67,-41,-45,71,30,7,19,-151,48,35,52,-83,11,5,-97,56,73,10,-5,-9,-6,24,70,-357,10,45,47,-124,4,16,40,67,13,24,61,14,28,-27,32,4,,16,11,-18,-6,43,20,11,0,29,-14,11,24,4,-27,-4,19,-17,115,,14,4,21,-9,0,26,68,-20,-151,,138,-37,76,-38,-98,101,-18,-1,29,1,16,42,7,72,-9,0,-6,21,-439,-31,-220,48,19,82,-91,136,35,-2,12,-14,13,24,-113,40,6,26,4,15,-10,71,-23,29,-124,-340,72,,-187,-74,56,-35,71,69,-3,77,102,59,9,75,62,-174,26,6,-25,38,18,16,15,-1,22,1,,2,48,-66,-18,49,-29,-7,-102,-24,71,28,38,-41,-36"}},"r":{"USD":[4.81,4.82,4.84,4.8,4.83,5.04,5.14,5.28,5.32,5.93,5.85,5.93,5.81,5.9,6.03,6.15,6.57,6.59,6.54,6.49,6.47,6.52,6.52,6.33,5.51,5.19,4.81,4.47,3.96,3.69,3.62,3.44,2.84,2.29,2.0,1.81,1.72,1.8,1.87,1.83,1.8,1.78,1.76,1.71,1.74,1.71,1.37,1.32,1.27,1.25,1.21,1.23,1.2,1.02,1.03,1.06,1.06,1.06,1.08,1.07,1.04,1.03,1.03,1.06,1.16,1.39,1.51,1.65,1.81,1.97,2.2,2.38,2.56,2.71,2.91,3.02,3.15,3.3,3.49,3.69,3.79,4.05,4.23,4.37,4.48,4.63,4.79,4.94,5.05,5.25,5.37,5.29,5.25,5.24,5.24,5.24,5.24,5.23,5.22,5.23,5.23,5.25,5.25,5.3,5.19,4.91,4.75,4.76,3.7,3.03,2.7,2.72,2.61,2.7,2.72,2.76,2.91,3.19,1.54,1.09,1.1,0.67,0.62,0.48,0.37,0.36,0.33,0.29,0.23,0.22,0.19,0.2,0.18,0.2,0.24,0.3,0.44,0.46,0.37,0.27,0.25,0.25,0.25,0.27,0.26,0.25,0.23,0.22,0.18,0.17,0.17,0.21,0.22,0.24,0.21,0.18,0.26,0.21,0.2,0.2,0.2,0.21,0.24,0.19,0.17,0.19,0.21,0.17,0.19,0.16,0.15,0.16,0.14,0.14,0.14,0.12,0.11,0.12,0.12,0.14,0.12,0.13,0.12,0.12,0.11,0.11,0.13,0.13,0.12,0.12,0.13,0.15,0.16,0.15,0.14,0.13,0.15,0.18,0.19,0.26,0.27,0.25,0.3,0.54,0.57,0.54,0.55,0.55,0.57,0.55,0.62,0.73,0.75,0.72,0.71,0.87,0.9,0.87,0.98,1.03,1.05,1.16,1.22,1.25,1.25,1.26,1.32,1.54,1.63,1.78,2.08,2.2,2.16,2.19,2.17,2.19,2.24,2.37,2.56,2.69,2.59,2.49,2.48,2.47,2.44,2.3,2.22,2.06,2.03,1.88,1.77,1.76,1.65,1.59,1.35,null,0.17,0.2,0.18,0.15,0.13,0.12,0.16,0.17,0.14,0.11,0.1,0.11,0.1,0.09,0.1,0.1,0.1,0.11,0.14,0.17,0.22,0.38,0.73,0.91,1.33,1.87,2.5,2.76,3.21,3.85,4.46,4.51,4.61,4.74,4.91,5.03,5.15,5.22,5.35,5.44,5.49,5.46,5.41,5.32,5.26,5.22,5.29,5.33,5.33,5.28,5.31,5.12,4.86,4.62,4.53,4.46,4.33,4.34,4.29,4.32,4.29,4.31,4.28,4.22,4.1,3.98,3.86,3.74,3.63,3.66,3.69,3.77,3.72,3.77,3.82,3.82,3.94],"EUR":[3.132,3.093,3.047,2.696,2.579,2.627,2.676,2.695,2.727,3.376,3.468,3.446,3.343,3.537,3.747,3.925,4.362,4.502,4.583,4.777,4.853,5.041,5.092,4.939,4.771,4.756,4.709,4.682,4.637,4.454,4.467,4.354,3.983,3.6,3.386,3.345,3.339,3.357,3.391,3.407,3.467,3.464,3.41,3.352,3.31,3.261,3.124,2.941,2.832,2.687,2.53,2.533,2.401,2.152,2.13,2.14,2.147,2.144,2.159,2.146,2.089,2.071,2.029,2.049,2.086,2.113,2.116,2.114,2.119,2.147,2.17,2.173,2.145,2.138,2.137,2.137,2.126,2.111,2.119,2.132,2.139,2.197,2.361,2.473,2.512,2.6,2.723,2.794,2.889,2.986,3.102,3.226,3.335,3.502,3.597,3.684,3.752,3.818,3.891,3.975,4.071,4.148,4.216,4.544,4.742,4.687,4.639,4.848,4.482,4.362,4.596,4.784,4.857,4.941,4.961,4.965,5.019,5.113,4.238,3.293,2.457,1.943,1.635,1.422,1.282,1.228,0.975,0.86,0.772,0.738,0.716,0.712,0.68,0.662,0.645,0.645,0.687,0.728,0.849,0.895,0.88,0.998,1.042,1.022,1.017,1.087,1.176,1.321,1.425,1.489,1.598,1.552,1.536,1.576,1.485,1.426,1.222,1.048,0.858,0.744,0.685,0.659,0.497,0.332,0.246,0.208,0.192,0.185,0.205,0.223,0.206,0.209,0.201,0.21,0.221,0.226,0.223,0.226,0.223,0.274,0.292,0.288,0.305,0.33,0.325,0.241,0.205,0.192,0.097,0.083,0.081,0.081,0.063,0.048,0.027,0.005,-0.01,-0.014,-0.019,-0.028,-0.037,-0.054,-0.088,-0.126,-0.146,-0.184,-0.229,-0.249,-0.257,-0.268,-0.295,-0.298,-0.302,-0.309,-0.313,-0.316,-0.326,-0.329,-0.329,-0.33,-0.329,-0.33,-0.33,-0.329,-0.329,-0.33,-0.329,-0.328,-0.328,-0.329,-0.328,-0.328,-0.325,-0.322,-0.321,-0.319,-0.319,-0.318,-0.316,-0.312,-0.308,-0.308,-0.309,-0.31,-0.312,-0.329,-0.365,-0.408,-0.418,-0.413,-0.401,-0.395,-0.391,-0.409,-0.417,-0.254,-0.272,-0.376,-0.444,-0.48,-0.491,-0.509,-0.521,-0.538,-0.547,-0.541,-0.539,-0.538,-0.54,-0.543,-0.545,-0.548,-0.545,-0.55,-0.567,-0.582,-0.56,-0.532,-0.495,-0.448,-0.386,-0.239,0.037,0.395,1.011,1.428,1.825,2.063,2.345,2.64,2.911,3.167,3.366,3.536,3.672,3.78,3.88,3.968,3.972,3.933,3.925,3.923,3.922,3.886,3.814,3.724,3.685,3.548,3.434,3.167,3.007,2.816,2.703,2.525,2.442,2.248,2.091,1.984,1.986,2.021,2.027,2.034,2.042,2.046,2.028],"GBP":[5.922,5.532,5.423,5.318,5.349,5.221,5.167,5.254,5.411,6.026,5.872,6.055,6.136,6.238,6.228,6.296,6.304,6.227,6.192,6.218,6.206,6.163,6.086,5.955,5.846,5.757,5.551,5.404,5.249,5.259,5.254,4.997,4.729,4.428,3.997,4.051,4.047,4.053,4.131,4.173,4.154,4.178,4.061,3.987,3.989,3.964,3.971,4.018,3.983,3.754,3.655,3.646,3.633,3.64,3.49,3.522,3.697,3.803,3.98,4.019,4.055,4.167,4.297,4.395,4.529,4.79,4.857,4.963,4.947,4.901,4.884,4.871,4.873,4.891,4.987,4.943,4.894,4.841,4.658,4.595,4.597,4.587,4.618,4.637,4.604,4.582,4.587,4.63,4.702,4.735,4.733,4.944,5.025,5.132,5.225,5.292,5.486,5.566,5.549,5.649,5.767,5.88,6.024,6.419,6.647,6.27,6.409,6.359,5.66,5.642,5.899,5.919,5.826,5.929,5.832,5.766,5.911,6.133,4.447,3.172,2.343,2.09,1.831,1.534,1.358,1.241,1.001,0.774,0.606,0.571,0.609,0.605,0.613,0.633,0.645,0.656,0.697,0.728,0.736,0.733,0.729,0.738,0.739,0.75,0.769,0.8,0.809,0.821,0.823,0.825,0.829,0.858,0.918,0.97,1.012,1.061,1.087,1.072,1.038,1.018,1.005,0.95,0.817,0.705,0.648,0.544,0.525,0.518,0.512,0.51,0.507,0.506,0.506,0.508,0.509,0.513,0.517,0.517,0.523,0.525,0.521,0.522,0.522,0.527,0.527,0.544,0.556,0.561,0.563,0.558,0.556,0.558,0.563,0.564,0.564,0.57,0.568,0.572,0.581,0.587,0.586,0.58,0.574,0.583,0.59,0.591,0.588,0.589,0.589,0.575,0.514,0.406,0.379,0.398,0.398,0.372,0.362,0.357,0.346,0.335,0.311,0.294,0.293,0.281,0.309,0.382,0.519,0.519,0.522,0.547,0.628,0.756,0.644,0.639,0.746,0.805,0.801,0.806,0.875,0.904,0.918,0.876,0.84,0.82,0.8,0.78,0.77,0.76,0.77,0.78,0.79,0.79,0.74,0.75,0.53,0.65,0.33,0.19,0.1,0.07,0.06,0.05,0.04,0.03,0.03,0.05,0.08,0.09,0.08,0.08,0.08,0.07,0.07,0.16,0.13,0.16,0.53,0.81,0.99,1.13,1.31,1.57,1.84,2.23,2.91,3.39,3.52,3.78,4.01,4.21,4.33,4.52,4.73,5.09,5.49,5.53,5.52,5.4,5.36,5.22,5.2,5.21,5.2,5.18,5.16,5.16,5.09,4.91,4.84,4.75,4.68,4.64,4.55,4.44,4.39,4.26,4.19,4.15,4.05,3.98,3.97,3.93,3.84,3.75,3.71],"JPY":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.1,0.08,0.09,0.09,0.07,0.08,0.08,0.08,0.1,0.1,0.09,0.08,0.08,0.08,0.09,0.09,0.09,0.09,0.09,0.08,0.1,0.09,0.09,0.08,0.08,0.08,0.09,0.09,0.09,0.09,0.09,0.09,0.1,0.1,0.1,0.08,0.08,0.08,0.09,0.09,0.09,0.09,0.09,0.09,0.1,0.104,0.11,0.126,0.14,0.27,0.35,0.44,0.432,0.436,0.447,0.502,0.54,0.54,0.66,0.66,0.65,0.67,0.73,0.77,0.84,0.85,0.85,0.87,0.86,0.85,0.85,0.84,0.84,0.84,0.86,0.85,0.85,0.87,0.89,0.88,0.74,0.72,0.71,0.65,0.6,0.57,0.56,0.55,0.54,0.54,0.53,0.51,0.46,0.45,0.44,0.43,0.4,0.39,0.38,0.37,0.36,0.36,0.34,0.34,0.34,0.34,0.34,0.336,0.333,0.332,0.332,0.332,0.329,0.329,0.329,0.329,0.329,0.331,0.332,0.332,0.332,0.332,0.335,0.327,0.327,0.327,0.326,0.318,0.308,0.292,0.269,0.25,0.228,0.228,0.228,0.228,0.228,0.228,0.221,0.22,0.22,0.22,0.212,0.212,0.212,0.21,0.21,0.21,0.21,0.21,0.192,0.182,0.179,0.173,0.171,0.17,0.17,0.169,0.169,0.169,0.169,0.169,0.169,0.169,0.169,0.169,0.098,0.098,0.06,0.06,0.059,0.058,0.058,0.056,0.056,0.056,0.056,0.056,0.056,0.056,0.056,0.056,0.056,0.075,0.056,0.056,0.063,0.063,0.063,0.068,0.068,0.097,0.097,0.078,0.078,0.091,0.091,0.05,0.05,0.05,0.05,0.03,0.03,0.05,0.05,0.049,0.049,0.049,0.009,0.009,0.009,0.018,0.021,0.021,0.021,0.006,-0.039,-0.042,-0.042,-0.065,-0.065,-0.055,-0.055,-0.055,-0.055,-0.055,-0.055,-0.065,-0.065,-0.065,-0.072,-0.072,-0.072,-0.072,-0.072,-0.072,-0.049,-0.049,-0.049,-0.049,-0.049,-0.049,0.005,-0.031,-0.02,-0.016,-0.016,-0.016,-0.015,-0.006,0.001,-0.008,-0.001,-0.019,-0.003,-0.003,-0.003,0.024,-0.012,0.024,0.052,0.025,0.027,0.109,0.109,0.129,0.149,0.166,0.255,0.256,0.256,0.362,0.386,0.767,0.792,0.821,0.784,0.775,0.773,0.773,0.773,0.818,0.809,0.806,1.073,1.116,1.229,1.269,1.242,1.274,1.412,1.458,1.56]},"rlast":{"USD":"2026-09","EUR":"2026-01","GBP":"2026-01","JPY":"2026-08"}};
+(function () {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs, parent, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; if (parent) parent.appendChild(e); return e; };
+  const usd = v => (v < 0 ? '−$' : '$') + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: 0 });
+  const usdS = v => (v > 0.5 ? '+' : '') + usd(v);
+  const pct = (v, d = 2) => (v < 0 ? '−' : '') + Math.abs(v).toFixed(d) + '%';
+  const pctS = (v, d = 1) => (v > 0 ? '+' : '') + pct(v, d);
+  const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dObj = day => new Date(day * 864e5);
+  const fmtD = day => { const d = dObj(day); return `${MON[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`; };
+  const fmtDs = day => { const d = dObj(day); return `${MON[d.getUTCMonth()]} ${d.getUTCDate()}`; };
+  const iso = day => dObj(day).toISOString().slice(0, 10);
+  const fromIso = s => Math.round(Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)) / 864e5);
+  const monLab = ym => { const [y, m] = ym.split('-'); return MON[+m - 1] + ' ' + y; };
+  const DAYS = 90, YEAR = 360;
+
+  // ---------- currencies and data ----------
+  const CUR = {
+    EUR: { sym: '€', name: 'euro', plural: 'euros', dp: 4, pdp: 3, sid: 'DEXUSEU', amt: 1000000, rname: 'Euro', rsrc: 'euro-area 3-month interbank rate (OECD via FRED, IR3TIB01EZM156N, monthly)', xdp: 2 },
+    GBP: { sym: '£', name: 'pound', plural: 'pounds', dp: 4, pdp: 3, sid: 'DEXUSUK', amt: 1000000, rname: 'UK', rsrc: 'UK 3-month interbank rate (OECD via FRED, IR3TIB01GBM156N, monthly)', xdp: 2 },
+    JPY: { sym: '¥', name: 'yen', plural: 'yen', dp: 6, pdp: 6, sid: 'DEXJPUS', amt: 150000000, rname: 'Japan', rsrc: 'Japan 3-month interbank rate (OECD via FRED, IR3TIB01JPM156N, monthly)', xdp: 5, inv: true },
+  };
+  const US_RSRC = 'US 3-month interbank rate (OECD via FRED, IR3TIB01USM156N, monthly)';
+  const dow = day => ((day % 7) + 7 + 4) % 7; // 1970-01-01 was a Thursday
+  function decode(c) {
+    const f = DATA.fx[c], parts = f.d.split(','), days = [], vals = [];
+    let day = fromIso(DATA.start), cur = null;
+    parts.forEach((p, i) => {
+      if (i > 0) { day++; while (dow(day) === 0 || dow(day) === 6) day++; }
+      if (p !== '') { cur = cur == null ? +p : cur + +p; days.push(day); vals.push(CUR[c].inv ? 1 / (cur / f.k) : cur / f.k); }
+    });
+    return { days, vals };
+  }
+  const M0 = DATA.m0.split('-').map(Number);
+  const mIdx = day => { const d = dObj(day); return (d.getUTCFullYear() - M0[0]) * 12 + d.getUTCMonth() - (M0[1] - 1); };
+  const rateAt = (k, day) => { const v = DATA.r[k][mIdx(day)]; return v == null ? null : v; };
+  const lastRate = k => { const a = DATA.r[k]; for (let i = a.length - 1; i >= 0; i--) if (a[i] != null) return { v: a[i], i }; return null; };
+  const mLabel = i => { const t = (M0[1] - 1) + i; return MON[t % 12] + ' ' + (M0[0] + Math.floor(t / 12)); };
+  const per = a => a / 100 * DAYS / YEAR;                 // annual % -> 90-day decimal rate
+  const irpF = (S, ih, iff) => S * (1 + per(ih)) / (1 + per(iff));
+
+  const SER = {};
+  const getSer = c => SER[c] || (SER[c] = buildWindows(c, decode(c)));
+  function buildWindows(c, s) {
+    const n = s.days.length, win = []; let j = 0;
+    for (let i = 0; i < n; i++) {
+      const tgt = s.days[i] + DAYS; if (j < i) j = i;
+      while (j < n && s.days[j] < tgt) j++;
+      if (j >= n) break;
+      const ih = rateAt('USD', s.days[i]), iff = rateAt(c, s.days[i]);
+      const F = ih != null && iff != null ? irpF(s.vals[i], ih, iff) : null;
+      win.push({ i, j, chg: (s.vals[j] / s.vals[i] - 1) * 100, F, prem: F == null ? null : (F / s.vals[i] - 1) * 100, ih, iff });
+    }
+    return Object.assign(s, { win });
+  }
+
+  // ---------- state ----------
+  const st = { pos: 'rec', cur: 'EUR', amt: 1e6, S: 1, F: 1, ih: 0, iff: 0, X: 1, p: 0.01, flat: 'F', ST: 1 };
+  const rp = { w: 0, own: false, ownF: null, pp: 1.5 };
+  const C = () => CUR[st.cur];
+  const fx = (v, dp) => '$' + v.toFixed(dp == null ? C().dp : dp);
+  const fc = v => C().sym + Math.round(v).toLocaleString('en-US');
+  const isRec = () => st.pos === 'rec';
+  const optName = () => isRec() ? 'put' : 'call';
+
+  function defaults() {
+    const s = getSer(st.cur), c = C();
+    const n = s.days.length, S = s.vals[n - 1];
+    const us = lastRate('USD'), fr = lastRate(st.cur);
+    const dp = c.dp, r = v => +v.toFixed(dp);
+    Object.assign(st, { amt: c.amt, S: r(S), ih: us.v, iff: fr.v });
+    st.F = r(irpF(st.S, st.ih, st.iff));
+    st.X = +S.toFixed(c.xdp);
+    st.p = +(S * 0.015).toFixed(c.pdp);
+    st.ST = st.S;
+    $('defNote').innerHTML = `Defaults: S = FRED ${c.sid} on ${fmtD(s.days[n - 1])}${c.inv ? ' (¥ per $, inverted to $ per ¥)' : ''}; i<sub>h</sub> = ${US_RSRC.split(' (')[0]}, ${mLabel(us.i)} average; i<sub>f</sub> = ${c.rsrc.split(' (')[0]}, ${mLabel(fr.i)} average (latest available); F = the interest rate parity value. <b>The strike and premium are made-up example values</b>: the data contain no option quotes.`;
+  }
+
+  // ---------- payoffs (dollars in 90 days) ----------
+  const mmRate = () => st.S / (1 + per(st.iff)) * (1 + per(st.ih)); // $ per unit locked in by the money market hedge
+  const optRate = (ST, X = st.X, p = st.p, rec = isRec()) => rec ? Math.max(ST, X) - p : Math.min(ST, X) + p;
+  const outcomes = ST => ({ U: st.amt * ST, F: st.amt * st.F, M: st.amt * mmRate(), O: st.amt * optRate(ST) });
+  const better = (a, b) => isRec() ? a > b : a < b;
+  const rch = (hedged, unhedged) => isRec() ? unhedged - hedged : hedged - unhedged;
+  const NAMES = () => ({ U: 'Remain unhedged', F: 'Forward hedge', M: 'Money market hedge', O: `Option hedge (${optName()})` });
+  const COL = { U: 'var(--s1)', F: 'var(--s2)', M: 'var(--s2)', O: 'var(--s3)' };
+
+  // ---------- generic helpers ----------
+  function niceStep(span, target) { const raw = span / target, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p; return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p; }
+  function nticks(a, b, target) { const s = niceStep(b - a, target), t = []; for (let v = Math.ceil(a / s - 1e-9) * s; v <= b + s * 1e-9; v += s) t.push(+v.toPrecision(12)); return { t, s }; }
+  const dpFor = step => Math.max(0, Math.ceil(-Math.log10(step) - 1e-9));
+  function moneyAxis(step, maxAbs) {
+    const unit = maxAbs >= 1e6 ? 1e6 : maxAbs >= 1e3 ? 1e3 : 1, suf = unit === 1e6 ? 'M' : unit === 1e3 ? 'k' : '';
+    const dp = dpFor(step / unit);
+    return v => '$' + (v / unit).toFixed(dp) + suf;
+  }
+  function chartSize(svg, ratioWide, ratioNarrow) {
+    const w = svg.parentNode.clientWidth || 560;
+    const W = Math.round(Math.max(300, Math.min(760, w)));
+    const H = Math.round(W * (W < 520 ? ratioNarrow : ratioWide));
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.textContent = '';
+    return { W, H };
+  }
+  function placeTip(tip, svg, W, H, px, top) {
+    const wrap = svg.parentNode, wr = wrap.getBoundingClientRect(), sr = svg.getBoundingClientRect();
+    const x = sr.left - wr.left + px / W * sr.width, y = sr.top - wr.top + top / H * sr.height + 4;
+    tip.hidden = false; const tw = tip.offsetWidth;
+    tip.style.left = Math.max(0, Math.min(wr.width - tw, x + (x > wr.width / 2 ? -tw - 12 : 12))) + 'px'; tip.style.top = y + 'px';
+  }
+  const svgX = (svg, e) => { const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()).x; };
+
+  // Line chart. series: {name,color,pts:[[x,y]],dash}; tipAt(x) -> {head, rows:[{color,name,val,y}]}
+  function lineChart(cfg) {
+    const svg = cfg.svg, { W, H } = chartSize(svg, cfg.ratio || 0.58, cfg.ratioN || 0.8);
+    const m = { l: cfg.ml || 62, r: 14, t: 16, b: 42 };
+    const [x0, x1] = cfg.x, [y0, y1] = cfg.y;
+    const X = v => m.l + (v - x0) / (x1 - x0) * (W - m.l - m.r);
+    const Y = v => H - m.b - (v - y0) / (y1 - y0) * (H - m.t - m.b);
+    const clampY = v => Math.max(y0, Math.min(y1, v));
+    cfg.yTicks.forEach(v => { el('line', { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: 'gridl' }, svg); el('text', { x: m.l - 7, y: Y(v) + 4, 'text-anchor': 'end', class: 'tick' }, svg, cfg.yFmt(v)); });
+    const xt = W < 420 && cfg.xTicks.length > 5 ? cfg.xTicks.filter((_, k) => k % 2 === 0) : cfg.xTicks;
+    xt.forEach(v => { el('line', { x1: X(v), x2: X(v), y1: H - m.b, y2: H - m.b + 4, class: 'axisl' }, svg); el('text', { x: X(v), y: H - m.b + 17, 'text-anchor': X(v) > W - m.r - 22 ? 'end' : 'middle', class: 'tick' }, svg, cfg.xFmt(v)); });
+    el('line', { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, class: 'axisl' }, svg);
+    el('text', { x: (m.l + W - m.r) / 2, y: H - 6, 'text-anchor': 'middle', class: 'axtitle' }, svg, cfg.xTitle);
+    el('text', { x: 12, y: (m.t + H - m.b) / 2, 'text-anchor': 'middle', class: 'axtitle', transform: `rotate(-90 12 ${(m.t + H - m.b) / 2})` }, svg, cfg.yTitle);
+    (cfg.vrefs || []).forEach(r => {
+      el('line', { x1: X(r.x), x2: X(r.x), y1: m.t, y2: H - m.b, class: 'ref' }, svg);
+      if (r.label) { const right = X(r.x) > W * 0.7; el('text', { x: X(r.x) + (right ? -5 : 5), y: m.t + 11, 'text-anchor': right ? 'end' : 'start', class: 'reflab' }, svg, r.label); }
+    });
+    (cfg.regions || []).forEach(r => el('text', { x: r.side === 'l' ? m.l + 6 : W - m.r - 6, y: H - m.b - 8, 'text-anchor': r.side === 'l' ? 'start' : 'end', class: 'region' }, svg, r.label));
+    cfg.series.forEach(s => {
+      const d = s.pts.map((p, k) => (k ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(clampY(p[1])).toFixed(1)).join(' ');
+      const a = { d, class: 'series', stroke: s.color }; if (s.dash) a['stroke-dasharray'] = s.dash;
+      el('path', a, svg);
+    });
+    (cfg.marks || []).forEach(p => {
+      el('circle', { cx: X(p.x), cy: Y(p.y), r: 5, fill: p.color, class: 'dot' }, svg);
+      if (p.badge) { const bx = X(p.x) + (p.bdx || 0), by = Y(p.y) + (p.bdy || -15); el('circle', { cx: bx, cy: by, r: 8, class: 'badge' }, svg); el('text', { x: bx, y: by + 4, 'text-anchor': 'middle', class: 'badgetx' }, svg, p.badge); }
+    });
+    const cross = el('line', { y1: m.t, y2: H - m.b, class: 'cross', visibility: 'hidden' }, svg);
+    const hdots = []; for (let k = 0; k < 4; k++) hdots.push(el('circle', { r: 5, class: 'dot', visibility: 'hidden' }, svg));
+    const hit = el('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: 'transparent', style: 'cursor:crosshair' }, svg);
+    const tip = cfg.tip;
+    const show = e => {
+      let xv = x0 + (svgX(svg, e) - m.l) / (W - m.l - m.r) * (x1 - x0); xv = Math.max(x0, Math.min(x1, xv)); if (cfg.snap) xv = cfg.snap(xv);
+      const info = cfg.tipAt(xv); if (!info) return hide();
+      cross.setAttribute('x1', X(info.x ?? xv)); cross.setAttribute('x2', X(info.x ?? xv)); cross.setAttribute('visibility', 'visible');
+      hdots.forEach(d => d.setAttribute('visibility', 'hidden'));
+      info.rows.filter(r => r.y != null).forEach((r, k) => { const d = hdots[k]; d.setAttribute('cx', X(info.x ?? xv)); d.setAttribute('cy', Y(clampY(r.y))); d.setAttribute('fill', r.color); d.setAttribute('visibility', 'visible'); });
+      tip.innerHTML = `<div style="color:var(--muted)">${info.head}</div>` + info.rows.map(r => `<div><i class="${r.y == null && r.hollow ? 'none' : ''}" style="background:${r.y == null && r.hollow ? 'transparent' : r.color}"></i>${r.name}: <b>${r.val}</b></div>`).join('');
+      placeTip(tip, svg, W, H, X(info.x ?? xv), m.t);
+    };
+    const hide = () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); hdots.forEach(d => d.setAttribute('visibility', 'hidden')); };
+    hit.addEventListener('pointermove', show); hit.addEventListener('pointerdown', show); hit.addEventListener('pointerleave', hide); hit.addEventListener('pointercancel', hide);
+    if (cfg.onClick) hit.addEventListener('click', e => { const xv = x0 + (svgX(svg, e) - m.l) / (W - m.l - m.r) * (x1 - x0); cfg.onClick(Math.max(x0, Math.min(x1, xv))); });
+  }
+
+  // Histogram of shares. bins: [{lo,hi,n}], total
+  function histChart(cfg) {
+    const svg = cfg.svg, { W, H } = chartSize(svg, 0.62, 0.72);
+    const m = { l: 44, r: 20, t: 16, b: 40 };
+    const [x0, x1] = cfg.x;
+    const share = b => b.n / cfg.total * 100;
+    const ymaxRaw = Math.max(...cfg.bins.map(share), 1);
+    const ys = niceStep(ymaxRaw, 4), y1 = Math.ceil(ymaxRaw / ys - 1e-9) * ys, yt = nticks(0, y1, 4);
+    const X = v => m.l + (v - x0) / (x1 - x0) * (W - m.l - m.r);
+    const Y = v => H - m.b - v / y1 * (H - m.t - m.b);
+    yt.t.forEach(v => { el('line', { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: 'gridl' }, svg); el('text', { x: m.l - 6, y: Y(v) + 4, 'text-anchor': 'end', class: 'tick' }, svg, v + '%'); });
+    const xt = nticks(x0, x1, W < 420 ? 4 : 6);
+    xt.t.forEach(v => { el('line', { x1: X(v), x2: X(v), y1: H - m.b, y2: H - m.b + 4, class: 'axisl' }, svg); el('text', { x: X(v), y: H - m.b + 17, 'text-anchor': X(v) > W - m.r - 16 ? 'end' : 'middle', class: 'tick' }, svg, (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + '%'); });
+    el('text', { x: (m.l + W - m.r) / 2, y: H - 5, 'text-anchor': 'middle', class: 'axtitle' }, svg, cfg.xTitle);
+    el('text', { x: 11, y: (m.t + H - m.b) / 2, 'text-anchor': 'middle', class: 'axtitle', transform: `rotate(-90 11 ${(m.t + H - m.b) / 2})` }, svg, 'Share of windows');
+    cfg.bins.forEach(b => { if (!b.n) return; const x = X(b.lo) + 0.5, w = Math.max(1, X(b.hi) - X(b.lo) - 1); el('rect', { x, y: Y(share(b)), width: w, height: H - m.b - Y(share(b)), fill: cfg.color, class: 'bar' }, svg); });
+    el('line', { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, class: 'axisl' }, svg);
+    el('line', { x1: X(0), x2: X(0), y1: m.t, y2: H - m.b, class: 'axisl' }, svg);
+    if (cfg.mark != null) {
+      el('line', { x1: X(cfg.mark), x2: X(cfg.mark), y1: m.t, y2: H - m.b, class: 'ref' }, svg);
+      const right = X(cfg.mark) > W * 0.55; el('text', { x: X(cfg.mark) + (right ? -5 : 5), y: m.t + 10, 'text-anchor': right ? 'end' : 'start', class: 'reflab' }, svg, (W < 480 ? 'Step 3: ' : 'Window in step 3: ') + pctS(cfg.mark));
+    }
+    const hl = el('rect', { class: 'barhi', visibility: 'hidden' }, svg);
+    const hit = el('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: 'transparent', style: 'cursor:crosshair' }, svg);
+    const tip = cfg.tip;
+    const show = e => {
+      const xv = x0 + (svgX(svg, e) - m.l) / (W - m.l - m.r) * (x1 - x0);
+      const b = cfg.bins.find(b => xv >= b.lo && xv < b.hi); if (!b) return hide();
+      const top = Y(share(b));
+      hl.setAttribute('x', X(b.lo) + 0.5); hl.setAttribute('width', Math.max(1, X(b.hi) - X(b.lo) - 1)); hl.setAttribute('y', Math.min(top, H - m.b - 2)); hl.setAttribute('height', Math.max(2, H - m.b - top)); hl.setAttribute('visibility', 'visible');
+      tip.innerHTML = `<div style="color:var(--muted)">${pctS(b.lo, 0)} to ${pctS(b.hi, 0)}</div><div><i style="background:${cfg.color}"></i>${b.n.toLocaleString('en-US')} windows: <b>${share(b).toFixed(1)}%</b></div>`;
+      placeTip(tip, svg, W, H, X((b.lo + b.hi) / 2), m.t);
+    };
+    const hide = () => { tip.hidden = true; hl.setAttribute('visibility', 'hidden'); };
+    hit.addEventListener('pointermove', show); hit.addEventListener('pointerdown', show); hit.addEventListener('pointerleave', hide); hit.addEventListener('pointercancel', hide);
+  }
+
+  // ===================== 1. SETUP =====================
+  const inputs = { amt: 'amt', S: 'spot', F: 'fwd', ih: 'ih', iff: 'if', X: 'strike', p: 'prem' };
+  function writeInputs() {
+    const c = C(), step = Math.pow(10, -c.dp);
+    $('amt').value = st.amt; $('spot').value = st.S; $('fwd').value = st.F; $('ih').value = st.ih; $('if').value = st.iff; $('strike').value = st.X; $('prem').value = st.p;
+    ['spot', 'fwd', 'strike'].forEach(id => $(id).step = step);
+    $('prem').step = Math.pow(10, -c.pdp);
+  }
+  function readInput(key) {
+    const v = parseFloat($(inputs[key]).value);
+    if (!isFinite(v)) return false;
+    if (['amt', 'S', 'F', 'X'].includes(key) && v <= 0) return false;
+    if (key === 'p' && v < 0) return false;
+    if ((key === 'ih' || key === 'iff') && (v < -10 || v > 100)) return false;
+    st[key] = v; return true;
+  }
+  Object.keys(inputs).forEach(k => $(inputs[k]).addEventListener('input', () => { if (readInput(k)) { if (k === 'S') clampST(); renderAll(); } }));
+  $('fwdCip').addEventListener('click', () => { st.F = +irpF(st.S, st.ih, st.iff).toFixed(C().dp); $('fwd').value = st.F; renderAll(); });
+  $('reset').addEventListener('click', () => { defaults(); writeInputs(); renderAll(); });
+  $('cur').addEventListener('change', e => { st.cur = e.target.value; defaults(); writeInputs(); syncReplayIndex(curDay); renderAll(); });
+  const setPos = p => { st.pos = p; $('posRec').setAttribute('aria-pressed', p === 'rec'); $('posPay').setAttribute('aria-pressed', p === 'pay'); renderAll(); };
+  $('posRec').addEventListener('click', () => setPos('rec'));
+  $('posPay').addEventListener('click', () => setPos('pay'));
+
+  function render1() {
+    const c = C(), rec = isRec(), A = st.amt, N = NAMES();
+    $('amtLab').textContent = `Amount ${rec ? 'to receive' : 'to pay'} in 90 days (${c.sym})`;
+    $('amtHint').textContent = fc(A) + (rec ? ' receivable' : ' payable');
+    $('spot').previousElementSibling.textContent = `Spot rate S ($ per ${c.sym})`;
+    $('ifLab').innerHTML = `${c.rname} interest rate i<sub>f</sub> (annual %)`;
+    $('ihHint').textContent = `90-day rate: ${pct(per(st.ih) * 100, 4)}`;
+    $('ifHint').textContent = `90-day rate: ${pct(per(st.iff) * 100, 4)}`;
+    const prem = (st.F / st.S - 1) * 100;
+    $('fwdHint').textContent = `Forward ${prem >= 0 ? 'premium' : 'discount'} (F − S)/S = ${pctS(prem, 3)}.`;
+    $('optCap').textContent = `${rec ? 'Put' : 'Call'} option on ${c.plural} (example values)`;
+    $('premHint').textContent = `${pct(st.p / st.S * 100, 2)} of spot; costs ${usd(A * st.p)} in total`;
+    $('ownBox').querySelector('label').textContent = `My 90-day forward rate ($ per ${c.sym})`;
+
+    const mm = A * mmRate(), fw = A * st.F;
+    const optWorst = A * (rec ? st.X - st.p : st.X + st.p);
+    $('lockTbl').innerHTML = `<thead><tr><th>Choice</th><th>${rec ? 'Dollars received' : 'Dollars paid'}</th></tr></thead><tbody>
+      <tr><td class="wrapok"><span class="sw" style="background:var(--s1)"></span>${N.U}</td><td class="wrapok">${fc(A)} × S<sub>T</sub>: unknown today</td></tr>
+      <tr><td class="wrapok"><span class="sw" style="background:var(--s2)"></span>${N.F}</td><td>${usd(fw)} <span class="tag">certain</span></td></tr>
+      <tr><td class="wrapok"><span class="sw" style="background:var(--s2)"></span>${N.M}</td><td>${usd(mm)} <span class="tag">certain</span></td></tr>
+      <tr><td class="wrapok"><span class="sw" style="background:var(--s3)"></span>${N.O}</td><td class="wrapok">${rec ? 'At least' : 'At most'} ${usd(optWorst)}; ${rec ? 'more if S<sub>T</sub> rises above' : 'less if S<sub>T</sub> falls below'} ${fx(st.X)}</td></tr></tbody>`;
+
+    const f90 = per(st.iff), h90 = per(st.ih);
+    if (rec) {
+      $('mmTitle').textContent = 'Money market hedge on a receivable: borrow foreign, invest home';
+      const borrow = A / (1 + f90), conv = borrow * st.S;
+      $('mmSteps').innerHTML = `<li>Borrow ${fc(borrow)} today: ${fc(A)} ÷ (1 + ${pct(f90 * 100, 4)}).</li><li>Convert at spot ${fx(st.S)}: ${usd(conv)}.</li><li>Invest at the US 90-day rate ${pct(h90 * 100, 4)}: grows to <b>${usd(mm)}</b>.</li><li>In 90 days, repay the ${c.sym} loan (${fc(A)}) with the receivable.</li>`;
+    } else {
+      $('mmTitle').textContent = 'Money market hedge on a payable: borrow home, invest foreign';
+      const inv = A / (1 + f90), cost = inv * st.S;
+      $('mmSteps').innerHTML = `<li>Deposit ${fc(inv)} today at ${pct(f90 * 100, 4)}: grows to the ${fc(A)} you owe.</li><li>Buy those ${c.plural} at spot ${fx(st.S)}: costs ${usd(cost)}.</li><li>Borrow ${usd(cost)} at the US 90-day rate ${pct(h90 * 100, 4)}.</li><li>In 90 days, repay <b>${usd(mm)}</b>.</li>`;
+    }
+    const Fp = irpF(st.S, st.ih, st.iff);
+    $('irp').textContent = `Interest rate parity: F = S × (1 + i_h)/(1 + i_f) = ${st.S} × ${(1 + h90).toFixed(6)} / ${(1 + f90).toFixed(6)} = ${fx(Fp, c.dp + 1)}`;
+    const diff = fw - mm, tol = A * Math.pow(10, -c.dp) / 2;
+    let v;
+    if (Math.abs(diff) <= tol) v = `Your forward equals the parity value (to the quoted decimals), so the forward and money market hedges give the same dollars. That is what covered interest arbitrage enforces.`;
+    else {
+      const fwdBetter = better(fw, mm);
+      v = `Your forward is ${st.F > Fp ? 'above' : 'below'} the parity value, so the <b>${fwdBetter ? 'forward hedge' : 'money market hedge'}</b> is better here by ${usd(Math.abs(diff))} (${rec ? 'more received' : 'less paid'}). In real markets covered interest arbitrage keeps this gap small.`;
+    }
+    $('irpVerdict').innerHTML = v;
+  }
+
+  // ===================== 2. PAYOFF =====================
+  const range = () => { // ±8% around spot, widened so the strike, the forward and the break-evens stay in view
+    const key = [st.X - st.p, st.X + st.p, st.F - st.p, st.F + st.p, mmRate()].filter(v => v > 0);
+    const lo = Math.min(st.S * 0.92, ...key.map(v => v - st.S * 0.03)), hi = Math.max(st.S * 1.08, ...key.map(v => v + st.S * 0.03));
+    return [Math.max(lo, st.S * 0.5), Math.min(hi, st.S * 1.5)];
+  };
+  function clampST() { const [lo, hi] = range(); st.ST = Math.max(lo, Math.min(hi, st.ST || st.S)); }
+  $('st').addEventListener('input', e => { st.ST = +e.target.value; render2(); });
+  const setFlat = f => { st.flat = f; $('flatF').setAttribute('aria-pressed', f === 'F'); $('flatM').setAttribute('aria-pressed', f === 'M'); render2(); };
+  $('flatF').addEventListener('click', () => setFlat('F'));
+  $('flatM').addEventListener('click', () => setFlat('M'));
+
+  function breakEvens(flatRate) {
+    const rec = isRec(), X = st.X, p = st.p, out = [];
+    const fname = st.flat === 'F' ? 'forward' : 'money market hedge';
+    out.push({ x: flatRate, a: 'U', b: st.flat, text: `Unhedged = ${fname} at S<sub>T</sub> = ${fx(flatRate)}. ${rec ? 'Above' : 'Below'} it, remaining unhedged would have done better.` });
+    const ou = rec ? X - p : X + p;
+    out.push({ x: ou, a: 'U', b: 'O', text: `Option = unhedged at S<sub>T</sub> = X ${rec ? '−' : '+'} p = ${fx(ou)}. ${rec ? 'Below' : 'Above'} it, the ${optName()} beats remaining unhedged.` });
+    if (rec ? flatRate + p > X : flatRate - p < X) {
+      const of = rec ? flatRate + p : flatRate - p;
+      out.push({ x: of, a: st.flat, b: 'O', text: `Option = ${fname} at S<sub>T</sub> = ${rec ? 'F + p' : 'F − p'} = ${fx(of)}. ${rec ? 'Above' : 'Below'} it, the option beats the ${fname}.` });
+    } else out.push({ x: null, text: `With these inputs the option is never worse than the ${fname}: its worst case already ${rec ? 'beats' : 'costs less than'} the locked-in rate.` });
+    return out;
+  }
+
+  function render2() {
+    const c = C(), rec = isRec(), A = st.amt, N = NAMES(), dp = c.dp;
+    const [lo, hi] = range();
+    const sl = $('st'), step = Math.pow(10, -dp);
+    sl.min = lo.toFixed(dp); sl.max = hi.toFixed(dp); sl.step = step; sl.value = st.ST;
+    $('stOut').textContent = fx(st.ST);
+    $('stNote').textContent = `${pctS((st.ST / st.S - 1) * 100, 1)} vs. today's spot ${fx(st.S)}. Drag, or tap the chart.`;
+    $('lead2').innerHTML = `Each line shows the dollars the ${rec ? 'exporter receives' : 'importer pays'} for ${fc(A)} if the spot rate in 90 days turns out to be S<sub>T</sub>. A flat line means the amount is locked in today. ${rec ? 'Higher is better.' : 'Lower is better.'} The option line is a hockey stick: the ${optName()} sets a ${rec ? 'floor' : 'ceiling'} and keeps the ${rec ? 'upside' : 'benefit of a falling rate'}, minus the premium.`;
+    $('c1title').textContent = rec ? 'Dollars received in 90 days (higher is better)' : 'Dollars paid in 90 days (lower is better)';
+    const flatRate = st.flat === 'F' ? st.F : mmRate();
+    const flatKey = st.flat;
+    $('leg1').innerHTML = `<span><i style="background:var(--s1)"></i>${N.U}</span><span><i style="background:var(--s2)"></i>${N[flatKey]}</span><span><i style="background:var(--s3)"></i>${N.O}</span>`;
+
+    const xs = []; const n = 120; for (let k = 0; k <= n; k++) xs.push(lo + (hi - lo) * k / n);
+    [st.X, st.X - st.p, st.X + st.p, flatRate].forEach(v => { if (v > lo && v < hi) xs.push(v); }); xs.sort((a, b) => a - b);
+    const ser = [
+      { key: 'U', name: N.U, color: 'var(--s1)', pts: [[lo, A * lo], [hi, A * hi]] },
+      { key: flatKey, name: N[flatKey], color: 'var(--s2)', pts: [[lo, A * flatRate], [hi, A * flatRate]] },
+      { key: 'O', name: N.O, color: 'var(--s3)', pts: xs.map(x => [x, A * optRate(x)]) },
+    ];
+    const ys = [A * lo, A * hi, A * flatRate, A * optRate(lo), A * optRate(hi), A * st.F, A * mmRate()];
+    let ymin = Math.min(...ys), ymax = Math.max(...ys); const pad = (ymax - ymin) * 0.06; ymin -= pad; ymax += pad;
+    const yt = nticks(ymin, ymax, 5); const yf = moneyAxis(yt.s, ymax);
+    const xt = nticks(lo, hi, 6); const xdp = dpFor(xt.s);
+    const bes = breakEvens(flatRate);
+    const yOf = k => x => k === 'U' ? A * x : k === 'O' ? A * optRate(x) : A * flatRate;
+    const marks = bes.filter(b => b.x != null && b.x >= lo && b.x <= hi).map((b, k) => ({ x: b.x, y: yOf(b.a)(b.x), color: 'var(--fg)', badge: String(bes.indexOf(b) + 1), bdy: (rec ? -16 : 16) * (k === 1 ? -1 : 1) }));
+    const out = outcomes(st.ST);
+    const all = ['U', 'F', 'M', 'O'];
+    lineChart({
+      svg: $('chart1'), tip: $('tip1'), x: [lo, hi], y: [ymin, ymax], xTicks: xt.t, yTicks: yt.t, ml: 68,
+      xFmt: v => '$' + v.toFixed(xdp), yFmt: yf, xTitle: `Spot rate in 90 days ($ per ${c.sym})`, yTitle: rec ? 'Dollars received' : 'Dollars paid',
+      vrefs: [{ x: st.ST, label: 'Your scenario' }].concat(st.S >= lo && st.S <= hi && Math.abs(st.S - st.ST) > (hi - lo) * 0.04 ? [{ x: st.S, label: 'Spot today' }] : []),
+      series: ser,
+      marks: marks.concat(ser.map(s => ({ x: st.ST, y: out[s.key], color: s.color }))),
+      snap: v => +v.toFixed(dp),
+      tipAt: x => { const o = outcomes(x); return { head: `S<sub>T</sub> = ${fx(x)}`, rows: all.map(k => ({ name: N[k], val: usd(o[k]), color: COL[k], y: (k === 'U' || k === 'O' || k === flatKey) ? o[k] : null, hollow: true })) }; },
+      onClick: v => { st.ST = +v.toFixed(dp); render2(); },
+    });
+    $('chart1').setAttribute('aria-label', `Payoff chart for a ${fc(A)} ${rec ? 'receivable' : 'payable'}. Unhedged dollars rise one-for-one with the future spot rate; the ${N[flatKey].toLowerCase()} is flat at ${usd(A * flatRate)}; the ${optName()} option hedge is ${rec ? 'at least' : 'at most'} ${usd(A * (rec ? st.X - st.p : st.X + st.p))}.`);
+    $('beList').innerHTML = bes.map((b, k) => `<li>${b.x != null ? `<span class="bn">${k + 1}</span>` : '<span class="bn">–</span>'}<span>${b.text}</span></li>`).join('');
+
+    // scoreboard at S_T
+    const best = all.reduce((a, k) => better(out[k], out[a]) ? k : a, 'U');
+    const tieTol = Math.max(0.5, A * Math.pow(10, -dp) / 2); // forward is quoted to dp decimals, so treat rounding gaps as ties
+    const tied = all.filter(k => Math.abs(out[k] - out[best]) <= tieTol);
+    $('scoreTbl').innerHTML = `<thead><tr><th>At S<sub>T</sub> = ${fx(st.ST)}</th><th>${rec ? 'Received' : 'Paid'}</th><th>Real cost of hedging</th></tr></thead><tbody>` +
+      all.map(k => { const r = k === 'U' ? null : rch(out[k], out.U); return `<tr class="${tied.includes(k) ? 'cur' : ''}"><td><span class="sw" style="background:${COL[k]}"></span>${N[k]}${tied.includes(k) ? ' <span class="tag">best here</span>' : ''}</td><td>${usd(out[k])}</td>${r == null ? '<td>–</td>' : `<td class="${r > 0.5 ? 'neg' : r < -0.5 ? 'pos' : ''}">${usdS(r)}</td>`}</tr>`; }).join('') + '</tbody>';
+    $('rchDef').innerHTML = rec ? 'RCH<sub>r</sub> = dollars received without hedging − dollars received with hedging.' : 'RCH<sub>p</sub> = dollars paid with hedging − dollars paid without hedging.';
+    const unWins = better(out.U, out.F);
+    $('take2').innerHTML = `At this S<sub>T</sub>, remaining unhedged ${unWins ? 'beats' : 'loses to'} the forward by ${usd(Math.abs(out.U - out.F))}. Drag S<sub>T</sub> to the other side of ${fx(st.F)} and the answer flips. The forward's dollars never move; the unhedged dollars always do.`;
+
+    // table view
+    const rows = nticks(lo, hi, 12).t; if (!rows.some(v => Math.abs(v - st.ST) < step / 2)) { rows.push(st.ST); rows.sort((a, b) => a - b); }
+    $('tbl1').innerHTML = `<thead><tr><th>S<sub>T</sub></th>${all.map(k => `<th>${N[k]}</th>`).join('')}</tr></thead><tbody>` +
+      rows.map(x => { const o = outcomes(x); return `<tr class="${Math.abs(x - st.ST) < step / 2 ? 'cur' : ''}"><td>${fx(x)}</td>${all.map(k => `<td>${usd(o[k])}</td>`).join('')}</tr>`; }).join('') + '</tbody>';
+  }
+
+  // ===================== 3. REPLAY =====================
+  function syncReplayIndex(day) {
+    const s = getSer(st.cur), W = s.win;
+    $('win').max = W.length - 1;
+    if (day != null) { let k = W.findIndex(w => s.days[w.i] >= day); if (k < 0) k = W.length - 1; rp.w = k; }
+    rp.w = Math.max(0, Math.min(W.length - 1, rp.w));
+    $('win').value = rp.w;
+    rp.ownF = null;
+  }
+  let curDay = null;
+  $('win').addEventListener('input', e => { rp.w = +e.target.value; rp.ownF = null; render3(); });
+  $('winDate').addEventListener('change', e => { if (!e.target.value) return; syncReplayIndex(fromIso(e.target.value)); render3(); });
+  const setFs = own => { rp.own = own; $('fsCip').setAttribute('aria-pressed', !own); $('fsOwn').setAttribute('aria-pressed', own); $('ownBox').hidden = !own; render3(); };
+  $('fsCip').addEventListener('click', () => setFs(false));
+  $('fsOwn').addEventListener('click', () => setFs(true));
+  $('ownF').addEventListener('input', e => { const v = parseFloat(e.target.value); if (isFinite(v) && v > 0) { rp.ownF = v; render3(); } });
+  $('pp').addEventListener('input', e => { rp.pp = +e.target.value; render3(); });
+
+  const PRESETS = [
+    { t: 'Lehman collapse, Sep 2008', d: '2008-09-15' },
+    { t: 'Brexit vote, Jun 2016', d: '2016-06-23' },
+    { t: 'COVID-19 shock, Mar 2020', d: '2020-03-02' },
+    { t: 'Biggest 90-day rise', f: 'max' },
+    { t: 'Biggest 90-day fall', f: 'min' },
+    { t: 'Most recent window', f: 'last' },
+    { t: 'Random window', f: 'rand' },
+  ];
+  PRESETS.forEach(p => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = p.t;
+    b.addEventListener('click', () => {
+      const s = getSer(st.cur), W = s.win;
+      if (p.d) syncReplayIndex(fromIso(p.d));
+      else { let k = 0; if (p.f === 'last') k = W.length - 1; else if (p.f === 'rand') k = Math.floor(Math.random() * W.length); else W.forEach((w, i) => { if (p.f === 'max' ? w.chg > W[k].chg : w.chg < W[k].chg) k = i; }); rp.w = k; syncReplayIndex(); }
+      render3();
+    });
+    $('presets').appendChild(b);
+  });
+
+  function render3() {
+    const c = C(), rec = isRec(), A = st.amt, s = getSer(st.cur), w = s.win[rp.w], N = NAMES(), dp = c.dp;
+    const d0 = s.days[w.i], d1 = s.days[w.j], S0 = s.vals[w.i], ST = s.vals[w.j];
+    curDay = d0;
+    $('winOut').textContent = `${fmtD(d0)} → ${fmtD(d1)}`;
+    $('winDate').min = iso(s.days[s.win[0].i]); $('winDate').max = iso(s.days[s.win[s.win.length - 1].i]); $('winDate').value = iso(d0);
+    $('lead3').innerHTML = `Uses the position, currency and amount from step 1: a ${fc(A)} ${rec ? 'receivable' : 'payable'}. Each window starts on a trading day and ends on the first trading day at least 90 days later (FRED noon buying rates). Historical forward rates are <b>not</b> in FRED, so the forward is estimated with interest rate parity, or you can type one in.`;
+    $('ppOut').textContent = rp.pp.toFixed(1) + '%';
+
+    // forward for this window
+    const cipOK = w.F != null;
+    if (rp.own && rp.ownF == null) { rp.ownF = cipOK ? +w.F.toFixed(dp) : +S0.toFixed(dp); }
+    if (rp.own) $('ownF').value = rp.ownF;
+    $('ownF').step = Math.pow(10, -dp);
+    const F = rp.own ? rp.ownF : (cipOK ? w.F : null);
+    const ih = w.ih, iff = w.iff;
+    const mlab = monLab(iso(d0).slice(0, 7));
+    let fnote;
+    if (cipOK) fnote = `Interest rate parity estimate: F ≈ S × (1 + i<sub>h</sub>×90/360)/(1 + i<sub>f</sub>×90/360) = ${fx(S0)} × (1 + ${pct(ih, 2)}×90/360)/(1 + ${pct(iff, 2)}×90/360) = <b>${fx(w.F)}</b>, using ${mlab} averages of the ${US_RSRC.split(' (')[0]} and the ${c.rsrc.split(' (')[0]}. It is an approximation, not a quoted forward.`;
+    else fnote = `<b>No interest rate parity estimate for ${mlab}:</b> ${ih == null ? 'the US rate series has no value for that month' : 'the ' + c.rsrc.split(' (')[0] + ' series has no value for that month'}. Choose "Enter my own" to type a forward rate.`;
+    if (rp.own) fnote = `You entered F = ${fx(rp.ownF)}. ` + (cipOK ? `(The parity estimate is ${fx(w.F)}.)` : '');
+    $('fwdNote3').innerHTML = fnote;
+
+    // option: at-the-money strike, assumed premium
+    const X = S0, p = S0 * rp.pp / 100;
+    $('optNote3').innerHTML = `${optName() === 'put' ? 'Put' : 'Call'} with strike X = spot at the start (${fx(X)}) and premium p = ${fx(p, dp + 1)} per unit (${usd(A * p)} in total). FRED has no option prices, so this premium is an assumption; real premiums rise with volatility.`;
+
+    const out = { U: A * ST, F: F == null ? null : A * F, M: cipOK ? A * S0 * (1 + per(ih)) / (1 + per(iff)) : null, O: A * optRate(ST, X, p, rec) };
+    const all = ['U', 'F', 'M', 'O'].filter(k => out[k] != null);
+    const best = all.reduce((a, k) => better(out[k], out[a]) ? k : a, 'U');
+    const tied = all.filter(k => Math.abs(out[k] - out[best]) < 0.5);
+    const effRate = { U: ST, F: F, M: cipOK ? S0 * (1 + per(ih)) / (1 + per(iff)) : null, O: optRate(ST, X, p, rec) };
+    $('replayTbl').innerHTML = `<thead><tr><th>${fmtDs(d0)} → ${fmtD(d1)}</th><th>Rate per ${c.sym}</th><th>${rec ? 'Received' : 'Paid'}</th><th>Real cost of hedging</th></tr></thead><tbody>` +
+      ['U', 'F', 'M', 'O'].map(k => {
+        const v = out[k];
+        if (v == null) return `<tr><td><span class="sw" style="background:${COL[k]}"></span>${N[k]}</td><td>–</td><td>–</td><td class="wrapok">needs a forward or rates</td></tr>`;
+        const r = k === 'U' ? null : rch(v, out.U);
+        const lab = k === 'F' ? (rp.own ? ' (your F)' : ' (parity estimate)') : k === 'M' ? ' (from the same rates)' : k === 'O' ? ' (assumed premium)' : '';
+        return `<tr class="${tied.includes(k) ? 'cur' : ''}"><td><span class="sw" style="background:${COL[k]}"></span>${N[k]}<span class="note">${lab}</span>${tied.includes(k) ? ' <span class="tag">won afterwards</span>' : ''}</td><td>${fx(effRate[k])}</td><td>${usd(v)}</td>${r == null ? '<td>–</td>' : `<td class="${r > 0.5 ? 'neg' : r < -0.5 ? 'pos' : ''}">${usdS(r)}</td>`}</tr>`;
+      }).join('') + '</tbody>';
+
+    const chg = (ST / S0 - 1) * 100;
+    let vt = `The ${c.name} ${chg >= 0 ? 'rose' : 'fell'} ${pct(Math.abs(chg), 1)}, from ${fx(S0)} to ${fx(ST)}. `;
+    if (out.F != null) {
+      const diff = out.U - out.F, uw = better(out.U, out.F);
+      vt += `Remaining unhedged ${rec ? 'brought in' : 'cost'} ${usd(Math.abs(diff))} ${diff >= 0 ? 'more' : 'less'} than the forward hedge, so afterwards the <b>${uw ? 'gamble' : 'hedge'}</b> looks better. `;
+    }
+    vt += `On ${fmtDs(d0)} nobody knew which way it would go. That is the risk the hedge removes.`;
+    $('verdict3').innerHTML = vt;
+
+    // chart
+    const pts = []; for (let k = w.i; k <= w.j; k++) pts.push([s.days[k] - d0, s.vals[k]]);
+    const optLine = rec ? X - p : X + p;
+    const ser = [{ name: 'Spot rate (unhedged)', color: 'var(--s1)', pts }];
+    if (F != null) ser.push({ name: 'Forward rate locked in', color: 'var(--s2)', pts: [[0, F], [d1 - d0, F]] });
+    ser.push({ name: `Option ${rec ? 'floor X − p' : 'cap X + p'}`, color: 'var(--s3)', pts: [[0, optLine], [d1 - d0, optLine]], dash: '7 5' });
+    $('leg2').innerHTML = ser.map(z => `<span><i style="background:${z.color}"></i>${z.name}</span>`).join('');
+    const yv = pts.map(q => q[1]).concat([optLine, F ?? S0]);
+    let y0 = Math.min(...yv), y1 = Math.max(...yv); const pd = (y1 - y0) * 0.08 || S0 * 0.01; y0 -= pd; y1 += pd;
+    const yt = nticks(y0, y1, 5), ydp = dpFor(yt.s);
+    const xend = d1 - d0;
+    const marks = [{ x: xend, y: ST, color: 'var(--s1)' }]; if (F != null) marks.push({ x: xend, y: F, color: 'var(--s2)' }); marks.push({ x: xend, y: effRate.O, color: 'var(--s3)' });
+    lineChart({
+      svg: $('chart2'), tip: $('tip2'), x: [0, xend], y: [y0, y1], xTicks: [0, 30, 60, 90].filter(v => v <= xend), yTicks: yt.t, ml: 64, ratio: 0.7,
+      xFmt: v => fmtDs(d0 + v), yFmt: v => '$' + v.toFixed(Math.max(ydp, 2)), xTitle: `Days since ${fmtD(d0)}`, yTitle: `$ per ${c.sym}`,
+      series: ser, marks,
+      regions: [],
+      snap: v => { let best = pts[0]; pts.forEach(q => { if (Math.abs(q[0] - v) < Math.abs(best[0] - v)) best = q; }); return best[0]; },
+      tipAt: x => { const q = pts.find(q => q[0] === x); if (!q) return null; return { x, head: `${fmtD(d0 + x)} (day ${x})`, rows: [{ name: 'Spot', val: fx(q[1]), color: 'var(--s1)', y: q[1] }].concat(F != null ? [{ name: 'Forward', val: fx(F), color: 'var(--s2)', y: F }] : []).concat([{ name: rec ? 'Option floor' : 'Option cap', val: fx(optLine), color: 'var(--s3)', y: optLine }]) }; },
+    });
+    $('chart2').setAttribute('aria-label', `Spot rate from ${fmtD(d0)} (${fx(S0)}) to ${fmtD(d1)} (${fx(ST)})` + (F != null ? `, forward rate ${fx(F)}` : '') + `, option ${rec ? 'floor' : 'cap'} ${fx(optLine)}.`);
+    $('tbl2').innerHTML = `<thead><tr><th>Date</th><th>Day</th><th>Spot ($ per ${c.sym})</th></tr></thead><tbody>` + pts.map(q => `<tr><td>${fmtD(d0 + q[0])}</td><td>${q[0]}</td><td>${fx(q[1])}</td></tr>`).join('') + '</tbody>';
+
+    renderDist(chg);
+    renderNotice();
+  }
+
+  // distribution over all windows
+  let distCache = {};
+  function distFor(cur) {
+    if (distCache[cur]) return distCache[cur];
+    const s = getSer(cur), W = s.win;
+    const ch = W.map(w => w.chg), pr = W.filter(w => w.prem != null).map(w => w.prem);
+    const beatRec = W.filter(w => w.F != null && s.vals[w.j] > w.F).length, nF = pr.length;
+    const sorted = ch.slice().sort((a, b) => a - b), q = f => sorted[Math.min(sorted.length - 1, Math.floor(f * sorted.length))];
+    const mean = ch.reduce((a, b) => a + b, 0) / ch.length, sd = Math.sqrt(ch.reduce((a, b) => a + (b - mean) ** 2, 0) / (ch.length - 1));
+    const prs = pr.slice().sort((a, b) => a - b);
+    const lo = Math.floor(Math.min(sorted[0], prs[0] ?? 0)), hi = Math.ceil(Math.max(sorted[sorted.length - 1], prs[prs.length - 1] ?? 0));
+    const bins = (arr) => { const b = []; for (let x = lo; x < hi; x++) b.push({ lo: x, hi: x + 1, n: 0 }); arr.forEach(v => { const k = Math.min(b.length - 1, Math.floor(v - lo)); b[k].n++; }); return b; };
+    const firstF = W.find(w => w.F != null);
+    return (distCache[cur] = { n: ch.length, nF, lo, hi, chBins: bins(ch), prBins: bins(pr), min: sorted[0], max: sorted[sorted.length - 1], p5: q(0.05), p95: q(0.95), sd, prMin: prs[0], prMax: prs[prs.length - 1], beatRec, first: s.days[W[0].i], last: s.days[W[W.length - 1].i], firstF: firstF ? s.days[firstF.i] : null });
+  }
+  function renderDist(markChg) {
+    const c = C(), rec = isRec(), D = distFor(st.cur), A = st.amt, s = getSer(st.cur), w = s.win[rp.w];
+    const beat = rec ? D.beatRec : D.nF - D.beatRec;
+    const beatPct = beat / D.nF * 100;
+    $('distLead').innerHTML = `${D.n.toLocaleString('en-US')} overlapping 90-day windows starting ${fmtD(D.first)} to ${fmtD(D.last)}. Left: how much the spot rate moved, which is how much an unhedged ${rec ? 'receivable' : 'payable'} of ${fc(A)} would have changed in dollars. Right: how far the parity-estimated forward rate sat from the starting spot rate (${D.nF.toLocaleString('en-US')} windows with both interest rates${D.firstF && D.firstF > D.first + 30 ? `, from ${fmtD(D.firstF)}` : ''}). ${rec ? 'For an exporter, a rise in the spot rate is good news and a fall is bad news.' : 'For an importer, a fall in the spot rate is good news and a rise is bad news.'}`;
+    $('distStats').innerHTML = `<div><span class="k">Unhedged: middle 90% of windows</span><b>${pctS(D.p5)} to ${pctS(D.p95)}</b><span class="note">full range ${pctS(D.min)} to ${pctS(D.max)}; on ${fc(A)} at today's spot that is ${usdS(A * st.S * D.min / 100)} to ${usdS(A * st.S * D.max / 100)}</span></div>
+      <div><span class="k">Forward hedge: full range vs. starting spot</span><b>${pctS(D.prMin, 2)} to ${pctS(D.prMax, 2)}</b><span class="note">known on day 0, set by the interest rate differential</span></div>
+      <div><span class="k">Remaining unhedged beat the forward</span><b>${pct(beatPct, 0)} of windows</b><span class="note">the forward won in the other ${pct(100 - beatPct, 0)}</span></div>`;
+    const color1 = 'var(--s1)', color2 = 'var(--s2)';
+    histChart({ svg: $('chart3'), tip: $('tip3'), bins: D.chBins, total: D.n, x: [D.lo, D.hi], color: color1, xTitle: `Change in $ per ${c.sym} over 90 days`, mark: markChg });
+    histChart({ svg: $('chart4'), tip: $('tip4'), bins: D.prBins, total: D.nF, x: [D.lo, D.hi], color: color2, xTitle: 'Forward vs. starting spot, (F − S)/S', mark: w.prem });
+    $('chart3').setAttribute('aria-label', `Histogram of 90-day changes in the ${c.name}: middle 90% from ${pctS(D.p5)} to ${pctS(D.p95)}.`);
+    $('chart4').setAttribute('aria-label', `Histogram of forward premiums: from ${pctS(D.prMin, 2)} to ${pctS(D.prMax, 2)}.`);
+    $('tbl3').innerHTML = `<thead><tr><th>Bin</th><th>Unhedged: windows</th><th>Share</th><th>Forward: windows</th><th>Share</th></tr></thead><tbody>` +
+      D.chBins.map((b, k) => { const f = D.prBins[k]; if (!b.n && !f.n) return ''; return `<tr><td>${pctS(b.lo, 0)} to ${pctS(b.hi, 0)}</td><td>${b.n}</td><td>${(b.n / D.n * 100).toFixed(1)}%</td><td>${f.n}</td><td>${(f.n / D.nF * 100).toFixed(1)}%</td></tr>`; }).join('') + '</tbody>';
+  }
+
+  // ===================== 4. NOTICE =====================
+  function renderNotice() {
+    const c = C(), rec = isRec(), A = st.amt, D = distFor(st.cur);
+    const beat = (rec ? D.beatRec : D.nF - D.beatRec) / D.nF * 100;
+    const worst = A * (rec ? st.X - st.p : st.X + st.p);
+    const adverse = rec ? Math.abs(D.p5) : D.p95;
+    $('notice').innerHTML = `
+      <p class="takeaway"><b class="h">1 · A forward locks in certainty.</b> With F = ${fx(st.F)} the ${rec ? 'exporter receives' : 'importer pays'} ${usd(A * st.F)} whatever the spot rate does. The flat line in step 2 gives up the good outcomes to get rid of the bad ones. The money market hedge does the same with loans and deposits; under interest rate parity the two give the same dollars.</p>
+      <p class="takeaway"><b class="h">2 · An option buys a ${rec ? 'floor' : 'ceiling'} and keeps the upside, for a premium.</b> The ${optName()} guarantees ${rec ? 'at least' : 'at most'} ${usd(worst)} and still lets the firm gain if the ${c.name} ${rec ? 'rises' : 'falls'}. The price is the premium, ${usd(A * st.p)} here, paid even when the option is never exercised.</p>
+      <p class="takeaway"><b class="h">3 · Whether hedging "wins" afterwards is not the point.</b> Remaining unhedged beat the parity forward in ${pct(beat, 0)} of the 90-day windows since ${dObj(D.first).getUTCFullYear()}${beat > 40 && beat < 60 ? ', close to a coin flip' : ''}. A hedge is chosen on day 0, when nobody knows the outcome. In 1 window in 20 the ${c.name} moved ${pct(adverse, 0)} or more against an unhedged ${rec ? 'exporter' : 'importer'}; the hedge removes that risk. Its real cost turns out positive in some windows and negative in others.</p>`;
+  }
+
+  // ---------- source line ----------
+  function renderSource() {
+    const last = k => monLab(DATA.rlast[k]);
+    $('source').innerHTML = `Sources: exchange rates from the Board of Governors of the Federal Reserve System, H.10 noon buying rates in New York, via FRED (series DEXUSEU, DEXUSUK, DEXJPUS; daily, ${fmtD(fromIso('1999-01-04'))} to ${DATA.fx.EUR.last.replace(/(\d+)-(\d+)-(\d+)/, (m, y, mo, d) => MON[+mo - 1] + ' ' + (+d) + ', ' + y)}). Interest rates, monthly averages: ${US_RSRC} through ${last('USD')} (no value for Apr 2020); euro-area, UK and Japan 3-month interbank rates from the OECD via FRED (IR3TIB01EZM156N through ${last('EUR')}; IR3TIB01GBM156N through ${last('GBP')}; IR3TIB01JPM156N from Apr 2002 through ${last('JPY')}). Months without a rate have no parity forward estimate.`;
+  }
+
+  function renderAll() { render1(); render2(); render3(); }
+
+  // ---------- start ----------
+  defaults(); writeInputs(); renderSource();
+  syncReplayIndex(fromIso('2008-09-15'));
+  renderAll();
+  let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { render2(); render3(); }, 150); });
+})();
+</script>
+</body></html>

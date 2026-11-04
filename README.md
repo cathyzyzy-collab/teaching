@@ -13,3 +13,4 @@ Apps (all listed at https://cathyzyzy-collab.github.io/teaching/):
 - [Triangular Arbitrage Game](https://cathyzyzy-collab.github.io/teaching/triangular-arbitrage/)
 - [Country Risk Premiums](https://cathyzyzy-collab.github.io/teaching/country-risk/)
 - [PPP Over the Decades](https://cathyzyzy-collab.github.io/teaching/ppp-decades/)
+- [Hedge or Gamble?](https://cathyzyzy-collab.github.io/teaching/fx-hedging/)
