@@ -1,0 +1,960 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>TVM Stories</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: six short stories stacked top to bottom. Each pairs controls with one hand-drawn SVG picture, a calculation card and a "try this" prompt. */
+:root {
+  color-scheme: light;
+  --bg: #eef1f1; --fg: #1a2328; --muted: #5b6a70; --panel: #ffffff; --line: #d5dcde;
+  --accent: #0f7c71; --cap: #f3f6f6; --neg: #a1402f; --pos: #1d6b3a;
+  --grid: #e3e8e9; --axis: #8a989d;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-cond: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #11171a; --fg: #e2e8ea; --muted: #9aaab0; --panel: #182024; --line: #29343a;
+    --accent: #5cc9bb; --cap: #1f292e; --neg: #e3826f; --pos: #6fcf8f;
+    --grid: #253035; --axis: #6f7f85;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #11171a; --fg: #e2e8ea; --muted: #9aaab0; --panel: #182024; --line: #29343a;
+  --accent: #5cc9bb; --cap: #1f292e; --neg: #e3826f; --pos: #6fcf8f;
+  --grid: #253035; --axis: #6f7f85;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+[hidden] { display: none !important; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 28px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); }
+header.top { display: grid; gap: 6px; margin-bottom: 22px; }
+header.top h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+header.top p { margin: 0; color: var(--muted); max-width: 76ch; }
+nav.steps { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+nav.steps a { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 999px; padding: 3px 12px; }
+nav.steps a:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+a { color: var(--accent); }
+
+section.lesson { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px 22px; margin-bottom: 22px; display: grid; gap: 16px; min-width: 0; }
+.lesson > h2 { margin: 0; font-size: 19px; font-weight: 600; display: flex; gap: 10px; align-items: baseline; }
+.lesson > h2 .num { font-family: var(--font-cond); font-size: 13px; color: var(--panel); background: var(--accent); border-radius: 999px; padding: 1px 9px; flex: none; }
+.lesson > p.lead { margin: -8px 0 0; color: var(--muted); max-width: 82ch; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 22px; align-items: start; }
+.grid2.even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+@media (max-width: 860px) { .grid2, .grid2.even { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 520px) { section.lesson { padding: 16px 14px 18px; } header.top h1 { font-size: 23px; } }
+
+/* controls */
+.controls { display: grid; gap: 12px; min-width: 0; }
+.ctl { display: grid; gap: 4px; }
+.ctl .lab { font-size: 13px; font-weight: 600; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.ctl .lab b { color: var(--fg); font-size: 15px; font-variant-numeric: tabular-nums; }
+.ctl.big .lab b { font-size: 20px; color: var(--accent); }
+input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; margin: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; flex-wrap: wrap; }
+.seg button { font: 600 13px var(--font-body); border: 0; background: transparent; color: var(--muted); padding: 4px 12px; cursor: pointer; }
+.seg button[aria-pressed=true] { background: var(--accent); color: var(--panel); }
+.btn { font: 600 13px var(--font-body); color: var(--accent); background: transparent; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+.btn:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.btn[aria-pressed=true] { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.btn:focus-visible, .seg button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.lab2 { font-size: 13px; font-weight: 600; color: var(--muted); }
+input[aria-invalid=true] { border-color: var(--neg) !important; }
+input[type=number] { font: 500 14px var(--font-body); font-variant-numeric: tabular-nums; color: var(--fg); background: var(--cap); border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px; width: 100%; min-width: 0; }
+
+/* stat cards */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.stat { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 2px; background: color-mix(in srgb, var(--cap) 60%, var(--panel)); min-width: 0; }
+.stat .k { font-size: 12.5px; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.stat .k i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.stat .v { font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stat .s { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.verdict { margin: 0; font-size: 15px; }
+
+/* contributed vs growth bars */
+.cbars { display: grid; gap: 8px; }
+.cbar { display: grid; gap: 3px; }
+.cbar .t { font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+.cbar .bar { display: flex; height: 14px; border-radius: 4px; overflow: hidden; background: var(--cap); }
+.cbar .bar span { display: block; height: 100%; }
+.cbar .bar .paid { background: var(--axis); }
+.ckey { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--muted); }
+.ckey i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+
+/* calculation card */
+.calc { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; background: color-mix(in srgb, var(--cap) 60%, var(--panel)); min-width: 0; }
+.calc h3 { margin: 0; font-size: 13.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.calc h4 { margin: 0; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.calc h4 i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.calcgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px 20px; }
+.calcgrid > div { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.formula { font-family: ui-monospace, Consolas, monospace; font-size: 13px; background: var(--cap); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; overflow-wrap: anywhere; }
+.keys { font-size: 13.5px; line-height: 1.9; overflow-wrap: anywhere; }
+.cap { font-family: var(--font-cond); font-size: 12px; font-weight: 600; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--cap); color: var(--fg); white-space: nowrap; }
+.keys .ans { font-weight: 600; color: var(--accent); white-space: nowrap; }
+.keys .step { color: var(--muted); font-size: 12.5px; }
+
+/* charts */
+.chart { position: relative; min-width: 0; display: grid; gap: 6px; }
+.chart svg { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.chart .gridl { stroke: var(--grid); stroke-width: 1; }
+.chart .axisl { stroke: var(--axis); stroke-width: 1; }
+.chart .tick { font: 500 11.5px var(--font-body); fill: var(--muted); font-variant-numeric: tabular-nums; }
+.chart .axtitle { font: 600 12px var(--font-body); fill: var(--muted); }
+.chart .ref { stroke: var(--axis); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.chart .reflab { font: 500 11.5px var(--font-body); fill: var(--muted); }
+.chart .series { fill: none; stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
+.chart .dlab { font: 600 12.5px var(--font-body); fill: var(--fg); font-variant-numeric: tabular-nums; }
+.chart .cross { stroke: var(--axis); stroke-width: 1; }
+.chart .dot { stroke: var(--panel); stroke-width: 2; }
+.chart .rowlab { font: 600 12.5px var(--font-body); fill: var(--fg); paint-order: stroke; stroke: var(--panel); stroke-width: 3px; }
+.chart .rowlab.sel { fill: var(--accent); }
+.chart .barlab { font: 600 11.5px var(--font-body); fill: var(--fg); font-variant-numeric: tabular-nums; }
+.chart .tl { stroke: var(--fg); stroke-width: 2; }
+.chart .ghost { fill: none; stroke: var(--axis); stroke-width: 1.25; stroke-dasharray: 3 3; }
+.chart .arc { fill: none; stroke: var(--axis); stroke-width: 1; stroke-dasharray: 2 3; opacity: .85; }
+.chart .colhit:focus { outline: none; }
+.chart .colhit:focus-visible { stroke: var(--accent); stroke-width: 2; }
+.tip { position: absolute; pointer-events: none; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; font-size: 12.5px; line-height: 1.45; box-shadow: 0 4px 14px rgba(0,0,0,.12); white-space: nowrap; font-variant-numeric: tabular-nums; z-index: 2; }
+.tip i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--muted); }
+.legend span i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: 3px; }
+.legend span i.sq { height: 10px; width: 10px; vertical-align: -1px; }
+.legend span i.dash { background: none !important; border-top: 2px dashed var(--axis); height: 0; }
+.charthead { display: flex; justify-content: space-between; align-items: baseline; gap: 6px 10px; flex-wrap: wrap; }
+.charthead h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.note { margin: 0; font-size: 13px; color: var(--muted); }
+.src { margin: 0; font-size: 12.5px; color: var(--muted); max-width: 90ch; }
+
+/* tables */
+.tblwrap { overflow-x: auto; max-height: 360px; overflow-y: auto; }
+table.data { border-collapse: collapse; width: 100%; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+table.data th, table.data td { padding: 4px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.data th { font-size: 12.5px; color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--panel); }
+table.data th:first-child, table.data td:first-child { text-align: left; }
+table.data tr.cur td { background: color-mix(in srgb, var(--accent) 10%, transparent); font-weight: 600; }
+td.neg { color: var(--neg); }
+details.tbl summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--accent); width: max-content; }
+details.tbl[open] summary { margin-bottom: 8px; }
+
+/* timeline inputs */
+.cfgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; }
+.cfgrid label { display: grid; gap: 2px; font-size: 12px; font-weight: 600; color: var(--muted); }
+
+.takeaway { margin: 0; padding: 10px 14px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); border-radius: 0 8px 8px 0; font-size: 14.5px; }
+.try { margin: 0; padding: 10px 14px; border: 1px dashed color-mix(in srgb, var(--accent) 55%, var(--line)); border-radius: 10px; font-size: 14px; }
+.try b:first-child { color: var(--accent); }
+.warn { color: var(--neg); font-weight: 600; }
+footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 86ch; display: grid; gap: 6px; }
+footer.note p { margin: 0; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+</style>
+</head><body>
+<div class="wrap">
+  <header class="top">
+    <h1>TVM Stories</h1>
+    <p>Seven short stories about the time value of money. Each one is a real situation you can play with: move a slider, watch the picture change, then check the five keys, N, I/Y, PV, PMT, FV. Sign convention as in class: money you pay out is negative, money you receive is positive.</p>
+    <nav class="steps" aria-label="Stories"><a href="#s1">1 · Start early</a><a href="#s2">2 · What $1 became</a><a href="#s3">3 · The timeline</a><a href="#s4">4 · The $2 billion jackpot</a><a href="#s5">5 · Minimum payments</a><a href="#s6">6 · Easy money</a><a href="#s7">7 · Rule of 72</a></nav>
+  </header>
+
+  <!-- ===================== 1. START EARLY ===================== -->
+  <section class="lesson" id="s1" aria-labelledby="h1">
+    <h2 id="h1"><span class="num">1</span>Start early or start late?</h2>
+    <p class="lead">Saver A invests every year from age 20 to 30, then stops and never adds another dollar. Saver B waits, then invests the same amount every year from age 30 until retirement, three times as many deposits. Both earn the same return. Who retires with more?</p>
+    <div class="grid2">
+      <div class="controls">
+        <div class="ctl">
+          <div class="lab"><label for="e_amt">Deposit each year</label><b id="e_amtOut"></b></div>
+          <input type="range" id="e_amt" min="1000" max="20000" step="500" value="5000">
+        </div>
+        <div class="ctl big">
+          <div class="lab"><label for="e_r">Annual return, I/Y</label><b id="e_rOut"></b></div>
+          <input type="range" id="e_r" min="1" max="15" step="0.1" value="10">
+        </div>
+        <div class="row">
+          <span class="lab2">Retire at</span>
+          <div class="seg" role="group" aria-label="Retirement age"><button type="button" id="e_60" aria-pressed="true">60</button><button type="button" id="e_65" aria-pressed="false">65</button></div>
+          <button class="btn" type="button" id="e_be">Set I/Y to break-even</button>
+          <button class="btn" type="button" id="e_sp">Long-run stocks (10%)</button>
+        </div>
+        <div class="stats">
+          <div class="stat"><span class="k"><i style="background:var(--s1)"></i><span>Saver A (ages 20–30)</span></span><span class="v" id="e_A"></span><span class="s" id="e_Asub"></span></div>
+          <div class="stat"><span class="k"><i style="background:var(--s2)"></i><span>Saver B (ages 30–<span class="e_R">60</span>)</span></span><span class="v" id="e_B"></span><span class="s" id="e_Bsub"></span></div>
+        </div>
+        <p class="verdict" id="e_verdict" aria-live="polite"></p>
+        <div class="cbars" id="e_bars"></div>
+        <p class="src">Default return: 10%, close to the S&amp;P 500's compound (geometric) average annual return of 10.02% with dividends reinvested, 1928–2025 (Damodaran, NYU Stern, <i>Historical Returns on Stocks, Bonds and Bills</i>, updated January 2026). Past returns are not a promise; stocks can lose money in any year.</p>
+      </div>
+      <div class="chart" id="e_wrap">
+        <div class="charthead"><h3>Account balance by age</h3><div class="legend"><span><i style="background:var(--s1)"></i>Saver A</span><span><i style="background:var(--s2)"></i>Saver B</span></div></div>
+        <svg id="e_svg" role="img" aria-label="Balances of Saver A and Saver B by age"></svg>
+        <div class="tip" hidden></div>
+        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="e_tbl"></table></div></details>
+      </div>
+    </div>
+    <div class="calc">
+      <h3>The keystrokes (END mode, P/Y = 1)</h3>
+      <div class="calcgrid" id="e_calc"></div>
+      <p class="note">Deposits are made at the end of each year: Saver A makes 10 deposits during ages 20–30, Saver B one deposit a year from age 30 until retirement. In Excel the deposit is negative (cash out), so FV comes out positive.</p>
+    </div>
+    <p class="takeaway" id="e_take"></p>
+    <p class="try"><b>Try this.</b> Click <i>Set I/Y to break-even</i>. Below that rate B's extra deposits win; above it A's head start wins. Now switch retirement to 65: B keeps saving five more years, so how much higher does the break-even rate move?</p>
+  </section>
+
+  <!-- ===================== 2. WHAT $1 BECAME ===================== -->
+  <section class="lesson" id="s2" aria-labelledby="h2">
+    <h2 id="h2"><span class="num">2</span>What $1 became</h2>
+    <p class="lead">One dollar invested at the start of the year you choose, left alone, with every dividend and interest payment reinvested. Real U.S. returns, year by year. Compounding at a few extra percent a year, for decades, is the whole story.</p>
+    <div class="grid2">
+      <div class="controls">
+        <div class="ctl big">
+          <div class="lab"><label for="h_start">Invest $1 at the start of</label><b id="h_startOut"></b></div>
+          <input type="range" id="h_start" min="1928" max="2016" step="1" value="1928">
+        </div>
+        <div class="row">
+          <div class="seg" role="group" aria-label="Dollars"><button type="button" id="h_nom" aria-pressed="true">Nominal $</button><button type="button" id="h_real" aria-pressed="false">After inflation</button></div>
+          <div class="seg" role="group" aria-label="Scale"><button type="button" id="h_log" aria-pressed="true">Log scale</button><button type="button" id="h_lin" aria-pressed="false">Linear scale</button></div>
+        </div>
+        <div class="stats" id="h_stats"></div>
+        <div class="calc">
+          <h3>Solve for I/Y: the compound annual return</h3>
+          <div class="keys" id="h_keys"></div>
+          <div class="formula" id="h_excel"></div>
+        </div>
+      </div>
+      <div class="chart" id="h_wrap">
+        <div class="charthead"><h3 id="h_title">Growth of $1</h3><div class="legend"><span><i style="background:var(--s1)"></i>S&amp;P 500 (with dividends)</span><span><i style="background:var(--s2)"></i>10-year Treasury bond</span><span><i style="background:var(--s3)"></i>3-month T-bill</span></div></div>
+        <svg id="h_svg" role="img" aria-label="Growth of one dollar in stocks, bonds and bills"></svg>
+        <div class="tip" hidden></div>
+        <p class="note" id="h_scalenote"></p>
+        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="h_tbl"></table></div></details>
+      </div>
+    </div>
+    <p class="src" id="h_src"></p>
+    <p class="takeaway" id="h_take"></p>
+    <p class="try"><b>Try this.</b> Switch to <i>After inflation</i>. How much purchasing power did T-bills, the "safe" choice, add over the whole period? Then switch to <i>Linear scale</i>: why do the bond and bill lines vanish, and why does a log scale make equal percentage gains look like equal steps?</p>
+  </section>
+
+  <!-- ===================== 3. TIMELINE ===================== -->
+  <section class="lesson" id="s3" aria-labelledby="h3">
+    <h2 id="h3"><span class="num">3</span>The cash-flow timeline</h2>
+    <p class="lead">Every TVM problem starts with a timeline. Put a cash flow at each tick, and each one is discounted back to t = 0 by dividing by (1 + I)<sup>t</sup>. Add the pieces and you have the present value. Pick a problem from class or type your own.</p>
+    <div class="grid2">
+      <div class="controls">
+        <div class="row" id="t_presets" role="group" aria-label="Examples from class"></div>
+        <div class="ctl">
+          <div class="lab"><label for="t_n">Periods, N</label><b id="t_nOut"></b></div>
+          <input type="range" id="t_n" min="1" max="10" step="1" value="3">
+        </div>
+        <div class="ctl big">
+          <div class="lab"><label for="t_r">Rate per period, I/Y</label><b id="t_rOut"></b></div>
+          <input type="range" id="t_r" min="0" max="20" step="0.1" value="4">
+        </div>
+        <div class="row">
+          <span class="lab2">Payment timing</span>
+          <div class="seg" role="group" aria-label="Payment timing"><button type="button" id="t_end" aria-pressed="true">END (ordinary)</button><button type="button" id="t_bgn" aria-pressed="false">BGN (annuity due)</button></div>
+        </div>
+        <div>
+          <div class="lab2" style="margin-bottom:4px">Cash flow for each period (+ in, − out)</div>
+          <div class="cfgrid" id="t_cfs"></div>
+        </div>
+      </div>
+      <div class="chart" id="t_wrap">
+        <div class="charthead"><h3>Each cash flow and its value today</h3><div class="legend"><span><i class="sq" style="background:var(--s2)"></i>Cash flow at time t</span><span><i class="sq" style="background:var(--s1)"></i>Its value at t = 0 (PV)</span><span id="t_ghostkey" hidden><i class="dash"></i>Where END would put it</span></div></div>
+        <svg id="t_svg" role="img" aria-label="Cash-flow timeline with present values"></svg>
+        <div class="tip" hidden></div>
+        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="t_tbl"></table></div></details>
+      </div>
+    </div>
+    <div class="stats" id="t_stats"></div>
+    <p class="verdict" id="t_mode" aria-live="polite"></p>
+    <div class="calc">
+      <h3>The keystrokes</h3>
+      <div class="calcgrid" id="t_calc"></div>
+    </div>
+    <p class="try"><b>Try this.</b> Load <i>Stipend (error clinic 01)</i>: "at the beginning of each of four academic years, the first of which begins one year from today." Flip between END and BGN. Which one matches the words, and why is the BGN answer exactly (1 + I) times too big? Then load <i>Deferred $500s</i> and see why N = 5 overstates the value.</p>
+  </section>
+
+  <!-- ===================== 4. LOTTERY ===================== -->
+  <section class="lesson" id="s4" aria-labelledby="h4">
+    <h2 id="h4"><span class="num">4</span>The $2.04 billion jackpot that was really $997.6 million</h2>
+    <p class="lead">On November 8, 2022, one Powerball ticket sold in California won an advertised $2.04 billion. The winner could choose 30 payments over 29 years (the first right away, each 5% larger than the one before) or $997.6 million in cash today, both before taxes. Which is worth more depends on one number: the discount rate.</p>
+    <div class="grid2">
+      <div class="controls">
+        <div class="ctl big">
+          <div class="lab"><label for="l_r">Discount rate, I/Y</label><b id="l_rOut"></b></div>
+          <input type="range" id="l_r" min="0" max="10" step="0.01" value="6">
+        </div>
+        <div class="row"><button class="btn" type="button" id="l_be">Set to break-even rate</button></div>
+        <div class="stats">
+          <div class="stat"><span class="k"><i style="background:var(--s1)"></i>PV of the 30 payments</span><span class="v" id="l_pv"></span><span class="s">first payment <span id="l_p1"></span>, last <span id="l_p30"></span></span></div>
+          <div class="stat"><span class="k"><i style="background:var(--axis)"></i>Cash option today</span><span class="v">$997.6 million</span><span class="s">49% of the advertised $2.04 billion</span></div>
+        </div>
+        <p class="verdict" id="l_verdict" aria-live="polite"></p>
+      </div>
+      <div class="chart" id="l_wrap">
+        <div class="charthead"><h3>What the payments are worth today, at each discount rate</h3><div class="legend"><span><i style="background:var(--s1)"></i>PV of the annuity</span><span><i class="dash"></i>Cash option</span></div></div>
+        <svg id="l_svg" role="img" aria-label="Present value of the jackpot annuity by discount rate"></svg>
+        <div class="tip" hidden></div>
+        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="l_tbl"></table></div></details>
+      </div>
+    </div>
+    <div class="calc">
+      <h3>The calculation</h3>
+      <div class="calcgrid" id="l_calc"></div>
+    </div>
+    <p class="src">Source: Powerball, “Ticket in California wins world record $2.04 billion Powerball jackpot,” November 8, 2022 (powerball.com). Payment schedule (30 graduated payments over 29 years, rising 5% a year) as described by Powerball for its annuity option. Taxes are ignored here.</p>
+    <p class="try"><b>Try this.</b> The break-even rate is the I/Y "built into" the annuity. Would you rather take the cash and invest it at that rate yourself? Compare it with the class version (slide 28): $3,025,000 today or $250,000 a year for 20 years, first payment in one year: 20 <span class="keys"><span class="cap">N</span></span> −3,025,000 <span class="keys"><span class="cap">PV</span></span> 250,000 <span class="keys"><span class="cap">PMT</span></span> 0 <span class="keys"><span class="cap">FV</span></span> <span class="keys"><span class="cap">CPT</span> <span class="cap">I/Y</span></span> = 5.35%.</p>
+  </section>
+
+  <!-- ===================== 5. CREDIT CARD ===================== -->
+  <section class="lesson" id="s5" aria-labelledby="h5">
+    <h2 id="h5"><span class="num">5</span>The minimum-payment trap</h2>
+    <p class="lead">A credit-card balance is a loan you pay back as an annuity. Pay only the minimum and the payment shrinks as the balance shrinks, so the loan drags on for years. Pay a fixed amount and it is an ordinary annuity you can solve for N.</p>
+    <div class="grid2">
+      <div class="controls">
+        <div class="ctl">
+          <div class="lab"><label for="c_bal">Balance owed</label><b id="c_balOut"></b></div>
+          <input type="range" id="c_bal" min="500" max="20000" step="100" value="5000">
+        </div>
+        <div class="ctl">
+          <div class="lab"><label for="c_apr">APR</label><b id="c_aprOut"></b></div>
+          <input type="range" id="c_apr" min="5" max="36" step="0.01" value="22.36">
+        </div>
+        <div class="ctl big">
+          <div class="lab"><label for="c_pmt">Your fixed monthly payment</label><b id="c_pmtOut"></b></div>
+          <input type="range" id="c_pmt" min="25" max="1000" step="5" value="200">
+        </div>
+        <div class="stats">
+          <div class="stat"><span class="k"><i style="background:var(--s2)"></i>Minimum payment only</span><span class="v" id="c_minT"></span><span class="s" id="c_minI"></span></div>
+          <div class="stat"><span class="k"><i style="background:var(--s1)"></i>Fixed payment</span><span class="v" id="c_fixT"></span><span class="s" id="c_fixI"></span></div>
+        </div>
+        <p class="verdict" id="c_verdict" aria-live="polite"></p>
+        <p class="src">Example only. Default APR 22.36% is the average rate on credit-card accounts assessed interest at U.S. commercial banks, August 2026 (Federal Reserve G.19 via FRED, series TERMCBCCINTNS). Minimum payment here = that month's interest + 1% of the balance, at least $25, a common formula; your card's rule may differ. Interest is charged monthly at APR ÷ 12.</p>
+      </div>
+      <div class="chart" id="c_wrap">
+        <div class="charthead"><h3>Balance still owed</h3><div class="legend"><span><i style="background:var(--s2)"></i>Minimum payment</span><span><i style="background:var(--s1)"></i>Fixed payment</span></div></div>
+        <svg id="c_svg" role="img" aria-label="Credit card balance over time under two payment plans"></svg>
+        <div class="tip" hidden></div>
+        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="c_tbl"></table></div></details>
+      </div>
+    </div>
+    <div class="calc">
+      <h3>Solve for N with a fixed payment (P/Y = 1, monthly rate)</h3>
+      <div class="keys" id="c_keys"></div>
+      <div class="formula" id="c_excel"></div>
+    </div>
+    <p class="try"><b>Try this.</b> Set the fixed payment to the first month's minimum payment (shown in the table) and compare. Then find the smallest fixed payment that clears the balance in 3 years: set N = 36 and <span class="keys"><span class="cap">CPT</span> <span class="cap">PMT</span></span>.</p>
+  </section>
+
+  <!-- ===================== 6. RULE OF 72 ===================== -->
+  <!-- ===================== 6. EASY MONEY ===================== -->
+  <section class="lesson" id="s6" aria-labelledby="h6">
+    <h2 id="h6"><span class="num">6</span>The true cost of “easy” money</h2>
+    <p class="lead">Short-term credit is usually advertised as a small fee: $15 per $100, a $7 late fee, “just $20 a week.” Turn each fee into a rate per period, then an annual rate. The APR simply multiplies the periodic rate by the number of periods a year, m. The effective annual rate (EAR) also counts interest on interest: EAR = (1 + APR/m)<sup>m</sup> − 1.</p>
+    <div class="grid2">
+      <div class="controls">
+        <div><div class="lab2" style="margin-bottom:4px">Pick a product to edit</div>
+        <div class="seg" role="group" aria-label="Product" id="m_pick"></div></div>
+        <div class="cfgrid" id="m_inputs" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr))"></div>
+        <p class="note" id="m_desc"></p>
+        <div class="stats" id="m_stats"></div>
+      </div>
+      <div class="chart" id="m_wrap">
+        <div class="charthead"><h3>APR vs. effective annual rate</h3><div class="legend"><span><i class="sq" style="background:var(--s1)"></i>APR (quoted)</span><span><i class="sq" style="background:var(--s2)"></i>EAR (effective)</span><span><i class="dash"></i>Stocks, 10.02% a year</span></div></div>
+        <svg id="m_svg" role="img" aria-label="APR and effective annual rate for four kinds of credit, log scale"></svg>
+        <div class="tip" hidden></div>
+        <p class="note">Log scale: each gridline is 10 times the one before, and bars start at 1%. A bar twice as long is not twice the rate.</p>
+        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="m_tbl"></table></div></details>
+      </div>
+    </div>
+    <div class="calc">
+      <h3>From fee to APR to EAR</h3>
+      <div class="calcgrid" id="m_calc"></div>
+    </div>
+    <p class="takeaway" id="m_take"></p>
+    <p class="src">Payday loan default: the CFPB reported that payday loans “have finance charges of $15 or $20 for each $100 borrowed” over a typical two-week term, an APR of 391% to 521% (Consumer Financial Protection Bureau, “Consumer Financial Protection Bureau examines payday lending,” January 19, 2012). Credit card default: 22.36%, the average rate on accounts assessed interest, August 2026 (Federal Reserve G.19 via FRED, TERMCBCCINTNS). The buy-now-pay-later late fee and the rent-to-own deal are illustrative examples, not quotes from any company. Fees, terms and legal limits vary by lender and by state. EAR assumes the same deal is repeated all year.</p>
+    <p class="try"><b>Try this.</b> For the payday loan, change the fee from $15 to $20 per $100: the APR rises by a third, but by how much does the EAR rise? Then make the rent-to-own payment $15 a week. Finally, check the credit card on the calculator: 2ND ICONV, NOM = 22.36, C/Y = 12, CPT EFF.</p>
+  </section>
+
+  <section class="lesson" id="s7" aria-labelledby="h7">
+    <h2 id="h7"><span class="num">7</span>The Rule of 72, checked</h2>
+    <p class="lead">A quick mental shortcut: money doubles in about 72 ÷ (rate in %) years. How close is it to the exact answer from the calculator? Slide 15 asked the same question: sales growing 10% a year double in about 7.3 years.</p>
+    <div class="grid2">
+      <div class="controls">
+        <div class="ctl big">
+          <div class="lab"><label for="d_r">Growth rate, I/Y</label><b id="d_rOut"></b></div>
+          <input type="range" id="d_r" min="1" max="30" step="0.1" value="10">
+        </div>
+        <div class="stats">
+          <div class="stat"><span class="k"><i style="background:var(--s2)"></i>Rule of 72</span><span class="v" id="d_72"></span><span class="s" id="d_72s"></span></div>
+          <div class="stat"><span class="k"><i style="background:var(--s1)"></i>Exact (CPT N)</span><span class="v" id="d_ex"></span><span class="s" id="d_err"></span></div>
+        </div>
+        <div class="calc">
+          <h3>Solve for N</h3>
+          <div class="keys" id="d_keys"></div>
+          <div class="formula" id="d_excel"></div>
+        </div>
+      </div>
+      <div class="chart" id="d_wrap">
+        <div class="charthead"><h3>How far off is the Rule of 72?</h3><div class="legend"><span><i style="background:var(--s2)"></i>Rule of 72 minus exact answer (years)</span><span><i class="dash"></i>Half a year off</span></div></div>
+        <svg id="d_svg" role="img" aria-label="Rule of 72 error in years, by growth rate"></svg>
+        <div class="tip" hidden></div>
+        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="d_tbl"></table></div></details>
+      </div>
+    </div>
+    <p class="takeaway" id="d_take"></p>
+    <p class="try"><b>Try this.</b> Back to story 1: at 10% Saver A's money doubles about every 7.3 years. From age 30 to 60 that is roughly four doublings, 2<sup>4</sup> = 16. Check it: 1.10<sup>30</sup> = 17.45. Where on the chart does the rule start to drift by more than half a year?</p>
+  </section>
+
+  <footer class="note">
+    <p>All calculations assume annual compounding (P/Y = C/Y = 1) unless a story says otherwise, and are made in your browser. Nothing is stored or sent anywhere.</p>
+    <p>Data sources: Aswath Damodaran, <i>Historical Returns on Stocks, Bonds and Bills: 1928–2025</i> (histretSP, NYU Stern, updated January 2026); U.S. Bureau of Labor Statistics CPI-U, not seasonally adjusted (FRED series CPIAUCNS); Federal Reserve G.19 (FRED series TERMCBCCINTNS); Powerball press release, November 8, 2022; Consumer Financial Protection Bureau, payday lending release, January 19, 2012.</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  const HIST = {"first":1928,"last":2025,"sp":[0.4381116,-0.0829795,-0.2512364,-0.4383755,-0.0864236,0.4998223,-0.0118857,0.4674042,0.3194341,-0.3533673,0.2928265,-0.0109756,-0.1067287,-0.1277146,0.1917376,0.2506131,0.1903068,0.3582108,-0.0842915,0.052,0.0570458,0.1830322,0.3080554,0.2367846,0.1815099,-0.012082,0.5256332,0.3259733,0.0743951,-0.1045736,0.4371995,0.1205646,0.0033654,0.2663771,-0.0881146,0.2261193,0.1641546,0.1239924,-0.0997095,0.2380297,0.1081486,-0.0824137,0.0356114,0.1422115,0.1875536,-0.1430805,-0.2590179,0.3699514,0.23831,-0.069797,0.0650928,0.1851949,0.3173525,-0.0470239,0.2041906,0.2233716,0.0614614,0.3123515,0.1849458,0.0581272,0.1653719,0.3147518,-0.0306445,0.3023484,0.0749373,0.0996705,0.0132592,0.371952,0.2268097,0.3310365,0.2833795,0.2088535,-0.0903182,-0.1184976,-0.2196605,0.283558,0.1074278,0.0483448,0.1561256,0.0548474,-0.3655234,0.2593523,0.1482109,0.0209837,0.1589059,0.3214509,0.1352442,0.0137889,0.1177308,0.2160548,-0.0422687,0.3121168,0.180232,0.2846885,-0.1803751,0.2606068,0.2487861,0.1772366],"tb":[0.0308,0.0316,0.0455,0.0231,0.0107,0.0096,0.0027833,0.001675,0.001725,0.0027583,0.00065,0.0004583,0.0003583,0.0012917,0.003425,0.0038,0.0038,0.0038,0.0038,0.0060083,0.01045,0.01115,0.0120333,0.015175,0.017225,0.0189083,0.0093752,0.0172434,0.0262139,0.0322457,0.0176655,0.0338602,0.0287297,0.0235249,0.0277237,0.0315602,0.0354574,0.0394908,0.0485572,0.0429345,0.053376,0.0666847,0.06391,0.0433426,0.0406184,0.0703544,0.0784578,0.0578639,0.049766,0.0526096,0.0717831,0.1005427,0.1139188,0.1403618,0.1109,0.0895,0.0992,0.0772,0.0615,0.0596,0.0689,0.0839,0.0775,0.0554,0.0351,0.0307,0.0437,0.0566,0.0515,0.052,0.0491,0.0478,0.06,0.0348,0.0164,0.0103,0.014,0.0322,0.0485,0.0448,0.014,0.0015,0.0014,0.0005,0.0009,0.0006,0.0003,0.0005,0.0032,0.0095,0.0197,0.0211,0.0036,0.0004,0.0209,0.0528,0.0518,0.0421],"bd":[0.0083547,0.042038,0.0454093,-0.0255886,0.0879031,0.0185527,0.0796344,0.0447205,0.0501788,0.0137915,0.0421325,0.0441226,0.0540248,-0.020222,0.0229487,0.0249,0.0257761,0.0380442,0.0312837,0.009197,0.0195104,0.0466349,0.004296,-0.0029531,0.02268,0.0414384,0.032898,-0.0133644,-0.0225577,0.0679701,-0.0209902,-0.0264663,0.116395,0.0206092,0.0569354,0.0168416,0.0372806,0.0071886,0.0290794,-0.0158062,0.0327462,-0.0501405,0.1675474,0.097869,0.0281845,0.0365866,0.0198861,0.0360525,0.1598456,0.0128996,-0.0077758,0.0067072,-0.0298974,0.0819922,0.3281455,0.0320021,0.1373336,0.2571249,0.2428422,-0.0496051,0.082236,0.1769365,0.0623538,0.1500451,0.0936164,0.1421096,-0.0803666,0.2348078,0.0142861,0.0993913,0.1492143,-0.0825421,0.1665527,0.0557218,0.151164,0.0037532,0.0449068,0.0286753,0.01961,0.1020992,0.2010128,-0.111167,0.0846293,0.1603533,0.0297157,-0.0910457,0.1074618,0.012843,0.0069055,0.0280172,-0.0001669,0.0963563,0.113319,-0.0441603,-0.1782817,0.0388,-0.0163718,0.0779548],"cpi":[17.3,17.1,17.2,16.1,14.6,13.1,13.2,13.4,13.8,14.0,14.4,14.0,14.0,14.1,15.5,16.9,17.4,17.8,18.2,21.5,23.4,24.1,23.6,25.0,26.5,26.7,26.9,26.7,26.8,27.6,28.4,28.9,29.4,29.8,30.0,30.4,30.9,31.2,31.8,32.9,33.9,35.5,37.7,39.8,41.1,42.5,46.2,51.9,55.5,58.2,62.1,67.7,76.7,86.3,94.0,97.6,101.3,105.3,109.3,110.5,115.4,120.5,126.1,133.8,137.9,141.9,145.8,149.7,153.5,158.6,161.3,163.9,168.3,174.0,176.7,180.9,184.3,190.3,196.8,201.8,210.036,210.228,215.949,219.179,225.672,229.601,233.049,234.812,236.525,241.432,246.524,251.233,256.974,260.474,278.802,296.797,306.746,315.605,324.054]};
+  const $ = id => document.getElementById(id);
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs, parent, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; if (parent) parent.appendChild(e); return e; };
+  const MINUS = '−';
+  const num = (v, d = 2) => (v < 0 ? MINUS : '') + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const money = (v, d = 2) => (v < 0 ? MINUS : '') + '$' + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const pct = (v, d = 2) => num(v, d) + '%';
+  const compact = v => { const a = Math.abs(v), s = v < 0 ? MINUS : ''; if (a >= 1e9) return s + '$' + +(a / 1e9).toFixed(2) + 'B'; if (a >= 1e6) return s + '$' + +(a / 1e6).toFixed(2) + 'M'; if (a >= 1e4) return s + '$' + +(a / 1e3).toFixed(0) + 'K'; if (a >= 1e3) return s + '$' + +(a / 1e3).toFixed(1) + 'K'; return s + '$' + +a.toFixed(2); };
+  const cap = s => `<span class="cap">${s}</span>`;
+  const plain = v => +v.toFixed(6) + ''; // number as typed into a calculator / Excel
+  const fvAnn = (n, r) => r === 0 ? n : (Math.pow(1 + r, n) - 1) / r;
+  const setPressed = (btns, on) => btns.forEach(b => b.setAttribute('aria-pressed', b === on));
+
+  // nice ticks for linear axes
+  function niceTicks(lo, hi, count) {
+    const span = hi - lo || 1, raw = span / count, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map(f => f * mag).find(s => s >= raw);
+    const t = []; for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + 1e-9; v += step) t.push(+v.toPrecision(12));
+    return { ticks: t, max: Math.ceil(hi / step - 1e-9) * step, min: Math.floor(lo / step + 1e-9) * step, step };
+  }
+
+  // ---------- generic line chart: one y-axis, hover crosshair + tooltip, direct labels ----------
+  function lineChart(o) {
+    const wrap = o.wrap, svg = wrap.querySelector('svg'), tip = wrap.querySelector('.tip');
+    const W = Math.max(280, Math.round(svg.parentNode.clientWidth)), narrow = W < 520;
+    const H = narrow ? 270 : 330;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.textContent = '';
+    const labW = o.labels ? Math.max(...o.series.map(s => (s.label || '').length)) * 7 + 12 : 0;
+    const m = { l: o.ml || 62, r: narrow || !o.labels ? 14 : Math.max(16, labW), t: 14, b: 44 };
+    const [x0, x1] = o.x, [y0, y1] = o.y, lg = !!o.log;
+    const T = v => lg ? Math.log10(Math.max(v, 1e-12)) : v;
+    const X = v => m.l + (v - x0) / (x1 - x0) * (W - m.l - m.r);
+    const Y = v => H - m.b - (T(Math.min(Math.max(v, y0), y1)) - T(y0)) / (T(y1) - T(y0)) * (H - m.t - m.b);
+    o.yTicks.forEach(v => { el('line', { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: 'gridl' }, svg); el('text', { x: m.l - 8, y: Y(v) + 4, 'text-anchor': 'end', class: 'tick' }, svg, o.yFmt(v)); });
+    let xT = o.xTicks; if (xT.length > 1) { const gap = X(xT[1]) - X(xT[0]); const k = Math.ceil(42 / Math.max(gap, 1)); if (k > 1) xT = xT.filter((_, j) => j % k === 0); }
+    xT.forEach(v => el('text', { x: X(v), y: H - m.b + 18, 'text-anchor': 'middle', class: 'tick' }, svg, o.xFmt(v)));
+    el('line', { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, class: 'axisl' }, svg);
+    el('text', { x: (m.l + W - m.r) / 2, y: H - 6, 'text-anchor': 'middle', class: 'axtitle' }, svg, o.xTitle);
+    el('text', { x: 13, y: (m.t + H - m.b) / 2, 'text-anchor': 'middle', class: 'axtitle', transform: `rotate(-90 13 ${(m.t + H - m.b) / 2})` }, svg, o.yTitle);
+    (o.refs || []).forEach(r => {
+      if (r.y != null) { el('line', { x1: m.l, x2: W - m.r, y1: Y(r.y), y2: Y(r.y), class: 'ref' }, svg); el('text', { x: r.labelLeft ? m.l + 6 : W - m.r - 4, y: Y(r.y) + (r.below ? 15 : -6), 'text-anchor': r.labelLeft ? 'start' : 'end', class: 'reflab' }, svg, r.label); }
+      if (r.x != null) { el('line', { x1: X(r.x), x2: X(r.x), y1: m.t, y2: H - m.b, class: 'ref' }, svg); el('text', { x: X(r.x) + (r.left ? -5 : 5), y: m.t + 12, 'text-anchor': r.left ? 'end' : 'start', class: 'reflab' }, svg, r.label); }
+    });
+    o.series.forEach(s => {
+      const d = s.pts.map((p, k) => (k ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1)).join(' ');
+      el('path', { d, class: 'series', style: `stroke:${s.color}` + (s.dash ? ';stroke-dasharray:6 4' : '') }, svg);
+    });
+    (o.marks || []).forEach(p => el('circle', { cx: X(p.x), cy: Y(p.y), r: 5.5, class: 'dot', style: `fill:${p.color}` }, svg));
+    // direct labels at the line ends, nudged apart
+    if (o.labels) {
+      const L = o.series.filter(s => s.label).map(s => { const p = s.pts[s.pts.length - 1]; return { s, x: X(p[0]), y: Y(p[1]) }; }).sort((a, b) => a.y - b.y);
+      L.forEach(l => { l.y += narrow ? -9 : 4; });
+      for (let k = 1; k < L.length; k++) if (L[k].y - L[k - 1].y < 15) L[k].y = L[k - 1].y + 15;
+      const over = L.length ? L[L.length - 1].y - (H - m.b - 7) : 0; if (over > 0) L.forEach(l => { l.y -= over; });
+      L.forEach(l => {
+        if (narrow) el('text', { x: l.x - 2, y: l.y, 'text-anchor': 'end', class: 'dlab', style: 'paint-order:stroke;stroke:var(--panel);stroke-width:3px' }, svg, l.s.label);
+        else el('text', { x: l.x + 7, y: l.y, class: 'dlab' }, svg, l.s.label);
+      });
+    }
+    // hover layer
+    const cross = el('line', { y1: m.t, y2: H - m.b, class: 'cross', visibility: 'hidden' }, svg);
+    const hdots = o.series.map(s => el('circle', { r: 4.5, class: 'dot', visibility: 'hidden', style: `fill:${s.color}` }, svg));
+    const hit = el('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: 'transparent', style: 'cursor:crosshair' }, svg);
+    const toX = e => { const r = svg.getBoundingClientRect(); return x0 + ((e.clientX - r.left) * W / r.width - m.l) / (W - m.l - m.r) * (x1 - x0); };
+    const near = (pts, xv) => { let best = null, bd = Infinity; for (const p of pts) { const d = Math.abs(p[0] - xv); if (d < bd) { bd = d; best = p; } } return best; };
+    const show = e => {
+      let xv = Math.max(x0, Math.min(x1, toX(e))); if (o.snap) xv = o.snap(xv);
+      cross.setAttribute('x1', X(xv)); cross.setAttribute('x2', X(xv)); cross.setAttribute('visibility', 'visible');
+      const rows = o.series.map((s, k) => { const p = near(s.pts, xv); if (!p || Math.abs(p[0] - xv) > (o.tol || 1e-6)) { hdots[k].setAttribute('visibility', 'hidden'); return s.missing ? `<div><i style="background:${s.color}"></i>${s.name}: <b>${s.missing}</b></div>` : ''; } hdots[k].setAttribute('cx', X(p[0])); hdots[k].setAttribute('cy', Y(p[1])); hdots[k].setAttribute('visibility', 'visible'); return `<div><i style="background:${s.color}"></i>${s.name}: <b>${o.tipFmt(p[1], s)}</b></div>`; });
+      tip.innerHTML = `<div style="color:var(--muted)">${o.xTip(xv)}</div>` + rows.join('') + (o.tipExtra ? o.tipExtra(xv) : '');
+      tip.hidden = false;
+      const wr = wrap.getBoundingClientRect(), sr = svg.getBoundingClientRect();
+      const px = sr.left - wr.left + X(xv) / W * sr.width, py = sr.top - wr.top + m.t + 4;
+      const tw = tip.offsetWidth; tip.style.left = Math.max(0, Math.min(wr.width - tw, px + (px > wr.width / 2 ? -tw - 12 : 12))) + 'px'; tip.style.top = py + 'px';
+    };
+    const hide = () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); hdots.forEach(d => d.setAttribute('visibility', 'hidden')); };
+    hit.addEventListener('pointermove', show); hit.addEventListener('pointerdown', show); hit.addEventListener('pointerleave', hide);
+    if (o.onClick) hit.addEventListener('click', e => o.onClick(Math.max(x0, Math.min(x1, toX(e)))));
+    return { X, Y };
+  }
+  const table = (tbl, head, rows, curIdx) => { tbl.innerHTML = `<thead><tr>${head.map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead><tbody>${rows.map((r, k) => `<tr${k === curIdx ? ' class="cur"' : ''}>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>`; };
+
+  // ===================== 1. START EARLY =====================
+  const E = { amt: 5000, r: 10, R: 60 };
+  const eA = (x, r, age) => age <= 20 ? 0 : age <= 30 ? x * fvAnn(age - 20, r) : x * fvAnn(10, r) * Math.pow(1 + r, age - 30);
+  const eB = (x, r, age) => age <= 30 ? 0 : x * fvAnn(age - 30, r);
+  function eBreakEven(R) { let lo = 1e-6, hi = 1; for (let k = 0; k < 200; k++) { const mid = (lo + hi) / 2; if (eA(1, mid, R) > eB(1, mid, R)) hi = mid; else lo = mid; } return (lo + hi) / 2 * 100; }
+  function renderE() {
+    const x = E.amt, r = E.r / 100, R = E.R;
+    $('e_amtOut').textContent = money(x, 0); $('e_rOut').textContent = pct(E.r);
+    document.querySelectorAll('.e_R').forEach(s => { s.textContent = R; });
+    const A = eA(x, r, R), B = eB(x, r, R), A30 = eA(x, r, 30), paidA = 10 * x, paidB = (R - 30) * x;
+    $('e_A').textContent = money(A); $('e_Asub').textContent = `${money(paidA, 0)} deposited · 10 deposits`;
+    $('e_B').textContent = money(B); $('e_Bsub').textContent = `${money(paidB, 0)} deposited · ${R - 30} deposits`;
+    const be = eBreakEven(R);
+    let v;
+    if (Math.abs(A - B) < 0.005 * Math.max(A, B)) v = `<b>About a tie.</b> At ${pct(E.r)} the two savers end up level at ${R}.`;
+    else if (A > B) v = `<b style="color:var(--s1)">Saver A wins</b> by ${money(A - B)}, with one third of the deposits. A's ${money(A30)} at age 30 compounds for ${R - 30} more years.`;
+    else v = `<b style="color:var(--s2)">Saver B wins</b> by ${money(B - A)}. At ${pct(E.r)} the extra ${R - 40} deposits beat A's head start.`;
+    $('e_verdict').innerHTML = v + ` Break-even return: <b>${pct(be)}</b>.`;
+    const mx = Math.max(A, B);
+    $('e_bars').innerHTML = [['A', A, paidA, 'var(--s1)'], ['B', B, paidB, 'var(--s2)']].map(([n, end, paid, c]) =>
+      `<div class="cbar"><div class="t"><span>Saver ${n}: deposited ${money(paid, 0)}</span><span>growth ${money(Math.max(0, end - paid), 0)}</span></div><div class="bar" role="img" aria-label="Saver ${n}: ${money(paid, 0)} deposited, ${money(end, 0)} at ${R}"><span class="paid" style="width:${Math.min(paid, end) / mx * 100}%"></span><span style="width:${Math.max(0, end - paid) / mx * 100}%;background:${c}"></span></div></div>`).join('') +
+      `<div class="ckey"><span><i style="background:var(--axis)"></i>Your own deposits</span><span><i style="background:linear-gradient(90deg,var(--s1) 50%,var(--s2) 50%)"></i>Interest on interest (growth)</span></div>`;
+    // chart
+    const ages = []; for (let a = 20; a <= R; a++) ages.push(a);
+    const pA = ages.map(a => [a, eA(x, r, a)]), pB = ages.map(a => [a, eB(x, r, a)]);
+    const nt = niceTicks(0, mx * 1.04, 5);
+    lineChart({ wrap: $('e_wrap'), x: [20, R], y: [0, nt.max], yTicks: nt.ticks, yFmt: compact, xTicks: ages.filter(a => a % 5 === 0), xFmt: a => a, xTitle: 'Age', yTitle: 'Balance',
+      labels: true, snap: Math.round,
+      series: [{ name: 'Saver A', color: 'var(--s1)', pts: pA, label: 'A ' + compact(A) }, { name: 'Saver B', color: 'var(--s2)', pts: pB, label: 'B ' + compact(B) }],
+      refs: [{ x: 30, label: 'A stops, B starts' }],
+      tipFmt: v => money(v, 0), xTip: a => `Age ${a}` });
+    table($('e_tbl'), ['Age', 'A deposited', 'A balance', 'B deposited', 'B balance'], ages.map(a => [a, money(Math.min(10, Math.max(0, a - 20)) * x, 0), money(eA(x, r, a)), money(Math.max(0, Math.min(R, a) - 30) * x, 0), money(eB(x, r, a))]), R - 20);
+    // keystrokes
+    const I = plain(E.r), rr = plain(r);
+    $('e_calc').innerHTML = `
+      <div><h4><i style="background:var(--s1)"></i>Saver A, two steps</h4>
+      <div class="keys"><span class="step">Step 1, deposits to age 30:</span> 10 ${cap('N')} ${I} ${cap('I/Y')} 0 ${cap('PV')} ${num(-x, 0)} ${cap('PMT')} ${cap('CPT')} ${cap('FV')} <span class="ans">= ${num(A30)}</span></div>
+      <div class="keys"><span class="step">Step 2, let it grow to ${R}:</span> ${R - 30} ${cap('N')} ${num(-A30)} ${cap('PV')} 0 ${cap('PMT')} ${cap('CPT')} ${cap('FV')} <span class="ans">= ${num(A)}</span></div>
+      <div class="formula">=FV(${rr}, 10, ${-x}) → ${num(A30)}<br>=FV(${rr}, ${R - 30}, 0, ${-A30.toFixed(2)}) → ${num(A)}</div></div>
+      <div><h4><i style="background:var(--s2)"></i>Saver B, one step</h4>
+      <div class="keys">${R - 30} ${cap('N')} ${I} ${cap('I/Y')} 0 ${cap('PV')} ${num(-x, 0)} ${cap('PMT')} ${cap('CPT')} ${cap('FV')} <span class="ans">= ${num(B)}</span></div>
+      <div class="formula">=FV(${rr}, ${R - 30}, ${-x}) → ${num(B)}</div></div>`;
+    $('e_take').innerHTML = `Saver A puts in ${money(paidA, 0)}; Saver B puts in ${money(paidB, 0)}. At ${pct(E.r)} A's deposits grow to ${num(A / paidA, 1)}× what was put in, B's to ${num(B / paidB, 1)}×. The difference is time: A's first dollar compounds for ${R - 21} years, B's for only ${R - 31}.`;
+  }
+  $('e_amt').addEventListener('input', e => { E.amt = +e.target.value; renderE(); });
+  $('e_r').addEventListener('input', e => { E.r = +e.target.value; renderE(); });
+  $('e_60').addEventListener('click', () => { E.R = 60; setPressed([$('e_60'), $('e_65')], $('e_60')); renderE(); });
+  $('e_65').addEventListener('click', () => { E.R = 65; setPressed([$('e_60'), $('e_65')], $('e_65')); renderE(); });
+  $('e_be').addEventListener('click', () => { E.r = Math.round(eBreakEven(E.R) * 10) / 10; $('e_r').value = E.r; renderE(); });
+  $('e_sp').addEventListener('click', () => { E.r = 10; $('e_r').value = 10; renderE(); });
+
+  // ===================== 2. WHAT $1 BECAME =====================
+  const H2 = { start: 1928, real: false, log: true };
+  const NAMES = [['sp', 'S&P 500', 'var(--s1)'], ['bd', '10-yr T-bond', 'var(--s2)'], ['tb', 'T-bills', 'var(--s3)']];
+  function histPaths(start, real) {
+    const i0 = start - HIST.first, out = {};
+    const cpi0 = HIST.cpi[i0]; // December of the year before the start year
+    NAMES.forEach(([k]) => {
+      let v = 1; const pts = [[start - 1, 1]];
+      for (let i = i0; i < HIST.sp.length; i++) { v *= 1 + HIST[k][i]; const yr = HIST.first + i; pts.push([yr, real ? v / (HIST.cpi[i + 1] / cpi0) : v]); }
+      out[k] = pts;
+    });
+    return out;
+  }
+  const logTickFmt = v => v >= 1 ? '$' + v.toLocaleString('en-US') : '$' + v.toFixed(v >= 0.1 ? 2 : 3).replace(/0+$/, '');
+  function renderH() {
+    const s = H2.start, last = HIST.last, N = last - s + 1;
+    $('h_startOut').textContent = s;
+    const P = histPaths(s, H2.real);
+    const ends = {}; NAMES.forEach(([k]) => { ends[k] = P[k][P[k].length - 1][1]; });
+    const all = NAMES.flatMap(([k]) => P[k].map(p => p[1]));
+    let y0, y1, ticks;
+    if (H2.log) {
+      const lo = Math.floor(Math.log10(Math.min(...all)) * 2) / 2, hi = Math.ceil(Math.log10(Math.max(...all)) * 2) / 2;
+      y0 = Math.pow(10, Math.min(lo, -0.5)); y1 = Math.pow(10, Math.max(hi, 0.5));
+      ticks = []; for (let e = Math.ceil(Math.log10(y0)); e <= Math.floor(Math.log10(y1) + 1e-9); e++) ticks.push(Math.pow(10, e));
+    } else { const nt = niceTicks(0, Math.max(...all) * 1.03, 5); y0 = 0; y1 = nt.max; ticks = nt.ticks; }
+    const xt = []; for (let yr = Math.ceil((s - 1) / 10) * 10; yr <= last; yr += (N > 50 ? 10 : N > 20 ? 5 : 2)) xt.push(yr);
+    const lab = k => ({ sp: 'Stocks ', bd: 'Bonds ', tb: 'Bills ' }[k]) + (ends[k] >= 100 ? money(ends[k], 0) : money(ends[k]));
+    lineChart({ wrap: $('h_wrap'), log: H2.log, x: [s - 1, last], y: [y0, y1], yTicks: ticks, yFmt: H2.log ? logTickFmt : compact, xTicks: xt, xFmt: v => v, xTitle: 'End of year', yTitle: H2.real ? `Value in ${s - 1} dollars` : 'Value of $1', ml: 64,
+      labels: true, snap: Math.round,
+      series: NAMES.map(([k, n, c]) => ({ name: n, color: c, pts: P[k], label: lab(k) })),
+      refs: H2.log ? [{ y: 1, label: 'Your $1', below: true }] : [],
+      tipFmt: v => money(v), xTip: yr => yr === s - 1 ? `Start of ${s}` : `End of ${yr}${H2.real ? ' (after inflation)' : ''}` });
+    $('h_title').textContent = `Growth of $1 invested at the start of ${s}${H2.real ? ', after inflation' : ''}`;
+    $('h_scalenote').textContent = H2.log ? 'Log scale: each gridline is 10 times the one below it, so a steady growth rate plots as a straight line.' : 'Linear scale: equal distances are equal dollar amounts.';
+    const cagr = k => (Math.pow(ends[k], 1 / N) - 1) * 100;
+    $('h_stats').innerHTML = NAMES.map(([k, n, c]) => `<div class="stat"><span class="k"><i style="background:${c}"></i>${n}</span><span class="v">${money(ends[k])}</span><span class="s">${pct(cagr(k))} a year${H2.real ? ' after inflation' : ''}</span></div>`).join('');
+    const fv = ends.sp;
+    $('h_keys').innerHTML = `S&amp;P 500, ${s}–${last}: ${N} ${cap('N')} −1 ${cap('PV')} 0 ${cap('PMT')} ${num(fv)} ${cap('FV')} ${cap('CPT')} ${cap('I/Y')} <span class="ans">= ${pct(cagr('sp'))}</span>`;
+    $('h_excel').textContent = `=RATE(${N}, 0, -1, ${fv.toFixed(2)}) → ${pct(cagr('sp'))}`;
+    const rows = P.sp.map((p, k) => [p[0] === s - 1 ? `Start ${s}` : p[0], money(p[1]), money(P.bd[k][1]), money(P.tb[k][1])]);
+    table($('h_tbl'), ['Year end', 'S&P 500', '10-yr T-bond', '3-month T-bill'], rows, rows.length - 1);
+    $('h_take').innerHTML = `Over ${N} years the S&amp;P 500 compounded at ${pct(cagr('sp'))} a year and T-bills at ${pct(cagr('tb'))}${H2.real ? ' after inflation' : ''}. A gap of ${num(cagr('sp') - cagr('tb'), 1)} percentage points a year turned into a ${num(ends.sp / ends.tb, 0)}-fold difference in ending wealth, in exchange for big losses along the way${(() => { const c = [1931, 1974, 2002, 2008, 2022].filter(y => y >= s); return c.length ? ` (find ${c.length > 1 ? c.slice(0, -1).join(', ') + ' and ' + c[c.length - 1] : c[0]})` : ''; })()}.`;
+  }
+  $('h_src').innerHTML = `Data: annual total returns of the S&amp;P 500 (dividends reinvested), the 10-year U.S. Treasury bond and the 3-month T-bill, ${HIST.first}–${HIST.last}, from Aswath Damodaran, <i>Historical Returns on Stocks, Bonds and Bills</i> (histretSP, NYU Stern, updated January 2026). Inflation: CPI-U for all urban consumers, not seasonally adjusted, December to December (U.S. BLS via FRED, series CPIAUCNS). Last year covered: ${HIST.last}.`;
+  $('h_start').addEventListener('input', e => { H2.start = +e.target.value; renderH(); });
+  $('h_nom').addEventListener('click', () => { H2.real = false; setPressed([$('h_nom'), $('h_real')], $('h_nom')); renderH(); });
+  $('h_real').addEventListener('click', () => { H2.real = true; setPressed([$('h_nom'), $('h_real')], $('h_real')); renderH(); });
+  $('h_log').addEventListener('click', () => { H2.log = true; setPressed([$('h_log'), $('h_lin')], $('h_log')); renderH(); });
+  $('h_lin').addEventListener('click', () => { H2.log = false; setPressed([$('h_log'), $('h_lin')], $('h_lin')); renderH(); });
+
+  // ===================== 3. TIMELINE =====================
+  const TL = { n: 3, r: 4, bgn: false, cf: [0, 100, 100, 100, 0, 0, 0, 0, 0, 0, 0] };
+  const PRESETS = [
+    { t: 'Lump sum (slide 12)', n: 3, r: 4, bgn: false, cf: [0, 0, 0, 100] },
+    { t: 'Ordinary annuity (slide 19)', n: 3, r: 4, bgn: false, cf: [0, 100, 100, 100] },
+    { t: 'Annuity due (slide 20)', n: 3, r: 4, bgn: true, cf: [0, 100, 100, 100] },
+    { t: 'Stipend (error clinic 01)', n: 4, r: 8, bgn: false, cf: [0, 1200, 1200, 1200, 1200] },
+    { t: 'Deferred $500s (error clinic 08)', n: 5, r: 7, bgn: false, cf: [0, 0, 500, 500, 500, 500] },
+    { t: 'Car note (slide 32)', n: 4, r: 5.5, bgn: false, cf: [0, 1000, 2000, 2000, 2000] },
+    { t: 'Project, find IRR (slide 33)', n: 4, r: 10, bgn: false, cf: [-437, 75, 225, 0, 300] },
+  ];
+  const presetBtns = PRESETS.map(p => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = p.t; b.setAttribute('aria-pressed', 'false'); b.addEventListener('click', () => { TL.n = p.n; TL.r = p.r; TL.bgn = p.bgn; TL.cf = p.cf.concat(Array(11).fill(0)).slice(0, 11); syncT(); setPressed(presetBtns, b); }); $('t_presets').appendChild(b); return b; });
+  // effective flows by time: in BGN, the payment for period t arrives at t − 1
+  function effFlows() { const f = Array(TL.n + 1).fill(0); f[0] += TL.cf[0]; for (let t = 1; t <= TL.n; t++) f[TL.bgn ? t - 1 : t] += TL.cf[t]; return f; }
+  const npv = (f, r) => f.reduce((s, c, t) => s + c / Math.pow(1 + r, t), 0);
+  function irr(f) {
+    if (!(f.some(c => c > 0) && f.some(c => c < 0))) return null;
+    let lo = -0.99, flo = npv(f, lo), found = null;
+    for (let r = -0.98; r <= 10; r += 0.01) { const fr = npv(f, r); if (flo * fr <= 0) { found = [r - 0.01, r]; break; } flo = fr; }
+    if (!found) return null; let [a, b] = found;
+    for (let k = 0; k < 100; k++) { const mid = (a + b) / 2; if (npv(f, a) * npv(f, mid) <= 0) b = mid; else a = mid; }
+    return (a + b) / 2 * 100;
+  }
+  function buildInputs() {
+    const g = $('t_cfs'); g.innerHTML = '';
+    for (let t = 0; t <= TL.n; t++) {
+      const l = document.createElement('label'); l.textContent = t === 0 ? 't = 0 (CF0)' : `Period ${t}`;
+      const i = document.createElement('input'); i.type = 'number'; i.step = 'any'; i.value = TL.cf[t]; i.inputMode = 'decimal';
+      i.setAttribute('aria-label', t === 0 ? 'Cash flow at time 0' : `Cash flow for period ${t}`);
+      i.addEventListener('input', () => { const v = parseFloat(i.value); TL.cf[t] = isFinite(v) ? v : 0; setPressed(presetBtns, null); renderT(); });
+      l.appendChild(i); g.appendChild(l);
+    }
+  }
+  function syncT() { $('t_n').value = TL.n; $('t_r').value = TL.r; setPressed([$('t_end'), $('t_bgn')], TL.bgn ? $('t_bgn') : $('t_end')); buildInputs(); renderT(); }
+  const sup = n => String(n).split('').map(d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]).join('');
+  function renderT() {
+    const n = TL.n, r = TL.r / 100, f = effFlows();
+    $('t_nOut').textContent = n; $('t_rOut').textContent = pct(TL.r);
+    const pv = f.map((c, t) => c / Math.pow(1 + r, t)), total = pv.reduce((a, b) => a + b, 0);
+    // the other mode, for comparison
+    const fOther = (() => { const g = Array(n + 1).fill(0); g[0] += TL.cf[0]; for (let t = 1; t <= n; t++) g[!TL.bgn ? t - 1 : t] += TL.cf[t]; return g; })();
+    const totalOther = npv(fOther, r);
+    const ir = irr(f);
+    const hasPeriodFlows = TL.cf.slice(1, n + 1).filter(c => c !== 0).length >= 2;
+    $('t_stats').innerHTML = `<div class="stat"><span class="k"><i style="background:var(--s1)"></i>${f[0] < 0 && f.some(c => c > 0) ? 'NPV' : 'Present value'} at t = 0 (${TL.bgn ? 'BGN' : 'END'})</span><span class="v">${money(total)}</span><span class="s">sum of the blue bars</span></div>` +
+      (hasPeriodFlows ? `<div class="stat"><span class="k">Same inputs in ${TL.bgn ? 'END' : 'BGN'} mode</span><span class="v">${money(totalOther)}</span><span class="s">${Math.abs(totalOther) > 1e-9 && Math.abs(total) > 1e-9 && TL.cf[0] === 0 ? `ratio ${num(TL.bgn ? total / totalOther : totalOther / total, 4)} = 1 + I` : ''}</span></div>` : '') +
+      (ir != null ? `<div class="stat"><span class="k">IRR (CPT IRR)</span><span class="v">${pct(ir)}</span><span class="s">rate where NPV = 0</span></div>` : '');
+    $('t_mode').innerHTML = TL.bgn
+      ? `<b>BGN mode:</b> each period's payment arrives at the <i>start</i> of the period, one tick earlier (dashed outlines show where END would put it). Every flow is discounted one period less, so the PV is (1 + I) times bigger. On the calculator: ${cap('2ND')} ${cap('BGN')} ${cap('2ND')} ${cap('SET')}, then reset to END afterward.`
+      : `<b>END mode</b> (the default): the payment for period t arrives at the end of the period, at tick t. Time 0 is today.`;
+    $('t_ghostkey').hidden = !TL.bgn;
+    drawTimeline(f, pv, total);
+    table($('t_tbl'), ['Time t', 'Cash flow', 'Discount factor 1/(1+I)ᵗ', 'PV at t = 0'], f.map((c, t) => [t, money(c), (1 / Math.pow(1 + r, t)).toFixed(6), money(pv[t])]).concat([['Total', '', '', money(total)]]));
+    // keystrokes
+    const I = plain(TL.r), rr = plain(r);
+    const cfWork = (() => {
+      const groups = []; for (let t = 1; t < f.length; t++) { const g = groups[groups.length - 1]; if (g && g.c === f[t]) g.k++; else groups.push({ c: f[t], k: 1 }); }
+      while (groups.length && groups[groups.length - 1].c === 0) groups.pop();
+      let s = `${cap('CF')} ${cap('2ND')} ${cap('CLR WORK')} ${num(f[0], f[0] % 1 ? 2 : 0)} ${cap('ENTER')} ${cap('↓')} `;
+      groups.forEach((g, k) => { const j = String(k + 1).padStart(2, '0'); s += `<span class="step">C${j}</span> ${num(g.c, g.c % 1 ? 2 : 0)} ${cap('ENTER')} ${cap('↓')} <span class="step">F${j}</span> ${g.k} ${cap('ENTER')} ${cap('↓')} `; });
+      s += `${cap('NPV')} ${I} ${cap('ENTER')} ${cap('↓')} ${cap('CPT')} <span class="ans">NPV = ${num(total)}</span>`;
+      if (ir != null) s += ` · ${cap('IRR')} ${cap('CPT')} <span class="ans">IRR = ${pct(ir)}</span>`;
+      return s;
+    })();
+    const rest = f.slice(1); while (rest.length && rest[rest.length - 1] === 0) rest.pop();
+    let html = `<div><h4>Cash-flow worksheet (any stream)</h4><div class="keys">${cfWork}</div><div class="formula">=${f[0] !== 0 ? plain(f[0]) + '+' : ''}NPV(${rr}, ${rest.map(plain).join(', ') || 0}) → ${num(total)}</div></div>`;
+    // TVM keys when the stream is a lump sum or a level annuity with CF0 = 0
+    const P = TL.cf.slice(1, n + 1), level = TL.cf[0] === 0 && P.every(c => c === P[0]) && P[0] !== 0;
+    const lump = TL.cf[0] === 0 && !TL.bgn && P.slice(0, -1).every(c => c === 0) && P[n - 1] !== 0;
+    if (level) html += `<div><h4>Five keys (level annuity, ${TL.bgn ? 'BGN' : 'END'} mode)</h4><div class="keys">${TL.bgn ? `${cap('2ND')} ${cap('BGN')} ${cap('2ND')} ${cap('SET')} → BGN · ` : ''}${n} ${cap('N')} ${I} ${cap('I/Y')} ${num(P[0], P[0] % 1 ? 2 : 0)} ${cap('PMT')} 0 ${cap('FV')} ${cap('CPT')} ${cap('PV')} <span class="ans">= ${num(-total)}</span></div><div class="formula">=PV(${rr}, ${n}, ${plain(P[0])}, 0, ${TL.bgn ? 1 : 0}) → ${num(-total)}</div><p class="note">PV comes out with the opposite sign: receiving the payments is worth paying ${money(Math.abs(total))} today.</p></div>`;
+    else if (lump) html += `<div><h4>Five keys (lump sum)</h4><div class="keys">${n} ${cap('N')} ${I} ${cap('I/Y')} 0 ${cap('PMT')} ${num(P[n - 1], P[n - 1] % 1 ? 2 : 0)} ${cap('FV')} ${cap('CPT')} ${cap('PV')} <span class="ans">= ${num(-total)}</span></div><div class="formula">=PV(${rr}, ${n}, 0, ${plain(P[n - 1])}) → ${num(-total)}</div></div>`;
+    else html += `<div><h4>Why not the five keys?</h4><p class="note" style="margin:0">PMT must be the same amount every period, starting at t = 1 (END) or t = 0 (BGN). This stream is uneven, deferred or has a CF0, so use the cash-flow worksheet, or split it into pieces (as in error clinic 08: value the annuity, then discount one more period).</p></div>`;
+    $('t_calc').innerHTML = html;
+  }
+  function drawTimeline(f, pv, total) {
+    const wrap = $('t_wrap'), svg = $('t_svg'), tip = wrap.querySelector('.tip');
+    const W = Math.max(280, Math.round(svg.parentNode.clientWidth)), narrow = W < 520, H = narrow ? 280 : 330;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.textContent = '';
+    const n = TL.n, r = TL.r / 100;
+    const m = { l: narrow ? 50 : 60, r: 10, t: 22, b: 40 };
+    const slots = n + 2, sw = (W - m.l - m.r) / slots; // slot 0 = total column, slots 1..n+1 = t = 0..n
+    const SX = k => m.l + (k + 0.5) * sw;
+    const posSum = pv.filter(v => v > 0).reduce((a, b) => a + b, 0), negSum = pv.filter(v => v < 0).reduce((a, b) => a + b, 0);
+    const ghost = TL.bgn ? TL.cf : [];
+    let hi = Math.max(0, posSum, ...f, ...ghost.slice(1, n + 1)), lo = Math.min(0, negSum, ...f, ...ghost.slice(0, n + 1));
+    if (hi === 0 && lo === 0) hi = 100;
+    const nt = niceTicks(lo * 1.08, hi * 1.08, 4); const y0 = Math.min(nt.min, 0), y1 = Math.max(nt.max, 0);
+    const Y = v => m.t + (y1 - v) / (y1 - y0 || 1) * (H - m.t - m.b);
+    niceTicks(y0, y1, 4).ticks.forEach(v => { el('line', { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: 'gridl' }, svg); el('text', { x: m.l - 6, y: Y(v) + 4, 'text-anchor': 'end', class: 'tick' }, svg, compact(v)); });
+    // timeline axis
+    el('line', { x1: SX(1) - sw * 0.45, x2: SX(n + 1) + sw * 0.45, y1: Y(0), y2: Y(0), class: 'tl' }, svg);
+    for (let t = 0; t <= n; t++) { el('line', { x1: SX(t + 1), x2: SX(t + 1), y1: Y(0) - 5, y2: Y(0) + 5, class: 'tl' }, svg); el('text', { x: SX(t + 1), y: H - m.b + 16, 'text-anchor': 'middle', class: 'tick' }, svg, t); }
+    el('text', { x: SX(0), y: H - m.b + 16, 'text-anchor': 'middle', class: 'tick', style: 'font-weight:600' }, svg, 'Σ PV');
+    el('text', { x: (SX(1) + SX(n + 1)) / 2, y: H - 4, 'text-anchor': 'middle', class: 'axtitle' }, svg, `Time (periods) · I/Y = ${pct(TL.r)}`);
+    el('line', { x1: SX(0) - sw * 0.4, x2: SX(0) + sw * 0.4, y1: Y(0), y2: Y(0), class: 'axisl' }, svg);
+    const bw = Math.min(26, sw * 0.32);
+    const bar = (x, a, b, style, cls) => el('rect', { x: x, y: Math.min(Y(a), Y(b)), width: bw, height: Math.max(0.5, Math.abs(Y(a) - Y(b))), rx: 2, style, class: cls || '' }, svg);
+    // ghosts (END positions) in BGN mode
+    if (TL.bgn) for (let t = 1; t <= n; t++) if (TL.cf[t]) el('rect', { x: SX(t + 1) - bw - 1, y: Math.min(Y(0), Y(TL.cf[t])), width: bw, height: Math.abs(Y(0) - Y(TL.cf[t])), rx: 2, class: 'ghost' }, svg);
+    // stacked total column
+    let up = 0, dn = 0; const segTop = [];
+    pv.forEach((v, t) => { if (!v) { segTop.push(null); return; } const a = v > 0 ? up : dn, b = a + v; if (v > 0) up = b; else dn = b; bar(SX(0) - bw / 2, a, b, `fill:var(--s1);opacity:${t % 2 ? 0.75 : 1};stroke:var(--panel);stroke-width:1`); segTop.push(b); });
+    el('text', { x: SX(0), y: total >= 0 ? Y(Math.max(up, 0)) - 6 : Y(Math.min(dn, 0)) + 14, 'text-anchor': 'middle', class: 'barlab' }, svg, compact(total));
+    // per-period bars + arcs back to t = 0
+    const showLab = n <= 6 || !narrow;
+    f.forEach((c, t) => {
+      const x = SX(t + 1);
+      if (c) {
+        bar(x - bw - 1, 0, c, 'fill:var(--s2)');
+        bar(x + 1, 0, pv[t], 'fill:var(--s1)');
+        if (showLab) el('text', { x: x - bw / 2 - 1, y: c >= 0 ? Y(c) - 5 : Y(c) + 13, 'text-anchor': 'middle', class: 'barlab' }, svg, compact(c));
+        if (t > 0 && segTop[t] != null) { const xs = x + 1 + bw / 2, ys = Y(pv[t]) - (pv[t] >= 0 ? 3 : -3), xe = SX(0) + bw / 2 + 2, ye = Y(segTop[t]); const lift = Math.min(ys, ye) - 12 - t * 2; el('path', { d: `M${xs} ${ys} C ${xs} ${lift}, ${xe + 20} ${lift}, ${xe} ${ye}`, class: 'arc' }, svg); }
+      }
+    });
+    // hover columns
+    for (let k = 0; k <= n + 1; k++) {
+      const t = k - 1;
+      const hit = el('rect', { x: SX(k) - sw / 2, y: m.t, width: sw, height: H - m.t - m.b, fill: 'transparent', class: 'colhit', tabindex: 0, role: 'img', 'aria-label': k === 0 ? `Total present value ${money(total)}` : `Time ${t}: cash flow ${money(f[t])}, present value ${money(pv[t])}` }, svg);
+      const show = () => {
+        tip.innerHTML = k === 0 ? `<div style="color:var(--muted)">Value at t = 0</div><div><i style="background:var(--s1)"></i>Sum of PVs: <b>${money(total)}</b></div>`
+          : `<div style="color:var(--muted)">Time ${t}</div><div><i style="background:var(--s2)"></i>Cash flow: <b>${money(f[t])}</b></div><div style="color:var(--muted)">÷ ${(1 + r).toFixed(4).replace(/0+$/, '').replace(/\.$/, '')}${sup(t)} = ÷ ${Math.pow(1 + r, t).toFixed(4)}</div><div><i style="background:var(--s1)"></i>PV: <b>${money(pv[t])}</b></div>`;
+        tip.hidden = false;
+        const wr = wrap.getBoundingClientRect(), sr = svg.getBoundingClientRect();
+        const px = sr.left - wr.left + SX(k) / W * sr.width; const tw = tip.offsetWidth;
+        tip.style.left = Math.max(0, Math.min(wr.width - tw, px + (px > wr.width / 2 ? -tw - 14 : 14))) + 'px'; tip.style.top = (sr.top - wr.top + 8) + 'px';
+      };
+      hit.addEventListener('pointerenter', show); hit.addEventListener('pointerdown', show); hit.addEventListener('focus', show);
+      hit.addEventListener('pointerleave', () => { tip.hidden = true; }); hit.addEventListener('blur', () => { tip.hidden = true; });
+    }
+  }
+  $('t_n').addEventListener('input', e => { TL.n = +e.target.value; setPressed(presetBtns, null); buildInputs(); renderT(); });
+  $('t_r').addEventListener('input', e => { TL.r = +e.target.value; renderT(); });
+  $('t_end').addEventListener('click', () => { TL.bgn = false; setPressed([$('t_end'), $('t_bgn')], $('t_end')); renderT(); });
+  $('t_bgn').addEventListener('click', () => { TL.bgn = true; setPressed([$('t_end'), $('t_bgn')], $('t_bgn')); renderT(); });
+
+  // ===================== 4. LOTTERY =====================
+  const JACK = 2.04e9, CASH = 997.6e6, G = 0.05, NP = 30;
+  const P1 = JACK / fvAnn(NP, G); // first payment; 30 payments growing 5% sum to the advertised amount
+  const lotPV = r => { let s = 0; for (let k = 0; k < NP; k++) s += P1 * Math.pow(1 + G, k) / Math.pow(1 + r, k); return s; };
+  const lotBE = (() => { let lo = 0, hi = 0.2; for (let k = 0; k < 200; k++) { const mid = (lo + hi) / 2; if (lotPV(mid) > CASH) lo = mid; else hi = mid; } return (lo + hi) / 2 * 100; })();
+  let LR = 6;
+  function renderL() {
+    const r = LR / 100, v = lotPV(r);
+    $('l_rOut').textContent = pct(LR); $('l_pv').textContent = compact(v).replace('B', ' billion').replace('M', ' million');
+    $('l_p1').textContent = compact(P1).replace('M', ' million'); $('l_p30').textContent = compact(P1 * Math.pow(1 + G, NP - 1)).replace('M', ' million');
+    $('l_verdict').innerHTML = (Math.abs(v - CASH) < 0.002 * CASH ? `<b>Break-even.</b> At ${pct(LR)} the two options are worth the same today.`
+      : v > CASH ? `<b style="color:var(--s1)">The annuity is worth more</b> at ${pct(LR)}: ${compact(v - CASH)} more than the cash, in today's dollars.`
+      : `<b>The cash is worth more</b> at ${pct(LR)}: the payments are worth only ${compact(v)} today, ${compact(CASH - v)} less than the cash.`) + ` Break-even rate: <b>${pct(lotBE)}</b>.`;
+    const pts = []; for (let k = 0; k <= 200; k++) { const rr = k * 0.05; pts.push([rr, lotPV(rr / 100)]); }
+    lineChart({ wrap: $('l_wrap'), x: [0, 10], y: [0, 2.2e9], yTicks: [0, 0.5e9, 1e9, 1.5e9, 2e9], yFmt: v => v === 0 ? '$0' : '$' + v / 1e9 + 'B', xTicks: [0, 2, 4, 6, 8, 10], xFmt: v => v + '%', xTitle: 'Discount rate, I/Y', yTitle: 'Value today',
+      snap: v => Math.round(v * 20) / 20, tol: 0.01,
+      series: [{ name: 'PV of annuity', color: 'var(--s1)', pts }],
+      refs: [{ y: CASH, label: 'Cash option $997.6M', below: false }, { x: lotBE, label: 'Break-even ' + pct(lotBE), left: lotBE > 5 }],
+      marks: [{ x: LR, y: v, color: 'var(--s1)' }],
+      tipFmt: v => compact(v), xTip: x => `Discount rate ${pct(x)}`, tipExtra: () => `<div style="color:var(--muted)">Cash option: <b>$997.6M</b></div>`,
+      onClick: x => { LR = Math.round(x * 20) / 20; $('l_r').value = LR; renderL(); } });
+    const rows = []; for (let k = 0; k <= 10; k++) rows.push([pct(k), compact(lotPV(k / 100)), compact(lotPV(k / 100) - CASH)]);
+    table($('l_tbl'), ['Discount rate', 'PV of 30 payments', 'Minus cash option'], rows);
+    const istar = ((1 + r) / (1 + G) - 1) * 100;
+    $('l_calc').innerHTML = `<div><h4>Present value of 30 growing payments</h4><div class="formula">PV = Σ P₁(1.05)ᵏ / (1 + I)ᵏ, k = 0…29<br>= P₁ × [1 − (1.05 / (1 + I))³⁰] / (I − 0.05) × (1 + I)</div><p class="note" style="margin:0">P₁ = $2.04 billion ÷ [(1.05³⁰ − 1) / 0.05] = ${money(P1, 0)}. The first payment comes today, so this is an annuity due (BGN).</p></div>
+      <div><h4>Calculator shortcut: growth-adjusted rate</h4><div class="keys">${cap('2ND')} ${cap('BGN')} ${cap('2ND')} ${cap('SET')} · 30 ${cap('N')} ${num(istar, 4)} ${cap('I/Y')} ${num(-P1, 0)} ${cap('PMT')} 0 ${cap('FV')} ${cap('CPT')} ${cap('PV')} <span class="ans">= ${num(v, 0)}</span></div><div class="formula">=PV((1+${plain(r)})/1.05-1, 30, ${-Math.round(P1)}, 0, 1) → ${num(v, 0)}</div><p class="note" style="margin:0">I/Y here is (1 + I) ÷ 1.05 − 1 = ${num(istar, 4)}%: growing payments discounted at I are equivalent to level payments discounted at this smaller rate. Reset to END afterward.</p></div>`;
+  }
+  $('l_r').addEventListener('input', e => { LR = +e.target.value; renderL(); });
+  $('l_be').addEventListener('click', () => { LR = Math.round(lotBE * 100) / 100; $('l_r').value = LR; renderL(); });
+
+  // ===================== 5. CREDIT CARD =====================
+  const CC = { bal: 5000, apr: 22.36, pmt: 200 };
+  const r2 = v => Math.round(v * 100) / 100;
+  function payoff(bal, apr, fixed) {
+    const i = apr / 1200; let m = 0, interest = 0; const pts = [[0, bal]], pays = [];
+    while (bal > 0.004 && m < 600) {
+      const it = r2(bal * i); let pay = fixed != null ? fixed : Math.max(r2(it + 0.01 * bal), 25);
+      pay = Math.min(pay, r2(bal + it)); bal = r2(bal + it - pay); interest += it; m++; pts.push([m, Math.max(0, bal)]); pays.push(pay);
+      if (fixed != null && fixed <= it && m >= 60) return { never: true, pts, interest, months: Infinity, pays };
+    }
+    return { never: bal > 0.004, pts, interest, months: m, pays };
+  }
+  const yrsMo = m => { const y = Math.floor(m / 12), mo = m % 12; return (y ? `${y} yr` : '') + (y && mo ? ' ' : '') + (mo ? `${mo} mo` : '') || '0 mo'; };
+  function renderC() {
+    const { bal, apr, pmt } = CC;
+    $('c_balOut').textContent = money(bal, 0); $('c_aprOut').textContent = pct(apr); $('c_pmtOut').textContent = money(pmt, 0);
+    const mn = payoff(bal, apr, null), fx = payoff(bal, apr, pmt);
+    $('c_minT').textContent = mn.never ? '50+ years' : yrsMo(mn.months); $('c_minI').textContent = `${mn.months === Infinity ? '' : mn.months + ' payments · '}interest ${money(mn.interest)}`;
+    const covers = pmt > r2(bal * apr / 1200);
+    if (fx.never) { $('c_fixT').innerHTML = `<span class="warn">${covers ? '50+ years' : 'Never'}</span>`; $('c_fixI').textContent = covers ? `${money(pmt, 0)} barely covers the ${money(r2(bal * apr / 1200))} monthly interest` : `${money(pmt, 0)} does not cover the ${money(r2(bal * apr / 1200))} monthly interest`; }
+    else { $('c_fixT').textContent = yrsMo(fx.months); $('c_fixI').textContent = `${fx.months} payments · interest ${money(fx.interest)}`; }
+    $('c_verdict').innerHTML = fx.never ? `<span class="warn">At ${money(pmt, 0)} a month the balance ${covers ? 'barely shrinks' : 'never shrinks'}.</span> The payment must exceed the interest, ${money(bal, 0)} × ${pct(apr)} ÷ 12 = ${money(bal * apr / 1200)}.`
+      : `Paying the minimum, the first payment is ${money(mn.pays[0])} and it shrinks every month. A fixed ${money(pmt, 0)} saves ${money(mn.interest - fx.interest)} of interest and ${yrsMo(Math.max(0, mn.months - fx.months))}.`;
+    const xMax = Math.min(600, Math.max(mn.months, fx.never ? 120 : fx.months, 12));
+    const step = xMax > 240 ? 60 : xMax > 120 ? 24 : 12; const xt = []; for (let v = 0; v <= xMax; v += step) xt.push(v);
+    const yMax = Math.max(bal, ...fx.pts.slice(0, xMax + 1).map(p => p[1]));
+    const nt = niceTicks(0, yMax * 1.05, 4);
+    lineChart({ wrap: $('c_wrap'), x: [0, xMax], y: [0, nt.max], yTicks: nt.ticks, yFmt: compact, xTicks: xt, xFmt: v => v / 12 + (v ? ' yr' : ''), xTitle: 'Time since you stop charging', yTitle: 'Balance owed',
+      snap: Math.round, labels: true,
+      series: [{ name: 'Minimum payment', color: 'var(--s2)', pts: mn.pts.slice(0, xMax + 1), label: 'Minimum', missing: '$0.00 (paid off)' }, { name: `Fixed ${money(pmt, 0)}`, color: 'var(--s1)', pts: fx.pts.slice(0, xMax + 1), label: `${money(pmt, 0)}/mo`, missing: fx.never ? '' : '$0.00 (paid off)' }],
+      tipFmt: v => money(v), xTip: mo => `Month ${mo} (${(mo / 12).toFixed(1)} years)`,
+      tipExtra: mo => mn.pays[mo] != null && mo < mn.months ? `<div style="color:var(--muted)">Next minimum payment: ${money(mn.pays[mo])}</div>` : '' });
+    const rows = []; for (let mo = 0; mo <= Math.max(mn.months, fx.never ? 0 : fx.months); mo += (mo < 12 ? 1 : 12)) rows.push([mo, mn.pays[mo] != null && mo < mn.months ? money(mn.pays[mo]) : '–', money(mn.pts[mo] ? mn.pts[mo][1] : 0), fx.pts[mo] ? money(fx.pts[mo][1]) : '$0.00']);
+    table($('c_tbl'), ['Month', 'Next minimum payment', 'Balance (minimum)', `Balance (fixed ${money(pmt, 0)})`], rows);
+    const i = apr / 12, Nex = covers ? -Math.log(1 - bal * i / 100 / pmt) / Math.log(1 + i / 100) : NaN, ok = isFinite(Nex);
+    $('c_keys').innerHTML = `${num(i, 4)} ${cap('I/Y')} <span class="step">(${pct(apr)} ÷ 12)</span> ${num(bal, 0)} ${cap('PV')} ${num(-pmt, 0)} ${cap('PMT')} 0 ${cap('FV')} ${cap('CPT')} ${cap('N')} <span class="ans">= ${ok ? num(Nex) + ' months' : 'Error: no solution'}</span>` + (ok ? ` <span class="step">→ ${Math.ceil(Nex - 1e-9)} payments, the last one smaller</span>` : '');
+    $('c_excel').textContent = `=NPER(${plain(apr / 100)}/12, ${-pmt}, ${bal}) → ${ok ? num(Nex) : '#NUM!'}`;
+  }
+  $('c_bal').addEventListener('input', e => { CC.bal = +e.target.value; renderC(); });
+  $('c_apr').addEventListener('input', e => { CC.apr = +e.target.value; renderC(); });
+  $('c_pmt').addEventListener('input', e => { CC.pmt = +e.target.value; renderC(); });
+
+  // ===================== 6. EASY MONEY =====================
+  const MP = [
+    { k: 'pd', name: 'Payday loan', f: [['fee', 'Fee per $100 ($)', 1, 50, 0.5, 15], ['days', 'Term (days)', 1, 60, 1, 14]],
+      desc: 'Borrow $100 until your next paycheck and repay $100 plus the fee. Default from the CFPB: $15 per $100 for two weeks.' },
+    { k: 'bnpl', name: 'BNPL late fee', f: [['fee', 'Late fee ($)', 1, 50, 0.5, 7], ['inst', 'Installment ($)', 5, 1000, 5, 50], ['days', 'Days late', 1, 60, 1, 14]],
+      desc: 'Illustrative example: a buy-now-pay-later installment paid late. The late fee is the price of keeping the money for those extra days.' },
+    { k: 'rto', name: 'Rent-to-own', f: [['cash', 'Cash price ($)', 50, 5000, 10, 500], ['pmt', 'Weekly payment ($)', 1, 500, 1, 20], ['weeks', 'Number of weeks', 2, 260, 1, 52]],
+      desc: 'Illustrative example: a TV with a $500 cash price, or $20 a week for 52 weeks until you own it. Payments at the end of each week (END); paying the first one up front would make the rate even higher.' },
+    { k: 'cc', name: 'Credit card', f: [['apr', 'APR (%)', 1, 40, 0.01, 22.36], ['bal', 'Balance ($)', 100, 20000, 100, 5000]],
+      desc: 'Interest is charged monthly at APR ÷ 12. The balance only matters for the minimum-payment payoff (same rule as story 5).' },
+  ];
+  const MV = {}; MP.forEach(p => { MV[p.k] = {}; p.f.forEach(f => { MV[p.k][f[0]] = f[5]; }); });
+  let MSEL = 'pd';
+  function rtoRate(cash, pmt, n) { if (pmt * n <= cash) return 0; let lo = 1e-9, hi = 10; for (let k = 0; k < 200; k++) { const mid = (lo + hi) / 2; const pv = pmt * (1 - Math.pow(1 + mid, -n)) / mid; if (pv > cash) lo = mid; else hi = mid; } return (lo + hi) / 2; }
+  function mCalc(k) {
+    const v = MV[k]; let p, m, extra = {};
+    if (k === 'pd') { p = v.fee / 100; m = 365 / v.days; }
+    else if (k === 'bnpl') { p = v.fee / v.inst; m = 365 / v.days; }
+    else if (k === 'rto') { p = rtoRate(v.cash, v.pmt, v.weeks); m = 52; extra.total = v.pmt * v.weeks; }
+    else { p = v.apr / 1200; m = 12; extra.pay = payoff(v.bal, v.apr, null); }
+    return { p, m, apr: p * m * 100, ear: (Math.pow(1 + p, m) - 1) * 100, extra };
+  }
+  const MPICK = MP.map(p => { const b = document.createElement('button'); b.type = 'button'; b.textContent = p.name; b.setAttribute('aria-pressed', p.k === MSEL); b.addEventListener('click', () => { MSEL = p.k; setPressed(MPICK, b); buildM(); renderM(); }); $('m_pick').appendChild(b); return b; });
+  function buildM() {
+    const P = MP.find(p => p.k === MSEL), g = $('m_inputs'); g.innerHTML = '';
+    P.f.forEach(([key, lab, mn, mx, st]) => {
+      const l = document.createElement('label'); l.textContent = lab;
+      const i = document.createElement('input'); i.type = 'number'; i.min = mn; i.max = mx; i.step = st; i.value = MV[MSEL][key]; i.inputMode = 'decimal';
+      i.addEventListener('input', () => { const x = parseFloat(i.value); if (isFinite(x) && x >= mn && x <= mx) { MV[MSEL][key] = x; i.removeAttribute('aria-invalid'); renderM(); } else i.setAttribute('aria-invalid', 'true'); });
+      l.appendChild(i); g.appendChild(l);
+    });
+    $('m_desc').textContent = P.desc;
+  }
+  const fmtPctBig = v => v >= 1000 ? num(v, 0) + '%' : pct(v);
+  const fP = v => { const t = (+v.toFixed(4)).toString(); const d = (t.split('.')[1] || '').length; return num(v, Math.max(2, d)) + '%'; }; // periodic rate, trailing zeros trimmed
+  const fM = v => Number.isInteger(v) ? String(v) : num(v, 4);
+  const fD = v => num(v, v % 1 ? 2 : 0);
+  function renderM() {
+    const R = {}; MP.forEach(p => { R[p.k] = mCalc(p.k); });
+    const c = R[MSEL], v = MV[MSEL], P = MP.find(p => p.k === MSEL);
+    let cost;
+    if (MSEL === 'pd') cost = [`Fee for ${v.days} days`, money(v.fee), `to borrow $100 · ${pct(c.p * 100)} per period`];
+    else if (MSEL === 'bnpl') cost = [`Late fee for ${v.days} days`, money(v.fee), `on ${money(v.inst)} · ${pct(c.p * 100)} per period`];
+    else if (MSEL === 'rto') cost = ['Total of payments', money(c.extra.total), `vs. ${money(v.cash)} cash · ${money(c.extra.total - v.cash)} extra`];
+    else cost = ['Minimum payments only', c.extra.pay.never ? '50+ years' : yrsMo(c.extra.pay.months), `on ${money(v.bal, 0)} · interest ${money(c.extra.pay.interest)}`];
+    $('m_stats').innerHTML = `<div class="stat"><span class="k"><i style="background:var(--s1)"></i>APR</span><span class="v">${pct(c.apr)}</span><span class="s">${fP(c.p * 100)} × ${fM(c.m)}</span></div>` +
+      `<div class="stat"><span class="k"><i style="background:var(--s2)"></i>EAR</span><span class="v">${pct(c.ear)}</span><span class="s">(1 + ${fP(c.p * 100)})<sup>${fM(c.m)}</sup> − 1</span></div>` +
+      `<div class="stat"><span class="k">${cost[0]}</span><span class="v">${cost[1]}</span><span class="s">${cost[2]}</span></div>`;
+    drawMoney(R);
+    table($('m_tbl'), ['Product', 'Rate per period', 'Periods a year, m', 'APR', 'EAR', 'What it costs'], MP.map(p => { const r = R[p.k], w = MV[p.k];
+      const what = p.k === 'pd' ? `${money(w.fee)} per $100, ${w.days} days` : p.k === 'bnpl' ? `${money(w.fee)} on ${money(w.inst)}, ${w.days} days` : p.k === 'rto' ? `${money(r.extra.total)} for a ${money(w.cash)} item` : `${money(r.extra.pay.interest)} interest on ${money(w.bal, 0)} (minimum payments)`;
+      return [p.name, fP(r.p * 100), fM(r.m), pct(r.apr), pct(r.ear), what]; }), MP.findIndex(p => p.k === MSEL));
+    // calculation card
+    const NOM = +c.apr.toFixed(4), CY = +c.m.toFixed(4), EFF = (Math.pow(1 + NOM / 100 / CY, CY) - 1) * 100;
+    let steps, excel;
+    if (MSEL === 'pd' || MSEL === 'bnpl') {
+      const base = MSEL === 'pd' ? 100 : v.inst;
+      steps = `<div class="keys">Rate per period = ${fD(v.fee)} ÷ ${fD(base)} = <b>${fP(c.p * 100)}</b> per ${v.days} days</div><div class="keys">Periods a year m = 365 ÷ ${v.days} = <b>${fM(c.m)}</b></div>`;
+      excel = `=(1+${plain(v.fee)}/${plain(base)})^(365/${v.days})-1 → ${pct(c.ear)}`;
+    } else if (MSEL === 'rto') {
+      steps = `<div class="keys"><span class="step">Weekly rate first (END):</span> ${v.weeks} ${cap('N')} ${num(v.cash, 0)} ${cap('PV')} ${num(-v.pmt, 0)} ${cap('PMT')} 0 ${cap('FV')} ${cap('CPT')} ${cap('I/Y')} <span class="ans">= ${num(c.p * 100, 4)}</span></div><div class="keys">Periods a year m = <b>52</b> weeks</div>`;
+      excel = `=(1+RATE(${v.weeks}, -${plain(v.pmt)}, ${plain(v.cash)}))^52-1 → ${pct(c.ear)}`;
+    } else {
+      steps = `<div class="keys">Rate per month = ${pct(v.apr)} ÷ 12 = <b>${fP(c.p * 100)}</b></div><div class="keys">Periods a year m = <b>12</b></div>`;
+      excel = `=EFFECT(${plain(v.apr / 100)}, 12) → ${pct(c.ear)}`;
+    }
+    steps += `<div class="keys">APR = ${fP(c.p * 100)} × ${fM(c.m)} = <b>${pct(c.apr)}</b></div><div class="keys">EAR = (1 + APR/m)<sup>m</sup> − 1 = (1 + ${fP(c.p * 100)})<sup>${fM(c.m)}</sup> − 1 = <b>${pct(c.ear)}</b></div>`;
+    $('m_calc').innerHTML = `<div><h4>${P.name}: the formula</h4>${steps}</div>
+      <div><h4>BA II Plus: interest conversion (ICONV)</h4><div class="keys">${cap('2ND')} ${cap('ICONV')} <span class="step">NOM =</span> ${NOM} ${cap('ENTER')} ${cap('↓')} ${cap('↓')} <span class="step">C/Y =</span> ${CY} ${cap('ENTER')} ${cap('↑')} ${cap('CPT')} <span class="ans">EFF = ${num(EFF)}</span></div>
+      <p class="note" style="margin:0">ICONV is 2ND then 2. NOM is the APR, C/Y the number of compounding periods a year${Number.isInteger(c.m) ? '' : ` (365 ÷ ${v.days}, rounded to 4 decimals)`}.</p><div class="formula">${excel}</div></div>`;
+    const pd = R.pd;
+    $('m_take').innerHTML = `A ${money(MV.pd.fee)} fee per $100 looks small, but it is ${pct(pd.p * 100)} for ${MV.pd.days} days. Quoted as an APR that is ${pct(pd.apr)}; repeated all year, $100 of debt would grow to ${money(100 * (1 + pd.ear / 100))}, an effective rate of ${pct(pd.ear)}. The shorter the period, the bigger the gap between APR and EAR. Compare the credit card: ${pct(R.cc.apr)} APR, ${pct(R.cc.ear)} EAR.`;
+  }
+  function drawMoney(R) {
+    const wrap = $('m_wrap'), svg = $('m_svg'), tip = wrap.querySelector('.tip');
+    const W = Math.max(280, Math.round(svg.parentNode.clientWidth)), narrow = W < 520;
+    const rowH = 60, m = { l: 8, r: narrow ? 66 : 78, t: 24, b: 40 }, H = m.t + MP.length * rowH + m.b;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.textContent = '';
+    const maxV = Math.max(...MP.map(p => R[p.k].ear), 100), hiE = Math.max(3, Math.ceil(Math.log10(maxV * 1.2)));
+    const X = v => m.l + Math.max(0, Math.log10(Math.max(v, 1))) / hiE * (W - m.l - m.r);
+    const tstep = X(10) - X(1) < 64 ? 2 : 1;
+    for (let e = 0; e <= hiE; e++) { const v = Math.pow(10, e); el('line', { x1: X(v), x2: X(v), y1: m.t - 4, y2: H - m.b, class: 'gridl' }, svg); if (e % tstep === 0) el('text', { x: X(v), y: H - m.b + 16, 'text-anchor': e === 0 ? 'start' : 'middle', class: 'tick' }, svg, v.toLocaleString('en-US') + '%'); }
+    el('line', { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, class: 'axisl' }, svg);
+    el('text', { x: (m.l + W - m.r) / 2, y: H - 6, 'text-anchor': 'middle', class: 'axtitle' }, svg, 'Annual rate (log scale)');
+    el('line', { x1: X(10.02), x2: X(10.02), y1: m.t - 8, y2: H - m.b, class: 'ref' }, svg);
+    el('text', { x: X(10.02) + 4, y: m.t - 10, class: 'reflab' }, svg, 'Stocks 10.02%');
+    MP.forEach((p, k) => {
+      const r = R[p.k], y = m.t + k * rowH, sel = p.k === MSEL;
+      el('text', { x: m.l, y: y + 13, class: 'rowlab' + (sel ? ' sel' : '') }, svg, (sel ? '▸ ' : '') + p.name);
+      [[r.apr, 'var(--s1)', 19], [r.ear, 'var(--s2)', 36]].forEach(([v, col, dy]) => {
+        el('rect', { x: m.l, y: y + dy, width: Math.max(1, X(v) - m.l), height: 14, rx: 2, style: `fill:${col}` }, svg);
+        el('text', { x: X(v) + 5, y: y + dy + 11, class: 'barlab' }, svg, fmtPctBig(v));
+      });
+      const hit = el('rect', { x: 0, y, width: W, height: rowH - 4, fill: 'transparent', class: 'colhit', tabindex: 0, role: 'button', 'aria-label': `${p.name}: APR ${pct(r.apr)}, EAR ${pct(r.ear)}. Press Enter to edit.`, style: 'cursor:pointer' }, svg);
+      const show = () => {
+        tip.innerHTML = `<div style="color:var(--muted)">${p.name}</div><div style="color:var(--muted)">${fP(r.p * 100)} per period × ${fM(r.m)} periods a year</div><div><i style="background:var(--s1)"></i>APR: <b>${pct(r.apr)}</b></div><div><i style="background:var(--s2)"></i>EAR: <b>${pct(r.ear)}</b></div>`;
+        tip.hidden = false;
+        const wr = wrap.getBoundingClientRect(), sr = svg.getBoundingClientRect(), tw = tip.offsetWidth;
+        tip.style.left = Math.max(0, Math.min(wr.width - tw, (sr.left - wr.left) + sr.width * 0.45)) + 'px'; tip.style.top = (sr.top - wr.top + (y + rowH) / H * sr.height) + 'px';
+      };
+      const pick = () => { MSEL = p.k; setPressed(MPICK, MPICK[k]); buildM(); renderM(); const hs = $('m_svg').querySelectorAll('.colhit'); if (hs[k]) hs[k].focus(); };
+      hit.addEventListener('pointerenter', show); hit.addEventListener('pointerleave', () => { tip.hidden = true; });
+      hit.addEventListener('focus', show); hit.addEventListener('blur', () => { tip.hidden = true; });
+      hit.addEventListener('click', pick); hit.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+    });
+  }
+  buildM();
+
+  // ===================== 7. RULE OF 72 =====================
+  let DR = 10;
+  const exactN = r => Math.log(2) / Math.log(1 + r / 100);
+  function renderD() {
+    const ex = exactN(DR), r72 = 72 / DR, err = r72 - ex;
+    $('d_rOut').textContent = pct(DR, 1);
+    $('d_72').textContent = num(r72) + ' years'; $('d_72s').textContent = `72 ÷ ${num(DR, 1)}`;
+    $('d_ex').textContent = num(ex) + ' years'; $('d_err').textContent = `rule is off by ${num(Math.abs(err))} years (${err >= 0 ? 'too long' : 'too short'})`;
+    $('d_keys').innerHTML = `${plain(DR)} ${cap('I/Y')} −1 ${cap('PV')} 0 ${cap('PMT')} 2 ${cap('FV')} ${cap('CPT')} ${cap('N')} <span class="ans">= ${num(ex)}</span>`;
+    $('d_excel').textContent = `=NPER(${plain(DR / 100)}, 0, -1, 2) → ${num(ex)}`;
+    const pe = []; for (let k = 10; k <= 300; k++) { const r = k / 10; pe.push([r, 72 / r - exactN(r)]); }
+    lineChart({ wrap: $('d_wrap'), x: [1, 30], y: [-0.5, 2.5], yTicks: [-0.5, 0, 0.5, 1, 1.5, 2, 2.5], yFmt: v => (v > 0 ? '+' : v < 0 ? MINUS : '') + Math.abs(v), xTicks: [1, 5, 10, 15, 20, 25, 30], xFmt: v => v + '%', xTitle: 'Growth rate, I/Y', yTitle: 'Error (years)', ml: 48,
+      snap: v => Math.round(v * 10) / 10, tol: 0.05,
+      series: [{ name: 'Rule of 72 − exact', color: 'var(--s2)', pts: pe }],
+      refs: [{ y: 0.5, label: '+½ year off', labelLeft: true, below: true }, { y: -0.5, label: '' }, { y: 0, label: 'Exact answer', labelLeft: true, below: true }],
+      marks: [{ x: DR, y: r72 - ex, color: 'var(--s2)' }],
+      tipFmt: v => (v >= 0 ? '+' : MINUS) + num(Math.abs(v)) + ' yr', xTip: x => `Growth rate ${pct(x, 1)}`,
+      tipExtra: x => `<div style="color:var(--muted)">72 ÷ I = ${num(72 / x)} · exact ${num(exactN(x))}</div>`,
+      onClick: x => { DR = Math.max(1, Math.round(x * 10) / 10); $('d_r').value = DR; renderD(); } });
+    const rows = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 18, 20, 25, 30].map(r => [pct(r, 0), num(72 / r), num(exactN(r)), num(72 / r - exactN(r))]);
+    table($('d_tbl'), ['Rate', 'Rule of 72', 'Exact', 'Difference'], rows, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 18, 20, 25, 30].indexOf(DR));
+    $('d_take').innerHTML = `The rule works best around 8%, where 72 ÷ 8 = 9 and the exact answer is ${num(exactN(8))} years. Far from 8% it drifts: at ${pct(DR, 1)} it says ${num(r72)} years, the exact answer is ${num(ex)}. For an exact answer, use ${cap('CPT')} ${cap('N')}.`;
+  }
+  $('d_r').addEventListener('input', e => { DR = +e.target.value; renderD(); });
+
+  // ---------- render all, re-render on resize ----------
+  const renderAll = () => { renderE(); renderH(); renderT(); renderL(); renderC(); renderM(); renderD(); };
+  buildInputs(); renderAll();
+  let rt = null, lastW = document.documentElement.clientWidth;
+  window.addEventListener('resize', () => { const w = document.documentElement.clientWidth; if (w === lastW) return; lastW = w; clearTimeout(rt); rt = setTimeout(renderAll, 120); });
+})();
+</script>
+</body></html>
