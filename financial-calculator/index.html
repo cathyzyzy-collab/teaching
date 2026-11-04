@@ -1,0 +1,886 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<style>body{margin:0} [hidden]{display:none!important}</style>
+</head><body>
+<title>Finance Keystroke Calculator</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&family=Share+Tech+Mono&display=swap">
+<style>
+/* Layout: instrument on the left, a teaching bench on the right (stored values, worked examples, keystroke tape); stacks on phones. */
+:root {
+  --bg: #eef1f1;
+  --fg: #1a2328;
+  --muted: #5b6a70;
+  --panel: #ffffff;
+  --line: #d5dcde;
+  --accent: #0f7c71;
+  --cap: #f3f6f6;
+  --neg: #a1402f;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-key: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-lcd: "Share Tech Mono", ui-monospace, "Consolas", monospace;
+  /* the device keeps one look in both themes */
+  --dev-body: #1f2c35;
+  --dev-body2: #17222a;
+  --dev-key: #3a4a55;
+  --dev-tvm: #2f5a60;
+  --dev-num: #e4e8e6;
+  --dev-num-fg: #18232a;
+  --dev-teal: #48c3b4;
+  --dev-teal-fg: #0b1f1c;
+  --dev-text: #eef2f3;
+  --lcd-bg: #c5cfbb;
+  --lcd-fg: #1c2a21;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11171a; --fg: #e2e8ea; --muted: #8fa0a6; --panel: #182024;
+    --line: #29343a; --accent: #5cc9bb; --cap: #1f292e; --neg: #e3826f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11171a; --fg: #e2e8ea; --muted: #8fa0a6; --panel: #182024;
+  --line: #29343a; --accent: #5cc9bb; --cap: #1f292e; --neg: #e3826f;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+}
+.wrap {
+  max-width: 1120px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 48px;
+}
+header.top { display: grid; gap: 6px; margin-bottom: 24px; }
+header.top h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+header.top p { margin: 0; color: var(--muted); max-width: 68ch; }
+kbd { font-family: var(--font-key); font-size: 12px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--cap); }
+
+.layout { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); gap: 28px; align-items: start; }
+.leftcol { display: grid; gap: 16px; min-width: 0; align-content: start; }
+.leftcol > * { width: 100%; max-width: 380px; }
+@media (max-width: 820px) { .layout { grid-template-columns: minmax(0, 1fr); } .leftcol > * { margin: 0 auto; } }
+.coach { display: grid; gap: 10px; border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.coach[hidden] { display: none !important; }
+.coachhead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.coachhead h2 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--fg); }
+.coachhead .count { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bar { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.bar span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s; }
+.seq.big .cap { font-size: 14px; padding: 2px 8px; }
+.seq.big .cap.num { font-size: 15px; }
+.say { margin: 0; font-size: 14.5px; line-height: 1.55; }
+.warn { margin: 0; font-size: 13px; color: var(--neg); }
+.tip { margin: 0; font-size: 12.5px; color: var(--muted); }
+.coachbtns { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn.primary { background: var(--accent); color: var(--panel); border-color: var(--accent); }
+.btn.primary:hover { background: color-mix(in srgb, var(--accent) 85%, var(--fg)); }
+.btn.quiet { border-color: transparent; color: var(--muted); margin-left: auto; }
+.key.hl { box-shadow: 0 0 0 3px #f3c45a, 0 0 14px rgba(243,196,90,.7); animation: hlpulse 1.2s ease-in-out infinite; }
+@keyframes hlpulse { 50% { box-shadow: 0 0 0 3px #f3c45a, 0 0 4px rgba(243,196,90,.3); } }
+
+/* ---------- device ---------- */
+.device {
+  width: 100%; max-width: 380px;
+  background: linear-gradient(180deg, var(--dev-body), var(--dev-body2));
+  border-radius: 24px; padding: 18px 16px 20px;
+  box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 18px 40px rgba(10,20,25,.28), 0 2px 6px rgba(10,20,25,.2);
+  color: var(--dev-text);
+  display: grid; gap: 12px;
+}
+.devhead { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--font-key); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #9fb2ba; padding: 0 4px; }
+.devhead b { color: var(--dev-teal); font-weight: 600; }
+.lcd {
+  background: var(--lcd-bg); color: var(--lcd-fg);
+  border-radius: 8px; padding: 8px 12px 10px;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,.28);
+  font-family: var(--font-lcd);
+}
+.ind { display: flex; gap: 10px; font-family: var(--font-key); font-size: 10px; font-weight: 600; letter-spacing: .05em; min-height: 14px; }
+.ind span { opacity: .13; }
+.ind span.on { opacity: .95; }
+.line { display: flex; align-items: baseline; gap: 8px; min-height: 46px; }
+.line .lab { font-size: 18px; min-width: 3.5em; white-space: nowrap; }
+.line .val { flex: 1; text-align: right; font-size: 34px; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: clip; font-variant-numeric: tabular-nums; }
+.hint { font-size: 12.5px; line-height: 1.4; color: #b9c8ce; min-height: 36px; padding: 0 4px; }
+.hint.err { color: #ffb4a3; }
+
+.keys { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px 8px; }
+.cell { display: grid; gap: 2px; }
+.sec { font-family: var(--font-key); font-size: 9.5px; font-weight: 600; letter-spacing: .04em; color: var(--dev-teal); text-align: center; height: 12px; line-height: 12px; white-space: nowrap; opacity: .72; transition: opacity .12s; }
+.device.second-on .sec { opacity: 1; text-shadow: 0 0 6px rgba(72,195,180,.55); }
+.key {
+  height: 38px; width: 100%; border: 0; border-radius: 8px; cursor: pointer;
+  font-family: var(--font-key); font-weight: 600; font-size: 13.5px; letter-spacing: .02em;
+  background: var(--dev-key); color: var(--dev-text);
+  box-shadow: 0 2px 0 rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
+  transition: transform .06s, filter .06s;
+}
+.key.tvm { background: var(--dev-tvm); }
+.key.num { background: var(--dev-num); color: var(--dev-num-fg); font-size: 16px; }
+.key.eq { background: #c9d6dc; color: var(--dev-num-fg); font-size: 17px; }
+.key.second { background: var(--dev-teal); color: var(--dev-teal-fg); }
+.device.second-on .key.second { box-shadow: 0 0 0 2px #e9fffb, 0 2px 0 rgba(0,0,0,.35); }
+.key:active, .key.pressed { transform: translateY(2px); filter: brightness(.85); box-shadow: 0 0 0 rgba(0,0,0,.35); }
+.key:focus-visible { outline: 2px solid var(--dev-teal); outline-offset: 2px; }
+
+/* ---------- bench ---------- */
+.bench { display: grid; gap: 18px; min-width: 0; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; min-width: 0; }
+.panel h2 { margin: 0 0 10px; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.regs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 16px; margin: 0; }
+@media (max-width: 520px) { .regs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.regs div { display: grid; gap: 1px; min-width: 0; }
+.regs dt { font-family: var(--font-key); font-size: 12px; color: var(--muted); }
+.regs dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 500; overflow-wrap: anywhere; }
+.regs dd.neg { color: var(--neg); }
+.cfsum { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.signs { margin: 12px 0 0; font-size: 13px; color: var(--muted); }
+
+.fold { padding: 0; }
+.fold summary { list-style: none; cursor: pointer; padding: 14px 44px 14px 18px; display: grid; gap: 2px; position: relative; border-radius: 12px; }
+.fold summary::-webkit-details-marker { display: none; }
+.fold summary::after { content: ""; position: absolute; right: 20px; top: 50%; width: 8px; height: 8px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: translateY(-70%) rotate(45deg); transition: transform .15s; }
+.fold[open] summary::after { transform: translateY(-30%) rotate(-135deg); }
+.fold summary:hover .ftitle { color: var(--accent); }
+.fold summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ftitle { font-size: 15px; font-weight: 600; }
+.fsub { font-size: 13px; color: var(--muted); }
+.fold .ex { padding: 4px 18px 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+.ex { display: grid; gap: 14px; }
+.exitem { display: grid; gap: 6px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.exitem:last-child { border-bottom: 0; padding-bottom: 0; }
+.exhead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.exhead h3 { margin: 0; font-size: 15.5px; font-weight: 600; }
+.exitem p { margin: 0; color: var(--muted); font-size: 13.5px; }
+.seq { display: flex; flex-wrap: wrap; gap: 4px; }
+.cap { font-family: var(--font-key); font-size: 11.5px; font-weight: 500; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--cap); white-space: nowrap; }
+.cap.s2 { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+.cap.num { border-color: transparent; background: transparent; padding: 0 1px; font-size: 12.5px; }
+.result { font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.result b { font-weight: 600; }
+.btn { font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--accent); background: transparent; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 999px; padding: 3px 12px; cursor: pointer; }
+.btn:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tape { display: flex; flex-wrap: wrap; gap: 4px; min-height: 26px; }
+.tape .empty { color: var(--muted); font-size: 13px; }
+footer.note { margin-top: 28px; color: var(--muted); font-size: 13px; max-width: 75ch; }
+@media (prefers-reduced-motion: reduce) { .key, .sec, .bar span { transition: none; } .key.hl { animation: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Finance Keystroke Calculator</h1>
+    <p>Time value of money, cash flows, amortization and rate conversion, entered in the same keystroke order students use on a financial calculator in class and on exams. Click the keys or type: digits, <kbd>+</kbd> <kbd>−</kbd> <kbd>*</kbd> <kbd>/</kbd> <kbd>^</kbd>, <kbd>Enter</kbd>, <kbd>Backspace</kbd>, <kbd>Esc</kbd>, <kbd>↑</kbd> <kbd>↓</kbd>.</p>
+  </header>
+
+  <div class="layout">
+    <div class="leftcol">
+    <section class="device" id="device" aria-label="Calculator">
+      <div class="devhead"><span>Financial <b>TVM</b></span><span><span id="modeTag">Chain</span> · DEC <span id="decTag">2</span></span></div>
+      <div class="lcd" role="status" aria-live="polite">
+        <div class="ind" aria-hidden="true">
+          <span id="i-2nd">2ND</span><span id="i-cpt">COMPUTE</span><span id="i-enter">ENTER</span><span id="i-set">SET</span><span id="i-nav">↑↓</span><span id="i-mem">STO</span><span id="i-bgn">BGN</span><span id="i-star">✱</span>
+        </div>
+        <div class="line"><span class="lab" id="lab"></span><span class="val" id="val">0.00</span></div>
+      </div>
+      <div class="hint" id="hint"></div>
+      <div class="keys" id="keys"></div>
+    </section>
+
+    <section class="panel coach" id="coach" hidden aria-live="polite" aria-label="Step-by-step guide">
+      <div class="coachhead"><h2 id="coachTitle">Example</h2><span class="count" id="coachCount"></span></div>
+      <div class="bar"><span id="coachBar"></span></div>
+      <div class="seq big" id="coachKeys"></div>
+      <p class="say" id="coachSay"></p>
+      <p class="warn" id="coachWarn" hidden>That key was not the next step. Click Back to redo this step, or Press for me to reset it and continue.</p>
+      <div class="coachbtns">
+        <button class="btn" id="coachBack" type="button">Back</button>
+        <button class="btn primary" id="coachNext" type="button">Press for me</button>
+        <button class="btn quiet" id="coachClose" type="button">Close</button>
+      </div>
+      <p class="tip" id="coachTip">Press the glowing key on the calculator yourself, or click Press for me.</p>
+    </section>
+    </div>
+
+    <div class="bench">
+      <section class="panel" aria-labelledby="h-regs">
+        <h2 id="h-regs">Stored values <span id="wsName" style="text-transform:none;letter-spacing:0;font-weight:500;color:var(--accent)"></span></h2>
+        <dl class="regs" id="regs"></dl>
+        <div class="cfsum" id="cfsum"></div>
+        <p class="signs">Sign convention: cash you pay out is negative, cash you receive is positive. A loan you receive is +PV and its payments are −PMT.</p>
+      </section>
+
+
+      <section class="panel" aria-labelledby="h-tape">
+        <h2 id="h-tape">Keystroke tape <button class="btn" id="clearTape" type="button">Clear</button></h2>
+        <div class="tape" id="tape"><span class="empty">Keys you press appear here, in order.</span></div>
+      </section>
+
+      <details class="panel fold" id="exFold">
+        <summary><span class="ftitle">Practice: worked examples</span><span class="fsub">5 step-by-step problems: mortgage, bond, NPV/IRR, amortization, effective rate</span></summary>
+        <div class="ex" id="examples"></div>
+      </details>
+    </div>
+  </div>
+
+  <footer class="note">Rates use the standard TVM equation with P/Y and C/Y. AMORT works from the unrounded PMT, so cents can differ slightly from a handheld that rounds each payment. Arithmetic starts in Chain mode (3 + 2 × 4 = 20, left to right). To switch to AOS (3 + 2 × 4 = 11, standard order of operations), press 2ND FORMAT, ↓, then 2ND SET. CLR WORK inside FORMAT returns to DEC 2 and Chain.</footer>
+</div>
+
+<script>
+(function () {
+  // ---------- key table: id, label, 2nd label, style ----------
+  const KEYS = [
+    ['cpt','CPT','QUIT','fn'],['enter','ENTER','SET','fn'],['up','↑','','fn'],['down','↓','','fn'],['back','→','','fn'],
+    ['2nd','2ND','','second'],['cf','CF','','fn'],['npv','NPV','','fn'],['irr','IRR','','fn'],['pow','yˣ','','fn'],
+    ['n','N','xP/Y','tvm'],['iy','I/Y','P/Y','tvm'],['pv','PV','AMORT','tvm'],['pmt','PMT','BGN','tvm'],['fv','FV','CLR TVM','tvm'],
+    ['pct','%','','fn'],['sqrt','√x','','fn'],['sq','x²','','fn'],['inv','1/x','','fn'],['div','÷','','fn'],
+    ['ln','LN','eˣ','fn'],['7','7','','num'],['8','8','','num'],['9','9','','num'],['mul','×','','fn'],
+    ['sto','STO','','fn'],['4','4','','num'],['5','5','','num'],['6','6','','num'],['sub','−','','fn'],
+    ['rcl','RCL','','fn'],['1','1','','num'],['2','2','ICONV','num'],['3','3','','num'],['add','+','','fn'],
+    ['ce','CE|C','CLR WORK','fn'],['0','0','','num'],['dot','.','FORMAT','num'],['pm','+|−','RESET','num'],['eq','=','','eq'],
+  ];
+  const KM = {}; KEYS.forEach(([id, l, s, c]) => KM[id] = { id, l, s, c });
+  const TVMK = { n: 'N', iy: 'IY', pv: 'PV', pmt: 'PMT', fv: 'FV' };
+  const TVMLAB = { N: 'N', IY: 'I/Y', PV: 'PV', PMT: 'PMT', FV: 'FV' };
+  const WSNAME = { PY: 'Payments per year', BGN: 'Payment timing', CF: 'Cash flows', NPV: 'NPV', IRR: 'IRR', AMORT: 'Amortization', ICONV: 'Interest conversion', FORMAT: 'Decimal places' };
+  const ERRMSG = {
+    2: 'Math error: division by zero, overflow, or an invalid operation such as √ or LN of a negative number. Press CE|C.',
+    5: 'No solution. Check signs: at least one cash flow must be negative and one positive, and N must be above zero. Press CE|C.',
+    6: 'That value is not allowed for this setting. Press CE|C.'
+  };
+
+  // ---------- state ----------
+  const S = {};
+  function freshState() {
+    Object.assign(S, {
+      typing: null, x: 0, over: null, label: '', second: false, cptArmed: false, computed: false,
+      stack: [], justOp: false, aos: false, ws: null, idx: 0,
+      tvm: { N: 0, IY: 0, PV: 0, PMT: 0, FV: 0 }, PY: 1, CY: 1, bgn: false,
+      mem: Array(10).fill(0), memMode: null,
+      cf0: 0, cfs: [], npvI: 0, npvVal: null, irrVal: null,
+      p1: 1, p2: 1, icv: { NOM: 0, EFF: 0, CY: 1 }, dec: 2, error: null, resetPending: false
+    });
+  }
+  freshState();
+
+  function err(code, msg) { const e = new Error(msg || ERRMSG[code]); e.code = code; return e; }
+  const pad2 = n => String(n).padStart(2, '0');
+  const isInt = v => Number.isInteger(v);
+
+  // ---------- worksheets ----------
+  function wsItems() {
+    switch (S.ws) {
+      case 'PY': return [
+        { lab: 'P/Y', get: () => S.PY, set: v => { if (!(v > 0)) throw err(6); S.PY = v; S.CY = v; } },
+        { lab: 'C/Y', get: () => S.CY, set: v => { if (!(v > 0)) throw err(6); S.CY = v; } }];
+      case 'BGN': return [{ lab: () => S.bgn ? 'BGN' : 'END', text: true, toggle: () => { S.bgn = !S.bgn; } }];
+      case 'CF': {
+        const it = [{ lab: 'CF0', get: () => S.cf0, set: v => { S.cf0 = v; } }];
+        const n = S.cfs.length;
+        for (let j = 0; j <= n && j < 24; j++) {
+          const jj = j;
+          it.push({ lab: 'C' + pad2(j + 1), get: () => S.cfs[jj] ? S.cfs[jj].c : 0,
+            set: v => { if (!S.cfs[jj]) S.cfs[jj] = { c: v, f: 1 }; else S.cfs[jj].c = v; } });
+          if (j < n) it.push({ lab: 'F' + pad2(j + 1), get: () => S.cfs[jj].f,
+            set: v => { if (!(isInt(v) && v >= 1 && v <= 9999)) throw err(6); S.cfs[jj].f = v; } });
+        }
+        return it;
+      }
+      case 'NPV': return [
+        { lab: 'I', get: () => S.npvI, set: v => { S.npvI = v; S.npvVal = null; } },
+        { lab: 'NPV', get: () => S.npvVal ?? 0, compute: () => { S.npvVal = npvAt(S.npvI / 100, true); } }];
+      case 'IRR': return [{ lab: 'IRR', get: () => S.irrVal ?? 0, compute: () => { S.irrVal = irr() * 100; } }];
+      case 'AMORT': return [
+        { lab: 'P1', get: () => S.p1, set: v => { if (!(isInt(v) && v >= 1 && v <= 9999)) throw err(6); S.p1 = v; } },
+        { lab: 'P2', get: () => S.p2, set: v => { if (!(isInt(v) && v >= 1 && v <= 9999)) throw err(6); S.p2 = v; } },
+        { lab: 'BAL', get: () => amort().bal, auto: true },
+        { lab: 'PRN', get: () => amort().prn, auto: true },
+        { lab: 'INT', get: () => amort().int, auto: true }];
+      case 'ICONV': return [
+        { lab: 'NOM', get: () => S.icv.NOM, set: v => { S.icv.NOM = v; },
+          compute: () => { const c = S.icv.CY; const b = 1 + S.icv.EFF / 100; if (b <= 0) throw err(2); S.icv.NOM = c * (Math.pow(b, 1 / c) - 1) * 100; } },
+        { lab: 'EFF', get: () => S.icv.EFF, set: v => { S.icv.EFF = v; },
+          compute: () => { const c = S.icv.CY; const b = 1 + S.icv.NOM / 100 / c; if (b <= 0) throw err(2); S.icv.EFF = (Math.pow(b, c) - 1) * 100; } },
+        { lab: 'C/Y', get: () => S.icv.CY, set: v => { if (!(v > 0)) throw err(6); S.icv.CY = v; } }];
+      case 'FORMAT': return [
+        { lab: 'DEC', int: true, get: () => S.dec, set: v => { if (!(isInt(v) && v >= 0 && v <= 9)) throw err(6); S.dec = v; } },
+        { lab: () => S.aos ? 'AOS' : 'Chn', text: true, toggle: () => { S.aos = !S.aos; S.stack = []; S.justOp = false; } }];
+    }
+    return [];
+  }
+  function curItem() { const it = wsItems(); if (S.idx >= it.length) S.idx = it.length - 1; return it[S.idx]; }
+  function openWs(name) { S.ws = name; S.idx = 0; S.typing = null; S.over = null; S.cptArmed = false; S.computed = false; S.stack = []; S.justOp = false; }
+  function exitWs() { S.ws = null; S.over = null; S.idx = 0; }
+  function clearWork() {
+    switch (S.ws) {
+      case 'PY': S.PY = 1; S.CY = 1; break;
+      case 'BGN': S.bgn = false; break;
+      case 'CF': S.cf0 = 0; S.cfs = []; S.idx = 0; break;
+      case 'NPV': S.npvI = 0; S.npvVal = null; break;
+      case 'IRR': S.irrVal = null; break;
+      case 'AMORT': S.p1 = 1; S.p2 = 1; break;
+      case 'ICONV': S.icv = { NOM: 0, EFF: 0, CY: 1 }; break;
+      case 'FORMAT': S.dec = 2; S.aos = false; S.stack = []; break;
+    }
+    S.typing = null; S.over = null; S.computed = false;
+  }
+
+  // ---------- finance math ----------
+  function perI() { const b = 1 + S.tvm.IY / 100 / S.CY; if (b <= 0) throw err(5); return Math.pow(b, S.CY / S.PY) - 1; }
+  function tvmF(i) {
+    const { N, PV, PMT, FV } = S.tvm; const k = S.bgn ? 1 : 0;
+    if (Math.abs(i) < 1e-12) return PV + PMT * N + FV;
+    const g = Math.pow(1 + i, N);
+    return PV * g + PMT * (1 + i * k) * (g - 1) / i + FV;
+  }
+  function findRoot(f) {
+    const grid = [-0.99,-0.9,-0.75,-0.5,-0.3,-0.2,-0.1,-0.05,-0.02,-0.01,-0.005,-0.001,0,0.001,0.0025,0.005,0.0075,0.01,0.015,0.02,0.03,0.05,0.075,0.1,0.15,0.2,0.3,0.5,0.75,1,1.5,2,3,5,10];
+    const vals = grid.map(x => { const y = f(x); return isFinite(y) ? y : NaN; });
+    let best = null;
+    for (let j = 0; j < grid.length; j++) {
+      if (vals[j] === 0) { const d = Math.abs(grid[j]); if (!best || d < best.dist) best = { exact: grid[j], dist: d }; }
+      if (j < grid.length - 1) {
+        const a = vals[j], b = vals[j + 1];
+        if (!isNaN(a) && !isNaN(b) && a * b < 0) {
+          const d = Math.min(Math.abs(grid[j]), Math.abs(grid[j + 1]));
+          if (!best || d < best.dist) best = { lo: grid[j], hi: grid[j + 1], flo: a, dist: d };
+        }
+      }
+    }
+    if (!best) throw err(5);
+    if (best.exact !== undefined) return best.exact;
+    let lo = best.lo, hi = best.hi, flo = best.flo;
+    for (let it = 0; it < 300; it++) {
+      const mid = (lo + hi) / 2, fm = f(mid);
+      if (fm === 0 || hi - lo < 1e-15) return mid;
+      if (flo * fm < 0) hi = mid; else { lo = mid; flo = fm; }
+    }
+    return (lo + hi) / 2;
+  }
+  function solveTVM(name) {
+    const { N, PV, PMT, FV } = S.tvm; const k = S.bgn ? 1 : 0;
+    if (name === 'IY') {
+      if (!(N > 0)) throw err(5);
+      if (PV === 0 && PMT === 0 && FV === 0) throw err(5);
+      const i = findRoot(tvmF);
+      return (Math.pow(1 + i, S.PY / S.CY) - 1) * S.CY * 100;
+    }
+    const i = perI(); const small = Math.abs(i) < 1e-12;
+    const g = Math.pow(1 + i, N);
+    const annF = small ? N : (g - 1) / i;
+    switch (name) {
+      case 'PV': return small ? -(PMT * N + FV) : -(PMT * (1 + i * k) * annF + FV) / g;
+      case 'FV': return -(PV * g + PMT * (1 + i * k) * annF);
+      case 'PMT': { if (N === 0) throw err(5); const d = (1 + i * k) * annF; if (d === 0) throw err(5); return -(PV * g + FV) / d; }
+      case 'N': {
+        if (small) { if (PMT === 0) throw err(5); const n = -(PV + FV) / PMT; if (!isFinite(n)) throw err(5); return n; }
+        const A = PMT * (1 + i * k) / i; const ratio = (A - FV) / (A + PV);
+        if (!(ratio > 0) || !isFinite(ratio)) throw err(5);
+        const n = Math.log(ratio) / Math.log(1 + i); if (!isFinite(n)) throw err(5); return n;
+      }
+    }
+  }
+  function cfList() { const out = []; S.cfs.forEach(c => { for (let t = 0; t < c.f; t++) out.push(c.c); }); return out; }
+  function npvAt(r, strict) {
+    if (strict && r <= -1) throw err(5);
+    const l = cfList(); let s = S.cf0, d = 1;
+    for (let t = 0; t < l.length; t++) { d *= (1 + r); s += l[t] / d; }
+    return s;
+  }
+  function irr() {
+    const all = [S.cf0, ...cfList()];
+    if (!(all.some(v => v > 0) && all.some(v => v < 0))) throw err(5);
+    return findRoot(r => npvAt(r));
+  }
+  function amort() {
+    if (S.p1 > S.p2) throw err(6, 'P1 must be less than or equal to P2. Press CE|C.');
+    const i = perI(), pmt = S.tvm.PMT; let b = S.tvm.PV, sInt = 0, sPrn = 0;
+    for (let t = 1; t <= S.p2; t++) {
+      let intr, prn;
+      if (S.bgn) { const bp = b + pmt; intr = bp * i; prn = pmt + intr; b = bp + intr; }
+      else { intr = b * i; prn = pmt + intr; b = b + intr + pmt; }
+      if (t >= S.p1) { sInt += -intr; sPrn += prn; }
+    }
+    return { bal: b, prn: sPrn, int: sInt };
+  }
+
+  // ---------- input mechanics ----------
+  function getCur() {
+    if (S.typing !== null) { const v = parseFloat(S.typing); return isNaN(v) ? 0 : v; }
+    if (S.ws) { if (S.over !== null) return S.over; const it = curItem(); return it && it.get ? it.get() : 0; }
+    return S.x;
+  }
+  function setResult(v) {
+    if (!isFinite(v)) throw err(2);
+    S.typing = null;
+    if (S.ws) S.over = v; else { S.x = v; S.label = ''; }
+    S.computed = false;
+  }
+  function typeChar(c) {
+    if (S.typing === null) { S.typing = ''; S.justOp = false; if (S.ws) S.over = null; else { S.label = ''; S.computed = false; } }
+    const digits = S.typing.replace(/[^0-9]/g, '').length;
+    if (c === '.') { if (S.typing.includes('.')) return; if (S.typing === '' || S.typing === '-') S.typing += '0'; S.typing += '.'; return; }
+    if (digits >= 10) return;
+    if (S.typing === '0') S.typing = c; else if (S.typing === '-0') S.typing = '-' + c; else S.typing += c;
+  }
+  function apply(a, op, b) {
+    let r;
+    switch (op) {
+      case 'add': r = a + b; break; case 'sub': r = a - b; break; case 'mul': r = a * b; break;
+      case 'div': if (b === 0) throw err(2); r = a / b; break;
+      case 'pow': r = Math.pow(a, b); break;
+    }
+    if (!isFinite(r)) throw err(2); return r;
+  }
+  // Chain: every operator has equal rank, evaluated left to right.
+  // AOS: yˣ before × ÷ before + −  (yˣ groups right to left).
+  function prec(op) { if (!S.aos) return 1; return op === 'pow' ? 3 : (op === 'mul' || op === 'div') ? 2 : 1; }
+  function binary(k) {
+    if (S.justOp && S.stack.length) { S.stack[S.stack.length - 1].op = k; return; }
+    let v = getCur();
+    while (S.stack.length) {
+      const top = S.stack[S.stack.length - 1], pt = prec(top.op), pk = prec(k);
+      if (pt > pk || (pt === pk && !(S.aos && k === 'pow'))) { S.stack.pop(); v = apply(top.v, top.op, v); }
+      else break;
+    }
+    S.stack.push({ v, op: k }); setResult(v); S.justOp = true;
+  }
+  function equals() {
+    if (!S.stack.length) { if (S.typing !== null) setResult(getCur()); return; }
+    let v = getCur();
+    while (S.stack.length) { const top = S.stack.pop(); v = apply(top.v, top.op, v); }
+    S.justOp = false; setResult(v);
+  }
+  function unary(f) { const v = f(getCur()); setResult(v); S.justOp = false; }
+  function percent() {
+    const v = getCur(), top = S.stack[S.stack.length - 1];
+    const r = top && (top.op === 'add' || top.op === 'sub') ? top.v * v / 100 : v / 100;
+    setResult(r); S.justOp = false;
+  }
+  function ceKey() {
+    S.cptArmed = false; S.memMode = null;
+    if (S.typing !== null) { S.typing = null; if (S.ws) S.over = null; else S.x = 0; return; }
+    if (S.ws) { S.over = null; return; }
+    S.x = 0; S.label = ''; S.stack = []; S.justOp = false; S.computed = false;
+  }
+  function enterKey() {
+    if (!S.ws) return; const it = curItem(); if (!it || !it.set) return;
+    it.set(getCur()); S.typing = null; S.over = null; S.computed = false;
+  }
+  function nav(d) {
+    if (!S.ws) return; const items = wsItems(); const n = items.length;
+    S.idx = ((S.idx + d) % n + n) % n; S.typing = null; S.over = null;
+    S.computed = !!items[S.idx].auto;
+  }
+  function cptKey() {
+    if (S.ws) { const it = curItem(); if (it && it.compute) { it.compute(); S.typing = null; S.over = null; S.computed = true; } return; }
+    S.cptArmed = true;
+  }
+  function tvmKey(name) {
+    if (S.ws) {
+      if (S.typing === null) { exitWs(); S.x = S.tvm[name]; S.label = TVMLAB[name]; S.computed = false; S.cptArmed = false; return; }
+      const v = getCur(); exitWs(); S.typing = String(v);
+    }
+    S.stack = []; S.justOp = false;
+    if (S.cptArmed) { S.cptArmed = false; const r = solveTVM(name); if (!isFinite(r)) throw err(5); S.tvm[name] = r; S.x = r; S.label = TVMLAB[name]; S.typing = null; S.computed = true; return; }
+    const v = getCur(); S.tvm[name] = v; S.x = v; S.label = TVMLAB[name]; S.typing = null; S.computed = false;
+  }
+  function handleSecond(k) {
+    switch (k) {
+      case 'cpt': exitWs(); S.typing = null; S.x = 0; S.label = ''; S.stack = []; S.justOp = false; S.cptArmed = false; S.computed = false; return;
+      case 'enter': if (S.ws) { const it = curItem(); if (it && it.toggle) it.toggle(); } return;
+      case 'n': setResult(getCur() * S.PY); S.justOp = false; return;
+      case 'iy': openWs('PY'); return;
+      case 'pv': openWs('AMORT'); return;
+      case 'pmt': openWs('BGN'); return;
+      case 'fv': S.tvm = { N: 0, IY: 0, PV: 0, PMT: 0, FV: 0 }; S.cptArmed = false; if (!S.ws) { S.x = 0; S.label = ''; S.typing = null; S.computed = false; } return;
+      case 'ce': if (S.ws) clearWork(); return;
+      case 'pm': S.resetPending = true; return;
+      case 'ln': unary(v => Math.exp(v)); return;
+      case '2': openWs('ICONV'); return;
+      case 'dot': openWs('FORMAT'); return;
+    }
+  }
+  function handle(k, sec) {
+    if (S.error) { if (k === 'ce' && !sec) S.error = null; return; }
+    if (S.resetPending) { S.resetPending = false; if (k === 'enter' && !sec) freshState(); return; }
+    if (S.memMode) {
+      const mode = S.memMode; S.memMode = null;
+      if (!sec && /^\d$/.test(k)) {
+        const d = +k;
+        if (mode === 'STO') { const v = getCur(); S.mem[d] = v; S.typing = null; if (S.ws) S.over = v; else S.x = v; }
+        else setResult(S.mem[d]);
+        return;
+      }
+      if (mode === 'RCL' && !sec && TVMK[k]) { const nm = TVMK[k]; exitWs(); S.x = S.tvm[nm]; S.typing = null; S.label = TVMLAB[nm]; S.computed = false; return; }
+    }
+    if (sec) return handleSecond(k);
+    if (/^\d$/.test(k)) return typeChar(k);
+    switch (k) {
+      case 'dot': return typeChar('.');
+      case 'back': if (S.typing !== null) { S.typing = S.typing.slice(0, -1); if (S.typing === '-') S.typing = ''; } return;
+      case 'pm':
+        if (S.typing !== null) S.typing = S.typing.startsWith('-') ? S.typing.slice(1) : '-' + S.typing;
+        else { setResult(-getCur()); S.justOp = false; }
+        return;
+      case 'ce': return ceKey();
+      case 'add': case 'sub': case 'mul': case 'div': case 'pow': return binary(k);
+      case 'eq': return equals();
+      case 'pct': return percent();
+      case 'sqrt': return unary(v => { if (v < 0) throw err(2); return Math.sqrt(v); });
+      case 'sq': return unary(v => v * v);
+      case 'inv': return unary(v => { if (v === 0) throw err(2); return 1 / v; });
+      case 'ln': return unary(v => { if (v <= 0) throw err(2); return Math.log(v); });
+      case 'sto': S.memMode = 'STO'; return;
+      case 'rcl': S.memMode = 'RCL'; return;
+      case 'enter': return enterKey();
+      case 'up': return nav(-1);
+      case 'down': return nav(1);
+      case 'cpt': return cptKey();
+      case 'cf': return openWs('CF');
+      case 'npv': return openWs('NPV');
+      case 'irr': return openWs('IRR');
+    }
+    if (TVMK[k]) return tvmKey(TVMK[k]);
+  }
+
+  // ---------- formatting ----------
+  const commas = s => s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  function fmt(v, dec) {
+    dec = dec ?? S.dec;
+    if (!isFinite(v)) throw err(2);
+    if (Math.abs(v) >= 1e10) return v.toExponential(Math.min(dec, 5)).replace('e+', 'E').replace('e', 'E');
+    const s = Math.abs(v).toFixed(dec);
+    const neg = v < 0 && Number(s) !== 0;
+    const [ip, fp] = s.split('.');
+    return (neg ? '-' : '') + commas(ip) + (fp !== undefined ? '.' + fp : '');
+  }
+  function fmtTyping(t) {
+    const neg = t.startsWith('-'); const s = neg ? t.slice(1) : t;
+    const [ip, fp] = s.split('.');
+    return (neg ? '-' : '') + commas(ip || '0') + (s.includes('.') ? '.' + (fp || '') : '');
+  }
+  function safeFmt(v) { try { return fmt(v); } catch (e) { return '—'; } }
+
+  // ---------- rendering ----------
+  const $ = id => document.getElementById(id);
+  const device = $('device');
+  function render() {
+    let label = '', value = '', item = null, items = null;
+    try {
+      if (S.error) throw S.error;
+      if (S.resetPending) { label = 'RST'; value = '?'; }
+      else if (S.ws) {
+        items = wsItems(); item = curItem();
+        const lab = typeof item.lab === 'function' ? item.lab() : item.lab;
+        if (item.text) { label = ''; value = lab; }
+        else {
+          label = lab + '=';
+          if (S.typing !== null) value = fmtTyping(S.typing);
+          else if (item.int) value = String(S.over !== null ? S.over : item.get());
+          else value = fmt(S.over !== null ? S.over : item.get());
+        }
+      } else {
+        label = S.label ? S.label + '=' : '';
+        value = S.typing !== null ? fmtTyping(S.typing) : fmt(S.x);
+      }
+    } catch (e) {
+      if (!S.error) { S.error = e; S.typing = null; }
+      label = ''; value = 'Error ' + (S.error.code || 2);
+    }
+    $('lab').textContent = label;
+    $('val').textContent = value;
+
+    const on = (id, b) => $(id).classList.toggle('on', !!b);
+    on('i-2nd', S.second);
+    on('i-cpt', S.cptArmed);
+    on('i-enter', !S.error && item && item.set && !item.text);
+    on('i-set', !S.error && item && item.toggle);
+    on('i-nav', !S.error && items && items.length > 1);
+    $('i-mem').textContent = S.memMode === 'RCL' ? 'RCL' : 'STO';
+    on('i-mem', !!S.memMode);
+    on('i-bgn', S.bgn);
+    on('i-star', !S.error && S.computed);
+    device.classList.toggle('second-on', S.second);
+    $('decTag').textContent = S.dec;
+    $('modeTag').textContent = S.aos ? 'AOS' : 'Chain';
+
+    // hint
+    const h = $('hint'); h.classList.remove('err');
+    let hint;
+    if (S.error) { hint = S.error.message || ERRMSG[S.error.code] || ERRMSG[2]; h.classList.add('err'); }
+    else if (S.second) hint = '2ND is on: the next key uses its teal label.';
+    else if (S.resetPending) hint = 'Press ENTER to reset everything, or any other key to cancel.';
+    else if (S.memMode === 'STO') hint = 'Press 0–9 to store the display in that memory.';
+    else if (S.memMode === 'RCL') hint = 'Press 0–9 for a memory, or N, I/Y, PV, PMT, FV to recall a TVM value.';
+    else if (S.cptArmed) hint = 'Now press the value to solve for: N, I/Y, PV, PMT or FV.';
+    else if (S.ws) {
+      const parts = [WSNAME[S.ws]];
+      if (items && items.length > 1) parts.push('↑↓ moves');
+      if (item && item.set) parts.push('type a value, then ENTER saves it');
+      if (item && item.compute) parts.push('CPT computes');
+      if (item && item.toggle) parts.push('2ND SET switches');
+      parts.push('2ND QUIT leaves');
+      hint = parts.join(' · ');
+    } else hint = 'Standard mode. Enter a number, then press a TVM key to store it.';
+    h.textContent = hint;
+
+    renderRegs();
+  }
+  function renderRegs() {
+    const rows = [['N', S.tvm.N], ['I/Y', S.tvm.IY], ['PV', S.tvm.PV], ['PMT', S.tvm.PMT], ['FV', S.tvm.FV], ['P/Y', S.PY], ['C/Y', S.CY], ['Timing', S.bgn ? 'BGN' : 'END']];
+    $('regs').innerHTML = rows.map(([k, v]) => {
+      const neg = typeof v === 'number' && v < 0;
+      const txt = typeof v === 'number' ? safeFmt(v) : v;
+      return `<div><dt>${k}</dt><dd class="${neg ? 'neg' : ''}">${txt}</dd></div>`;
+    }).join('');
+    const cf = S.cfs.length || S.cf0 ? 'Cash flows: CF0 ' + safeFmt(S.cf0) + S.cfs.map((c, j) => ` · C${pad2(j + 1)} ${safeFmt(c.c)}${c.f > 1 ? ' ×' + c.f : ''}`).join('') : 'Cash flows: none entered (press CF).';
+    $('cfsum').textContent = cf;
+    $('wsName').textContent = S.ws ? 'In: ' + WSNAME[S.ws] : '';
+  }
+
+  // ---------- keys ----------
+  const keysEl = $('keys');
+  KEYS.forEach(([id, l, s, c]) => {
+    const cell = document.createElement('div'); cell.className = 'cell';
+    const sec = document.createElement('span'); sec.className = 'sec'; sec.textContent = s; sec.setAttribute('aria-hidden', 'true');
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'key ' + c; b.id = 'k-' + id; b.textContent = l;
+    b.setAttribute('aria-label', s ? `${l} (2ND: ${s})` : l);
+    b.addEventListener('click', () => userPress(id));
+    cell.append(sec, b); keysEl.append(cell);
+  });
+
+  function flash(k) {
+    const b = $('k-' + k); if (!b) return;
+    b.classList.add('pressed'); setTimeout(() => b.classList.remove('pressed'), 130);
+  }
+
+  // ---------- tape ----------
+  const tape = [];
+  function logTape(k, sec) {
+    const d = KM[k]; if (!d) return;
+    if (sec && d.s) tape.push({ t: '2ND ' + d.s, cls: 's2' });
+    else tape.push({ t: d.l, cls: d.c === 'num' ? 'num' : '' });
+    if (tape.length > 120) tape.splice(0, tape.length - 120);
+    renderTape();
+  }
+  function renderTape() {
+    const el = $('tape');
+    if (!tape.length) { el.innerHTML = '<span class="empty">Keys you press appear here, in order.</span>'; return; }
+    el.innerHTML = tape.map(x => `<span class="cap ${x.cls}">${x.t}</span>`).join('');
+  }
+  $('clearTape').addEventListener('click', () => { tape.length = 0; renderTape(); });
+
+  // ---------- press ----------
+  function press(k, quiet) {
+    if (!quiet) flash(k);
+    if (k === '2nd') { if (!S.error) S.second = !S.second; if (!quiet) render(); return; }
+    const sec = S.second; S.second = false;
+    if (!quiet) logTape(k, sec);
+    try { handle(k, sec); } catch (e) { S.error = e; S.typing = null; }
+    if (!quiet) render();
+  }
+
+  // ---------- examples (each step: keys to press + why) ----------
+  const K = s => s.split(' ');
+  const EXAMPLES = [
+    { t: 'Mortgage payment', d: '$300,000 loan, 30 years, 6% APR, monthly payments.',
+      r: 'PMT = <b>−1,798.65</b> (you pay, so it is negative)', steps: [
+      { k: K('2nd iy'), s: 'Open the P/Y worksheet: 2ND, then I/Y. P/Y means payments per year.' },
+      { k: K('1 2 enter'), s: 'Payments are monthly, so P/Y = 12. ENTER saves it, and C/Y (compounding per year) is set to 12 automatically.' },
+      { k: K('2nd cpt'), s: 'QUIT (2ND, then CPT) goes back to standard mode.' },
+      { k: K('2nd fv'), s: 'CLR TVM clears N, I/Y, PV, PMT and FV left over from an earlier problem. P/Y stays at 12. Do this before every new problem.' },
+      { k: K('3 6 0 n'), s: 'N is the total number of payments: 30 years × 12 months = 360.' },
+      { k: K('6 iy'), s: 'I/Y is the annual rate in percent. Type 6, not 0.06. The calculator divides by P/Y to get the monthly rate.' },
+      { k: K('3 0 0 0 0 0 pv'), s: 'PV = +300,000. You receive the loan money today, so it is a cash inflow (positive).' },
+      { k: K('0 fv'), s: 'FV = 0. Nothing is owed at the end, because the loan is fully paid off.' },
+      { k: K('cpt pmt'), s: 'CPT, then PMT, solves for the payment: −1,798.65 per month. It is negative because you pay it out.' }] },
+    { t: 'Bond price', d: '10-year bond, 5% coupon paid semiannually, $1,000 face value, 6% yield to maturity.',
+      r: 'PV = <b>−925.61</b>, a discount bond because the yield is above the coupon rate', steps: [
+      { k: K('2nd iy'), s: 'Open the P/Y worksheet.' },
+      { k: K('2 enter'), s: 'Coupons are paid twice a year, so P/Y = 2.' },
+      { k: K('2nd cpt'), s: 'QUIT back to standard mode.' },
+      { k: K('2nd fv'), s: 'CLR TVM clears values from the last problem.' },
+      { k: K('2 0 n'), s: 'N = 10 years × 2 = 20 coupon periods.' },
+      { k: K('6 iy'), s: 'I/Y = 6, the annual yield to maturity. With P/Y = 2 the calculator uses 3% per half-year.' },
+      { k: K('2 5 pmt'), s: 'PMT = each coupon: 5% × 1,000 ÷ 2 = 25. Positive, because the bondholder receives it.' },
+      { k: K('1 0 0 0 fv'), s: 'FV = 1,000, the face value repaid at maturity. Also received, so positive.' },
+      { k: K('cpt pv'), s: 'Solve for PV: −925.61 is the price you pay today. It is below 1,000 because the 6% yield is higher than the 5% coupon.' }] },
+    { t: 'Project NPV and IRR', d: 'Invest 1,000 today; receive 300, 400 and 600 over three years; 10% cost of capital.',
+      r: 'NPV = <b>54.09</b>, then IRR = <b>12.71%</b>', steps: [
+      { k: K('cf'), s: 'Open the cash flow worksheet. The display shows CF0, the cash flow at time 0.' },
+      { k: K('2nd ce'), s: 'CLR WORK erases cash flows from an earlier problem.' },
+      { k: K('1 0 0 0 pm enter'), s: 'CF0 = −1,000, the initial investment. +|− makes it negative; ENTER saves it.' },
+      { k: K('down 3 0 0 enter'), s: '↓ moves to C01, the year 1 cash flow: 300, then ENTER.' },
+      { k: K('down'), s: 'F01 is how many years in a row C01 repeats. It is already 1, so just look and move on.' },
+      { k: K('down 4 0 0 enter'), s: '↓ to C02, the year 2 cash flow: 400, ENTER.' },
+      { k: K('down down 6 0 0 enter'), s: '↓ passes F02 (leave it at 1), ↓ again to C03: 600, ENTER.' },
+      { k: K('npv'), s: 'Open NPV. It first asks for I, the discount rate.' },
+      { k: K('1 0 enter'), s: 'Cost of capital is 10%: type 10, ENTER.' },
+      { k: K('down cpt'), s: '↓ to NPV, then CPT: 54.09. A positive NPV means the project earns more than 10%, so accept it.' },
+      { k: K('irr cpt'), s: 'IRR, then CPT: 12.71%. It is above the 10% cost of capital, which agrees with the positive NPV.' }] },
+    { t: 'First-year interest', d: 'Same mortgage, then the AMORT worksheet for payments 1 through 12.',
+      r: 'BAL = 296,315.96, PRN = −3,684.04, INT = <b>−17,899.78</b>', steps: [
+      { k: K('2nd iy 1 2 enter 2nd cpt'), s: 'Set P/Y = 12 and QUIT, as in the mortgage example.' },
+      { k: K('2nd fv 3 6 0 n 6 iy 3 0 0 0 0 0 pv 0 fv'), s: 'Clear TVM and enter the loan: N = 360, I/Y = 6, PV = 300,000, FV = 0.' },
+      { k: K('cpt pmt'), s: 'Compute PMT = −1,798.65. AMORT uses the payment that is stored, so always compute it first.' },
+      { k: K('2nd pv'), s: 'Open AMORT: 2ND, then PV. P1 is the first payment in the range you want.' },
+      { k: K('1 enter'), s: 'P1 = 1, the first payment.' },
+      { k: K('down 1 2 enter'), s: '↓ to P2 = 12, the last payment in the range. Payments 1 to 12 are the first year.' },
+      { k: K('down'), s: 'BAL: the loan balance still owed after payment 12 is 296,315.96.' },
+      { k: K('down'), s: 'PRN: principal repaid during year 1 is 3,684.04 (shown negative because it is paid).' },
+      { k: K('down'), s: 'INT: interest paid in year 1 is 17,899.78. Early in a mortgage most of each payment is interest.' }] },
+    { t: 'Effective annual rate', d: '6% APR compounded monthly. Useful when comparing quoted rates across banks and countries.',
+      r: 'EFF = <b>6.17%</b>', steps: [
+      { k: K('2nd 2'), s: 'Open ICONV (interest conversion): 2ND, then 2. The first item is NOM, the quoted annual rate (APR).' },
+      { k: K('6 enter'), s: 'NOM = 6, ENTER.' },
+      { k: K('down down'), s: '↓ passes EFF, ↓ again to C/Y, the number of compounding periods per year.' },
+      { k: K('1 2 enter'), s: 'Monthly compounding: C/Y = 12, ENTER.' },
+      { k: K('up cpt'), s: '↑ back to EFF, then CPT: 6.17%. Monthly compounding makes the effective rate higher than the 6% quote.' }] },
+  ];
+  EXAMPLES.forEach(ex => { ex.seq = ex.steps.flatMap(st => st.k); });
+  function seqHtml(seq) {
+    const out = []; let numBuf = '';
+    const flushNum = () => { if (numBuf) { out.push(`<span class="cap">${numBuf}</span>`); numBuf = ''; } };
+    for (let j = 0; j < seq.length; j++) {
+      const k = seq[j];
+      if (k === '2nd' && seq[j + 1] && KM[seq[j + 1]].s) { flushNum(); out.push(`<span class="cap s2">2ND ${KM[seq[j + 1]].s}</span>`); j++; continue; }
+      if (/^\d$/.test(k) || k === 'dot') { numBuf += k === 'dot' ? '.' : k; continue; }
+      if (k === 'pm' && numBuf) { numBuf += ' +|−'; continue; }
+      flushNum(); out.push(`<span class="cap">${KM[k].l}</span>`);
+    }
+    flushNum(); return out.join('');
+  }
+  const exEl = $('examples');
+  EXAMPLES.forEach((ex, n) => {
+    const d = document.createElement('div'); d.className = 'exitem';
+    d.innerHTML = `<div class="exhead"><h3>${ex.t}</h3><button class="btn play" type="button" id="play-${n}">Step through</button></div>
+      <p>${ex.d}</p><div class="seq">${seqHtml(ex.seq)}</div><div class="result">${ex.r}</div>`;
+    exEl.append(d);
+    d.querySelector('button').addEventListener('click', () => startWalk(n));
+  });
+
+  // ---------- step-by-step coach ----------
+  let playing = false;         // true while "Press for me" is animating
+  let coach = null;            // { ex, step, pos, off }
+  const coachEl = $('coach');
+  const PREFIX = ['ce', '2nd', 'cpt'];
+
+  function rebuild(stepsDone) {
+    // replay silently from a clean state so Back always lands on a known display
+    const keepDec = S.dec, keepAos = S.aos;
+    freshState(); S.dec = keepDec; S.aos = keepAos;
+    tape.length = 0;
+    const ex = EXAMPLES[coach.ex];
+    const keys = PREFIX.concat(ex.steps.slice(0, stepsDone).flatMap(st => st.k));
+    keys.forEach(k => press(k, true));
+    tape.length = 0;
+    ex.steps.slice(0, stepsDone).forEach(st => st.k.forEach(k => tapeKey(k)));
+    renderTape(); render();
+  }
+  // tape helper that mirrors logTape's 2ND pairing for replays
+  let tapePending2nd = false;
+  function tapeKey(k) {
+    if (k === '2nd') { tapePending2nd = true; return; }
+    logTape(k, tapePending2nd); tapePending2nd = false;
+  }
+  function startWalk(n) {
+    if (playing) return;
+    coach = { ex: n, step: 0, pos: 0, off: false };
+    rebuild(0); renderCoach();
+    coachEl.hidden = false;
+    coachEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    $('coachNext').focus({ preventScroll: true });
+  }
+  function closeWalk() { coach = null; coachEl.hidden = true; clearHl(); }
+  function clearHl() { document.querySelectorAll('.key.hl').forEach(b => b.classList.remove('hl')); }
+  function renderCoach() {
+    clearHl();
+    if (!coach) return;
+    const ex = EXAMPLES[coach.ex], total = ex.steps.length, done = coach.step >= total;
+    $('coachTitle').textContent = ex.t;
+    $('coachCount').textContent = done ? 'Finished' : `Step ${coach.step + 1} of ${total}`;
+    $('coachBar').style.width = (Math.min(coach.step, total) / total * 100) + '%';
+    if (done) {
+      $('coachKeys').innerHTML = '';
+      $('coachSay').innerHTML = 'Result: ' + ex.r + '.';
+      $('coachNext').textContent = 'Start over';
+    } else {
+      const st = ex.steps[coach.step];
+      $('coachKeys').innerHTML = seqHtml(st.k);
+      $('coachSay').textContent = st.s;
+      $('coachNext').textContent = coach.pos > 0 ? 'Finish this step for me' : 'Press for me';
+      if (!coach.off) { const nk = st.k[coach.pos]; const b = $('k-' + nk); if (b) b.classList.add('hl'); }
+    }
+    $('coachBack').disabled = playing || (coach.step === 0 && coach.pos === 0 && !coach.off);
+    $('coachNext').disabled = playing;
+    $('coachWarn').hidden = !coach.off;
+    $('coachTip').hidden = done;
+  }
+  function coachNext() {
+    if (!coach || playing) return;
+    const ex = EXAMPLES[coach.ex];
+    if (coach.step >= ex.steps.length) { startWalk(coach.ex); return; }
+    if (coach.off) { coach.off = false; coach.pos = 0; rebuild(coach.step); }
+    const rest = ex.steps[coach.step].k.slice(coach.pos);
+    playing = true; renderCoach();
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const delay = reduce ? 120 : 420;
+    let j = 0;
+    const tick = () => {
+      if (j >= rest.length) { playing = false; coach.step++; coach.pos = 0; renderCoach(); return; }
+      press(rest[j++]); setTimeout(tick, delay);
+    };
+    tick();
+  }
+  function coachBack() {
+    if (!coach || playing) return;
+    if (coach.pos > 0 || coach.off) { coach.pos = 0; coach.off = false; }
+    else if (coach.step > 0) coach.step--;
+    rebuild(coach.step); renderCoach();
+  }
+  $('coachNext').addEventListener('click', coachNext);
+  $('coachBack').addEventListener('click', coachBack);
+  $('coachClose').addEventListener('click', closeWalk);
+
+  // a key pressed by the student (mouse or keyboard)
+  function userPress(k) {
+    if (playing) return;
+    press(k);
+    if (!coach || coach.off) return;
+    const ex = EXAMPLES[coach.ex];
+    if (coach.step >= ex.steps.length) return;
+    const st = ex.steps[coach.step];
+    if (k === st.k[coach.pos]) { coach.pos++; if (coach.pos >= st.k.length) { coach.step++; coach.pos = 0; } }
+    else coach.off = true;
+    renderCoach();
+  }
+
+  // ---------- physical keyboard ----------
+  document.addEventListener('keydown', e => {
+    if (playing || e.ctrlKey || e.metaKey || e.altKey) return;
+    let k = null;
+    if (/^[0-9]$/.test(e.key)) k = e.key;
+    else switch (e.key) {
+      case '.': k = 'dot'; break; case '+': k = 'add'; break; case '-': k = 'sub'; break;
+      case '*': case 'x': k = 'mul'; break; case '/': k = 'div'; break; case '^': k = 'pow'; break;
+      case '%': k = 'pct'; break; case '=': k = 'eq'; break;
+      case 'Enter': k = S.ws ? 'enter' : 'eq'; break;
+      case 'Backspace': k = 'back'; break; case 'Escape': k = 'ce'; break;
+      case 'ArrowUp': k = 'up'; break; case 'ArrowDown': k = 'down'; break;
+    }
+    if (k) { e.preventDefault(); userPress(k); }
+  });
+
+  // expose for testing
+  render();
+})();
+</script>
+</body></html>
