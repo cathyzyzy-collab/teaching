@@ -1,0 +1,845 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Shark Tank Capital Budgeting</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: 1 pick a portfolio (cards + budget bar), 2 reveal (score, strategy bars, table), 3 one project up close (NPV profile + keystrokes), 4 what to notice. */
+:root {
+  color-scheme: light;
+  --bg: #eef1f1; --fg: #1a2328; --muted: #5b6a70; --panel: #ffffff; --line: #d5dcde;
+  --accent: #0f7c71; --cap: #f3f6f6; --neg: #a1402f; --pos: #1d6b3a;
+  --grid: #e3e8e9; --axis: #8a989d; --neutral: #9aa7ac;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-cond: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #11171a; --fg: #e2e8ea; --muted: #9aaab0; --panel: #182024; --line: #29343a;
+    --accent: #5cc9bb; --cap: #1f292e; --neg: #e3826f; --pos: #6fcf8f;
+    --grid: #253035; --axis: #6f7f85; --neutral: #55656b;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #11171a; --fg: #e2e8ea; --muted: #9aaab0; --panel: #182024; --line: #29343a;
+  --accent: #5cc9bb; --cap: #1f292e; --neg: #e3826f; --pos: #6fcf8f;
+  --grid: #253035; --axis: #6f7f85; --neutral: #55656b;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+[hidden] { display: none !important; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 28px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); }
+header.top { display: grid; gap: 6px; margin-bottom: 22px; }
+header.top h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+header.top p { margin: 0; color: var(--muted); max-width: 76ch; }
+nav.steps { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+nav.steps a { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 999px; padding: 3px 12px; }
+nav.steps a:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+section.lesson { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px 22px; margin-bottom: 22px; display: grid; gap: 16px; min-width: 0; }
+@media (max-width: 520px) { section.lesson { padding: 16px 14px 18px; } }
+.lesson > h2 { margin: 0; font-size: 19px; font-weight: 600; display: flex; gap: 10px; align-items: baseline; }
+.lesson > h2 .num { font-family: var(--font-cond); font-size: 13px; color: var(--panel); background: var(--accent); border-radius: 999px; padding: 1px 9px; }
+.lesson > p.lead { margin: -8px 0 0; color: var(--muted); max-width: 82ch; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.locked { margin: 0; padding: 14px 16px; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); font-size: 14px; }
+
+/* controls */
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.seg button { font: 600 13px var(--font-body); border: 0; background: transparent; color: var(--muted); padding: 5px 13px; cursor: pointer; }
+.seg button[aria-pressed=true] { background: var(--accent); color: var(--panel); }
+.btn { font: 600 13px var(--font-body); color: var(--accent); background: transparent; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 999px; padding: 5px 13px; cursor: pointer; }
+.btn:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.btn.primary { background: var(--accent); color: var(--panel); border-color: var(--accent); }
+.btn:disabled { opacity: .5; cursor: default; background: transparent; }
+.btn.primary:disabled { background: var(--accent); }
+.btn:focus-visible, .seg button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+select, input.code { font: 500 14px var(--font-body); color: var(--fg); background: var(--cap); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; }
+input.code { width: 5.2em; font-variant-numeric: tabular-nums; letter-spacing: .06em; }
+.lab { font-size: 13px; font-weight: 600; color: var(--muted); }
+.note { margin: 0; font-size: 13px; color: var(--muted); }
+
+/* round bar */
+.roundbar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: space-between; }
+.roundcode { font-family: var(--font-cond); font-weight: 600; font-size: 15px; letter-spacing: .02em; padding: 3px 12px; border-radius: 8px; background: var(--cap); border: 1px solid var(--line); white-space: nowrap; }
+.roundcode b { font-size: 20px; font-variant-numeric: tabular-nums; color: var(--accent); }
+.rules { margin: 0; font-size: 14px; max-width: 86ch; }
+
+/* budget bar (sticky while picking) */
+.budget { position: sticky; top: 0; z-index: 5; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px 12px; display: grid; gap: 8px; box-shadow: 0 6px 14px -12px rgba(0,0,0,.35); }
+.budhead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 14px; }
+.budtext { font-size: 14px; font-variant-numeric: tabular-nums; }
+.budtext b { font-size: 17px; }
+.budtrack { position: relative; height: 26px; border-radius: 6px; background: var(--cap); border: 1px solid var(--line); overflow: hidden; display: flex; }
+.budtrack span { display: flex; align-items: center; justify-content: center; height: 100%; background: var(--accent); color: var(--panel); font: 600 12.5px var(--font-cond); border-right: 2px solid var(--panel); white-space: nowrap; overflow: hidden; transition: width .2s; }
+@media (prefers-reduced-motion: reduce) { .budtrack span { transition: none; } }
+
+/* project cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 248px), 1fr)); gap: 14px; }
+.card { border: 1px solid var(--line); border-radius: 12px; padding: 13px 14px 12px; display: grid; gap: 8px; align-content: start; background: var(--panel); min-width: 0; }
+.card.picked { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: color-mix(in srgb, var(--accent) 6%, var(--panel)); }
+.cardhead { display: flex; gap: 10px; align-items: flex-start; }
+.letter { flex: none; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font: 600 15px var(--font-cond); background: var(--cap); border: 1px solid var(--line); }
+.card.picked .letter { background: var(--accent); color: var(--panel); border-color: var(--accent); }
+.card h3 { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.3; }
+.pitch { margin: 0; font-size: 13.5px; color: var(--muted); }
+.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.facts div { background: var(--cap); border-radius: 8px; padding: 4px 8px; min-width: 0; }
+.facts small { display: block; font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: .02em; }
+.facts b { font-size: 15px; font-variant-numeric: tabular-nums; }
+.mini { width: 100%; height: auto; display: block; }
+.mini .bar { fill: var(--neutral); } .mini .barneg { fill: var(--neg); }
+.mini .base { stroke: var(--axis); stroke-width: 1; }
+.mini text { font: 500 10px var(--font-body); fill: var(--muted); }
+.cfchips { display: flex; flex-wrap: wrap; gap: 3px 10px; font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.cfchips b { color: var(--fg); font-weight: 500; }
+.sitetag { font-size: 12.5px; font-weight: 600; color: var(--fg); border-left: 3px solid var(--s2); padding: 1px 0 1px 8px; }
+.metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 10px; font-size: 13px; font-variant-numeric: tabular-nums; border-top: 1px dashed var(--line); padding-top: 8px; }
+.metrics span { color: var(--muted); }
+.metrics b { color: var(--fg); font-weight: 600; }
+.metrics b.neg { color: var(--neg); } .metrics b.pos { color: var(--pos); }
+.badges { display: flex; flex-wrap: wrap; gap: 4px; }
+.badge { font-size: 11.5px; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.badge.best { border-color: color-mix(in srgb, var(--s2) 60%, var(--line)); color: var(--fg); }
+.cardfoot { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+.cardfoot .why { font-size: 12px; color: var(--muted); }
+.invest[aria-pressed=true] { background: var(--accent); color: var(--panel); border-color: var(--accent); }
+
+/* score */
+.score { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 600px) { .score { grid-template-columns: minmax(0, 1fr); } }
+.stat { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; background: color-mix(in srgb, var(--cap) 60%, var(--panel)); min-width: 0; }
+.stat small { display: block; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.stat b { display: block; font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.25; }
+.stat span { font-size: 13px; color: var(--muted); }
+.stat.hi b { color: var(--accent); }
+.verdict { margin: 0; font-size: 15px; }
+
+/* charts */
+.chart { position: relative; min-width: 0; }
+.chart svg { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.chart .gridl { stroke: var(--grid); stroke-width: 1; }
+.chart .axisl { stroke: var(--axis); stroke-width: 1; }
+.chart .zero { stroke: var(--axis); stroke-width: 1.25; }
+.chart .tick { font: 500 11.5px var(--font-body); fill: var(--muted); font-variant-numeric: tabular-nums; }
+.chart .axtitle { font: 600 12px var(--font-body); fill: var(--muted); }
+.chart .ref { stroke: var(--axis); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.chart .reflab { font: 500 11.5px var(--font-body); fill: var(--muted); }
+.chart .series { fill: none; stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
+.chart .dlab { font: 600 12px var(--font-body); fill: var(--fg); }
+.chart .dlabm { font: 500 11.5px var(--font-body); fill: var(--muted); }
+.chart .cross { stroke: var(--axis); stroke-width: 1; }
+.chart .dot { stroke: var(--panel); stroke-width: 2; }
+.chart .hbar { fill: var(--neutral); }
+.chart .rowlab { font: 600 13px var(--font-body); fill: var(--fg); }
+.chart .rowsub { font: 500 11.5px var(--font-body); fill: var(--muted); }
+.chart .val { font: 600 12.5px var(--font-body); fill: var(--fg); font-variant-numeric: tabular-nums; }
+.chart .hl { fill: var(--cap); }
+.tip { position: absolute; pointer-events: none; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; font-size: 12.5px; line-height: 1.45; box-shadow: 0 4px 14px rgba(0,0,0,.12); white-space: nowrap; font-variant-numeric: tabular-nums; z-index: 6; }
+.tip i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--muted); }
+.legend span i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: 3px; }
+.legend span i.sq { width: 10px; height: 10px; vertical-align: -1px; }
+.charthead { display: flex; justify-content: space-between; align-items: baseline; gap: 6px 10px; flex-wrap: wrap; }
+.charthead h3 { margin: 0; font-size: 15px; font-weight: 600; }
+
+/* tables */
+.tblwrap { overflow-x: auto; }
+table.data { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+table.data th, table.data td { padding: 5px 9px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.data th { font-size: 12.5px; color: var(--muted); font-weight: 600; vertical-align: bottom; }
+table.data th:first-child, table.data td:first-child { text-align: left; }
+table.data td.c, table.data th.c { text-align: center; }
+table.data tr.cur td { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+table.data tfoot td { font-weight: 600; border-bottom: 0; }
+td.neg { color: var(--neg); } td.pos { color: var(--pos); }
+details.tbl summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--accent); }
+details.tbl[open] summary { margin-bottom: 8px; }
+
+/* close-up */
+.calc { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; background: color-mix(in srgb, var(--cap) 60%, var(--panel)); min-width: 0; }
+.calc h3 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.formula { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; background: var(--cap); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; overflow-wrap: anywhere; }
+ol.keysteps { margin: 0; padding-left: 20px; display: grid; gap: 7px; font-size: 13.5px; }
+ol.keysteps li::marker { color: var(--muted); font-size: 12px; }
+.seq { display: inline-flex; flex-wrap: wrap; gap: 3px; vertical-align: 1px; margin-right: 4px; }
+.cap { font-family: var(--font-cond); font-size: 12px; font-weight: 600; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--cap); color: var(--fg); white-space: nowrap; }
+.cap.s2 { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+.cap.num { border-color: transparent; background: transparent; padding: 0 1px; font-size: 13px; }
+.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 3px 14px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.kv span { color: var(--muted); }
+
+.takeaway { margin: 0; padding: 10px 14px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); border-radius: 0 8px 8px 0; font-size: 14.5px; }
+ol.notice { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; counter-reset: n; }
+ol.notice li { counter-increment: n; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14.5px; max-width: 92ch; }
+ol.notice li::before { content: counter(n); font: 600 14px var(--font-cond); color: var(--panel); background: var(--accent); border-radius: 999px; width: 26px; height: 26px; display: grid; place-items: center; margin-top: 1px; }
+ol.notice b.h { display: block; }
+footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 86ch; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+</head><body>
+<div class="wrap">
+  <header class="top">
+    <h1>Shark Tank Capital Budgeting</h1>
+    <p>You are the Sharks. You have a fixed pot of capital and a line of entrepreneurs pitching projects. Pick a portfolio using whatever you believe, then reveal NPV, IRR, payback and PI and see how close you came to the best possible set. All startups and numbers are made-up classroom examples; cash flows are in $ millions.</p>
+    <nav class="steps" aria-label="Sections"><a href="#s1">1 · Hear the pitches</a><a href="#s2">2 · Reveal and score</a><a href="#s3">3 · One project up close</a><a href="#s4">4 · What to notice</a></nav>
+  </header>
+
+  <!-- ===================== 1. PICK ===================== -->
+  <section class="lesson" id="s1" aria-labelledby="h1">
+    <h2 id="h1"><span class="num">1</span>Hear the pitches, then invest</h2>
+    <div class="roundbar">
+      <div class="row">
+        <div class="seg" role="group" aria-label="Choose a round" id="roundSeg">
+          <button type="button" data-round="0" aria-pressed="true">Round 1</button>
+          <button type="button" data-round="1" aria-pressed="false">Round 2</button>
+          <button type="button" data-round="2" aria-pressed="false">Round 3</button>
+        </div>
+        <button class="btn" type="button" id="randBtn">New random menu</button>
+      </div>
+      <div class="row">
+        <span class="roundcode" id="roundCode" aria-live="polite">Round 1</span>
+        <label class="lab" for="codeIn">Join code</label>
+        <input class="code" id="codeIn" type="text" inputmode="numeric" maxlength="4" placeholder="4821" autocomplete="off">
+        <button class="btn" type="button" id="codeGo">Load</button>
+      </div>
+    </div>
+    <p class="rules" id="rules"></p>
+    <p class="note" id="codeMsg" aria-live="polite" hidden></p>
+
+    <div class="budget" id="budget" aria-labelledby="budLabel">
+      <div class="budhead">
+        <div class="budtext" id="budText" aria-live="polite"></div>
+        <div class="row">
+          <button class="btn" type="button" id="clearBtn">Clear picks</button>
+          <button class="btn primary" type="button" id="revealBtn">Reveal the numbers</button>
+        </div>
+      </div>
+      <span id="budLabel" hidden>Capital budget used</span>
+      <div class="budtrack" id="budTrack" role="img" aria-label="Budget used"></div>
+    </div>
+
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <!-- ===================== 2. REVEAL ===================== -->
+  <section class="lesson" id="s2" aria-labelledby="h2">
+    <h2 id="h2"><span class="num">2</span>Reveal: how did your Sharks do?</h2>
+    <p class="locked" id="lock2">Pick your portfolio in step 1, then press <b>Reveal the numbers</b>. Your score is your total NPV as a percent of the best NPV you could have earned under the budget.</p>
+    <div id="res2" hidden style="display:grid;gap:16px;min-width:0">
+      <div class="score" id="score"></div>
+      <p class="verdict" id="verdict" aria-live="polite"></p>
+      <div class="grid2">
+        <div class="chart" id="c1wrap">
+          <div class="charthead"><h3>Total NPV by picking rule</h3><div class="legend"><span><i class="sq" style="background:var(--s1)"></i>Your pick</span><span><i class="sq" style="background:var(--s2)"></i>Best combination</span><span><i class="sq" style="background:var(--neutral)"></i>Ranking rules</span></div></div>
+          <svg id="chart1" viewBox="0 0 560 300" aria-label="Total NPV earned by each picking rule"></svg>
+          <div class="tip" id="tip1" hidden></div>
+          <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="tbl1"></table></div></details>
+        </div>
+        <div style="display:grid;gap:10px;min-width:0">
+          <p class="takeaway" id="ruleNote"></p>
+          <p class="note" id="bestNote"></p>
+        </div>
+      </div>
+      <div style="display:grid;gap:8px;min-width:0">
+        <div class="charthead"><h3>Every project, revealed</h3>
+          <div class="row"><span class="lab">Sort by</span>
+            <div class="seg" role="group" aria-label="Sort the table" id="sortSeg">
+              <button type="button" data-sort="menu" aria-pressed="true">Menu</button>
+              <button type="button" data-sort="npv" aria-pressed="false">NPV</button>
+              <button type="button" data-sort="irr" aria-pressed="false">IRR</button>
+              <button type="button" data-sort="pi" aria-pressed="false">PI</button>
+              <button type="button" data-sort="pb" aria-pressed="false">Payback</button>
+            </div>
+          </div>
+        </div>
+        <div class="tblwrap"><table class="data" id="resTbl"></table></div>
+        <p class="note">NPV = PV of future CFs − cost. IRR is the rate where NPV = 0. Payback counts years until the undiscounted CFs repay the cost; discounted payback uses PVs at the WACC. PI = PV of future CFs ÷ initial cost, so PI &gt; 1 exactly when NPV &gt; 0.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 3. CLOSE-UP ===================== -->
+  <section class="lesson" id="s3" aria-labelledby="h3">
+    <h2 id="h3"><span class="num">3</span>One project up close: NPV profile and calculator keys</h2>
+    <p class="lead">The NPV profile plots a project's NPV at every discount rate. It crosses zero at the IRR. At the WACC, its height is the NPV you earn.</p>
+    <p class="locked" id="lock3">Reveal the numbers in step 1 first.</p>
+    <div id="res3" hidden style="display:grid;gap:16px;min-width:0">
+      <div class="row">
+        <label class="lab" for="projSel">Project</label>
+        <select id="projSel"></select>
+        <label class="row lab" id="rivalWrap" style="gap:6px"><input type="checkbox" id="rivalChk" checked> Compare with its same-site rival</label>
+      </div>
+      <div class="grid2">
+        <div class="chart" id="c2wrap">
+          <div class="charthead"><h3 id="c2title">NPV profile</h3><div class="legend" id="leg2"></div></div>
+          <svg id="chart2" viewBox="0 0 560 330" aria-label="NPV profile"></svg>
+          <div class="tip" id="tip2" hidden></div>
+          <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="tbl2"></table></div></details>
+          <p class="takeaway" id="profNote" style="margin-top:10px"></p>
+        </div>
+        <div class="calc" aria-labelledby="hkeys">
+          <h3 id="hkeys">BA II Plus: CF, NPV and IRR</h3>
+          <ol class="keysteps" id="keys"></ol>
+          <div><div class="note" style="margin-bottom:4px">Excel (from the slides: =NPV(rate, CF1:CFn) + CF0)</div><div class="formula" id="excel"></div></div>
+          <div class="kv" id="kv"></div>
+          <details class="tbl"><summary>Payback worksheet</summary><div class="tblwrap"><table class="data" id="pbTbl"></table></div></details>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 4. NOTICE ===================== -->
+  <section class="lesson" id="s4" aria-labelledby="h4">
+    <h2 id="h4"><span class="num">4</span>What to notice</h2>
+    <p class="locked" id="lock4">Reveal the numbers in step 1 first, so these points don't spoil the game.</p>
+    <ol class="notice" id="notice" hidden></ol>
+  </section>
+
+  <footer class="note">Classroom simulation: every startup, pitch and cash flow is invented. Cash flows arrive at the end of each year and are in $ millions. Projects are independent except the two that share a site, which are mutually exclusive. Decision rules follow the Module 8 slides: accept independent projects with NPV &gt; 0 (equivalently IRR &gt; WACC); for mutually exclusive projects, take the one with the higher positive NPV. With a capital budget, the best portfolio is the affordable combination with the largest total NPV, found here by checking every combination. Round codes rebuild the same random menu on any device.</footer>
+</div>
+
+<script id="engine">
+// ===================== pure engine: math, menus, generator =====================
+const CB = (() => {
+  const npv = (r, cfs) => cfs.reduce((s, c, t) => s + c / Math.pow(1 + r, t), 0);
+  function irr(cfs) { // normal cash flows only (one sign change), so the root is unique
+    let lo = -0.95, hi = 10;
+    if (npv(hi, cfs) > 0 || npv(lo, cfs) < 0) return null;
+    for (let k = 0; k < 200; k++) { const m = (lo + hi) / 2; if (npv(m, cfs) > 0) lo = m; else hi = m; }
+    return (lo + hi) / 2;
+  }
+  function payback(cfs, r) { // r = null for regular payback; returns null if never recovered
+    let cum = cfs[0];
+    for (let t = 1; t < cfs.length; t++) {
+      const c = r == null ? cfs[t] : cfs[t] / Math.pow(1 + r, t);
+      if (cum + c >= -1e-12) return t - 1 + (-cum) / c;
+      cum += c;
+    }
+    return null;
+  }
+  function metrics(p) {
+    const cfs = [-p.cost, ...p.cf], n = npv(p.w, cfs);
+    return { cfs, npv: n, irr: irr(cfs), pb: payback(cfs, null), dpb: payback(cfs, p.w), pi: (n + p.cost) / p.cost };
+  }
+  const EPS = 1e-9;
+  function analyze(menu) {
+    const P = menu.projects, n = P.length, M = P.map(metrics);
+    const me = []; P.forEach((p, i) => { if (p.site) me.push(i); });
+    const cost = s => s.reduce((a, i) => a + P[i].cost, 0);
+    const tot = s => s.reduce((a, i) => a + M[i].npv, 0);
+    const ok = s => cost(s) <= menu.budget + EPS && !(me.length === 2 && s.includes(me[0]) && s.includes(me[1]));
+    let best = [], bestV = 0, nFeasible = 0;
+    for (let mask = 0; mask < (1 << n); mask++) {
+      const s = []; for (let i = 0; i < n; i++) if (mask & (1 << i)) s.push(i);
+      if (!ok(s)) continue;
+      nFeasible++;
+      const v = tot(s);
+      if (v > bestV + EPS || (Math.abs(v - bestV) <= EPS && cost(s) < cost(best) - EPS)) { best = s; bestV = v; }
+    }
+    function greedy(key, accept) {
+      const s = [];
+      [...Array(n).keys()].sort((a, b) => key(a) - key(b) || a - b).forEach(i => { if (accept(i) && ok([...s, i])) s.push(i); });
+      return s.sort((a, b) => a - b);
+    }
+    const strat = {
+      irr: greedy(i => -M[i].irr, i => M[i].irr > P[i].w),
+      pb: greedy(i => M[i].pb == null ? 1e9 : M[i].pb, i => M[i].pb != null),
+      pi: greedy(i => -M[i].pi, i => M[i].pi > 1),
+      best
+    };
+    return { M, me, ok, cost, tot, strat, bestV, nFeasible, nCombos: 1 << n };
+  }
+  // classroom-trap roles, read from the numbers so they work for any menu
+  function roles(menu, A) {
+    const P = menu.projects, M = A.M, idx = [...P.keys()];
+    const star = idx.reduce((a, b) => (M[b].irr > M[a].irr ? b : a), 0);
+    const negs = idx.filter(i => M[i].npv < 0 && M[i].pb != null);
+    const trap = negs.length ? negs.reduce((a, b) => (M[b].pb < M[a].pb ? b : a)) : null;
+    let L = null, S = null;
+    if (A.me.length === 2) { const [a, b] = A.me; if (M[a].npv >= M[b].npv) { L = a; S = b; } else { L = b; S = a; } }
+    const fastest = idx.filter(i => M[i].pb != null).reduce((a, b) => (M[b].pb < M[a].pb ? b : a));
+    return { star, trap, L, S, fastest };
+  }
+
+  // ---------- fixed rounds (hand-built; numbers verified in Python) ----------
+  const site1 = 'the empty warehouse roof', site2 = 'the harbor ferry dock', site3 = 'the stadium parking lot';
+  const ROUNDS = [
+    { title: 'Round 1', budget: 10, note: 'Every pitch is judged at the same 10% WACC.', projects: [
+      { name: 'GlowGolf Mini-Golf', pitch: 'Black-light mini-golf with a neon dragon on hole 18.', cost: 2.5, cf: [0.85, 0.9, 0.9, 0.9], w: 0.10 },
+      { name: 'Snack Drone Express', pitch: 'Drones drop warm pretzels at your dorm window in six minutes.', cost: 1.0, cf: [0.45, 0.55, 0.6, 0.4], w: 0.10 },
+      { name: 'Rooftop Greenhouse', pitch: 'Grow basil and strawberries on the roof and sell to restaurants downstairs. Slow to ramp up, then steady.', cost: 3.0, cf: [0.3, 0.6, 1.0, 1.4, 1.7], w: 0.10, site: site1 },
+      { name: 'PawPalace Pet Hotels', pitch: 'Luxury suites for dogs, with webcams and a bone-shaped pool.', cost: 6.0, cf: [0.8, 1.2, 1.5, 1.6, 1.6, 1.6, 1.6], w: 0.10 },
+      { name: 'PopUp Phone Fix', pitch: 'Kiosks that repair one hugely popular phone model, which is about to be discontinued.', cost: 2.0, cf: [2.0, 0.15], w: 0.10 },
+      { name: 'Rooftop Holiday Market', pitch: 'Two winters of rooftop cocoa stalls and skating, then the lease is up.', cost: 3.0, cf: [2.4, 1.3], w: 0.10, site: site1 },
+      { name: 'RoboBarista Cart', pitch: 'A robot arm that makes lattes and remembers your name.', cost: 1.5, cf: [0.5, 0.55, 0.6, 0.6], w: 0.10 },
+    ] },
+    { title: 'Round 2', budget: 12, note: 'A bigger pot, but money is pricier: every pitch is judged at a 12% WACC.', projects: [
+      { name: 'Tiny-House Rentals', pitch: 'Weekend tiny houses in the woods, each with a hot tub.', cost: 2.5, cf: [0.7, 0.8, 0.9, 0.9, 0.9], w: 0.12 },
+      { name: 'Dockside Ferris Wheel', pitch: 'A rented Ferris wheel for two big summers on the dock.', cost: 4.0, cf: [3.6, 1.4], w: 0.12, site: site2 },
+      { name: 'Glow Socks', pitch: 'Socks that glow in the dark, so you never lose the other one.', cost: 0.8, cf: [0.45, 0.45, 0.45], w: 0.12 },
+      { name: 'Cloud Kitchen Hub', pitch: 'One giant kitchen cooking for twelve delivery-only restaurant brands.', cost: 7.0, cf: [1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5], w: 0.12 },
+      { name: 'Esports Lounge', pitch: 'Gaming chairs, fast internet and a snack bar, open all night.', cost: 1.5, cf: [0.6, 0.6, 0.6], w: 0.12 },
+      { name: 'Harbor Seafood Hall', pitch: 'A permanent food hall in the old ferry terminal. Takes years to build a crowd.', cost: 4.0, cf: [0.4, 0.8, 1.2, 1.6, 1.8, 1.6], w: 0.12, site: site2 },
+      { name: 'Viral Dance App', pitch: 'The dance craze is huge this month. Next year? Who knows.', cost: 3.0, cf: [2.95, 0.3], w: 0.12 },
+      { name: 'Robot Car Wash', pitch: 'A car wash run entirely by robots that also vacuum the seats.', cost: 2.0, cf: [0.75, 0.75, 0.75, 0.75], w: 0.12 },
+    ] },
+    { title: 'Round 3', budget: 8, note: 'A tight budget, and riskier pitches carry higher hurdle rates: check each card\'s WACC.', projects: [
+      { name: 'Smart Beehives', pitch: 'Sensor-packed hives that text the beekeeper when the queen is grumpy.', cost: 1.2, cf: [0.4, 0.4, 0.4, 0.4, 0.4], w: 0.12 },
+      { name: 'Monster-Truck Weekends', pitch: 'Two seasons of monster-truck shows in the stadium lot.', cost: 2.5, cf: [2.45, 0.6], w: 0.11, site: site3 },
+      { name: 'Solar Parking Canopies', pitch: 'Solar roofs over parking lots, with a 10-year power contract. Low risk, low drama.', cost: 5.0, cf: [0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85], w: 0.09 },
+      { name: 'Bubble Tea Truck', pitch: 'A festival-season truck with a one-summer permit.', cost: 1.5, cf: [1.55, 0.05], w: 0.12 },
+      { name: 'Robot Lawn Gnomes', pitch: 'Garden gnomes that mow, water and tell bad jokes.', cost: 0.5, cf: [0.3, 0.3, 0.25], w: 0.14 },
+      { name: 'Pickleball Dome', pitch: 'A year-round pickleball dome in the stadium lot. Leagues take years to fill.', cost: 2.5, cf: [0.2, 0.5, 0.7, 0.9, 1.1, 1.2], w: 0.11, site: site3 },
+      { name: 'VR Dino Museum', pitch: 'Walk with life-size virtual dinosaurs. Kids scream, parents pay.', cost: 2.0, cf: [0.7, 0.8, 0.8, 0.6], w: 0.13 },
+    ] },
+  ];
+
+  // ---------- seeded random menus ----------
+  function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const POOL = {
+    star: [['Snack Drone Express', 'Drones drop warm pretzels at your dorm window in six minutes.'], ['Glow Socks', 'Socks that glow in the dark, so you never lose the other one.'], ['Robot Lawn Gnomes', 'Garden gnomes that mow, water and tell bad jokes.'], ['Umbrella Vending Bot', 'Pops up at bus stops the second it starts to rain.'], ['Pocket Karaoke', 'A keychain karaoke mic with a built-in cheering crowd.'], ['Plant Babysitter App', 'Neighbors water your plants while you travel; the app takes a cut.']],
+    big: [['PawPalace Pet Hotels', 'Luxury suites for dogs, with webcams and a bone-shaped pool.'], ['Cloud Kitchen Hub', 'One giant kitchen cooking for twelve delivery-only restaurant brands.'], ['Solar Parking Canopies', 'Solar roofs over parking lots, with a long power contract.'], ['Indoor Surf Park', 'A wave machine in a former warehouse. Surf lessons all winter.'], ['Vertical Strawberry Farm', 'Forty-foot towers of strawberries grown under LED lights.'], ['Campus Shuttle Robots', 'Self-driving shuttles that loop between dorms and the library.']],
+    trap: [['PopUp Phone Fix', 'Kiosks that repair one popular phone model, which is about to be discontinued.'], ['Viral Dance App', 'The dance craze is huge this month. Next year? Who knows.'], ['Bubble Tea Truck', 'A festival-season truck with a one-summer permit.'], ['Fidget Cube 3.0', 'The fidget toy every kid wants right now. Right now.'], ['Meme Merch Shop', 'T-shirts printed with this week\'s most popular meme.'], ['Eclipse Glasses Stand', 'Sells viewing glasses for one big eclipse, then nothing.']],
+    pair: [['the empty warehouse roof', ['Rooftop Greenhouse', 'Grow herbs and strawberries for restaurants downstairs. Slow to ramp up, then steady.'], ['Rooftop Holiday Market', 'Two winters of rooftop cocoa stalls and skating, then the lease is up.']],
+      ['the harbor ferry dock', ['Harbor Seafood Hall', 'A permanent food hall in the old ferry terminal. Takes years to build a crowd.'], ['Dockside Ferris Wheel', 'A rented Ferris wheel for two big summers on the dock.']],
+      ['the stadium parking lot', ['Pickleball Dome', 'A year-round pickleball dome. Leagues take years to fill.'], ['Monster-Truck Weekends', 'Two seasons of monster-truck shows in the lot.']],
+      ['the old mall atrium', ['Climbing Gym', 'Forty-foot climbing walls where the food court used to be. Memberships grow slowly.'], ['Haunted House Pop-Up', 'Two Halloween seasons of the scariest maze in town.']],
+      ['the riverside lot', ['Riverside Food Hall', 'Twenty food stalls by the river. Needs time to become the place to be.'], ['Summer Water Slide', 'A giant inflatable slide for two hot summers.']]],
+    filler: [['GlowGolf Mini-Golf', 'Black-light mini-golf with a neon dragon on hole 18.'], ['RoboBarista Cart', 'A robot arm that makes lattes and remembers your name.'], ['Robot Car Wash', 'A car wash run entirely by robots that also vacuum the seats.'], ['Tiny-House Rentals', 'Weekend tiny houses in the woods, each with a hot tub.'], ['Esports Lounge', 'Gaming chairs, fast internet and a snack bar, open all night.'], ['Smart Beehives', 'Sensor-packed hives that text the beekeeper when the queen is grumpy.'], ['VR Dino Museum', 'Walk with life-size virtual dinosaurs. Kids scream, parents pay.'], ['Cat Café', 'Coffee, cake and twelve adoptable cats.'], ['E-Bike Share', 'Electric bikes you unlock with your student ID.'], ['Laundry Lockers', 'Drop dirty clothes in a locker, get them back folded.'], ['Sauna Boat Tours', 'A floating sauna that cruises the harbor at sunset.'], ['Sock Subscription', 'A surprise pair of very loud socks every month.']]
+  };
+  const r2 = v => Math.round(v * 100) / 100;
+  const r05 = v => Math.round(v * 20) / 20;
+  function generate(code) {
+    const rnd = mulberry32((code * 2654435761) >>> 0);
+    const U = (a, b) => a + (b - a) * rnd();
+    const I = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+    const pick = arr => arr[Math.floor(rnd() * arr.length)];
+    const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+    // scale a cash-flow shape so the project's IRR is near the target, then round to $0.05M
+    const shape = (weights, cost, target) => { const k = cost / weights.reduce((s, x, t) => s + x / Math.pow(1 + target, t + 1), 0); return weights.map(x => Math.max(0.05, r05(x * k))); };
+    for (let attempt = 0; attempt < 600; attempt++) {
+      const w = I(8, 12) / 100;
+      const star = { cost: r2(0.5 + 0.1 * I(0, 7)) }; const sl = I(3, 4);
+      star.cf = shape([1, 1.1, 1.15, 0.85].slice(0, sl), star.cost, w + U(0.2, 0.32));
+      const big = { cost: 5 + 0.5 * I(0, 4) }; const bl = I(7, 10);
+      big.cf = shape(Array.from({ length: bl }, (_, t) => t === 0 ? 0.6 : t === 1 ? 0.85 : 1), big.cost, w + U(0.025, 0.05));
+      const trap = { cost: r2(1.5 + 0.1 * I(0, 15)) };
+      trap.cf = shape(rnd() < 0.5 ? [1, U(0.06, 0.16)] : [1, U(0.06, 0.14), 0.03], trap.cost, w - U(0.025, 0.06));
+      const L = { cost: 2.5 + 0.5 * I(0, 3) }; const ll = I(5, 6);
+      const irrL = w + U(0.04, 0.07);
+      L.cf = shape([0.2, 0.45, 0.65, 0.85, 1, 1.05].slice(0, ll), L.cost, irrL);
+      const S = { cost: L.cost }; S.cf = shape([1, U(0.6, 0.8), U(0.15, 0.3)], S.cost, irrL + U(0.02, 0.045));
+      const nf = I(2, 3), fillers = [];
+      for (let f = 0; f < nf; f++) {
+        const fl = I(3, 5), dud = nf === 3 && f === 2;
+        const c = 1 + 0.5 * I(0, 4);
+        fillers.push({ cost: c, cf: shape(Array.from({ length: fl }, (_, t) => dud ? 1 : 0.9 + 0.05 * Math.min(t, 2)), c, dud ? w - U(0.02, 0.04) : w + U(0.04, 0.12)) });
+      }
+      // names
+      const pr = pick(POOL.pair), fnames = shuffle(POOL.filler);
+      const nm = (o, a) => Object.assign(o, { name: a[0], pitch: a[1], w });
+      nm(star, pick(POOL.star)); nm(big, pick(POOL.big)); nm(trap, pick(POOL.trap));
+      nm(L, pr[1]); nm(S, pr[2]); L.site = pr[0]; S.site = pr[0];
+      fillers.forEach((f, k) => nm(f, fnames[k]));
+      const projects = shuffle([star, big, trap, L, S, ...fillers]);
+      // budget: a binding limit, rounded to $0.5M; try candidate budgets in a seeded order
+      const M = projects.map(metrics), ix = p => projects.indexOf(p);
+      const iS = ix(star), iT = ix(trap), iL = ix(L), iS2 = ix(S), iB = ix(big);
+      const others = projects.map((_, i) => i).filter(i => i !== iS);
+      const menuChecks = [
+        others.every(i => M[i].irr < M[iS].irr - 0.03 && projects[i].cost > star.cost),  // highest IRR is the smallest check
+        M[iT].npv < -0.03 && M[iT].pb != null && projects.every((p, i) => i === iT || M[i].pb == null || M[i].pb > M[iT].pb + 0.1), // fastest payback, negative NPV
+        M[iL].npv > M[iS2].npv + 0.08 && M[iS2].npv > 0.05 && M[iS2].irr > M[iL].irr + 0.01, // NPV vs IRR conflict on the shared site
+        M[iB].npv > 0.3,
+        M.every(m => Math.abs(m.npv) >= 0.03),
+      ];
+      if (!menuChecks.every(Boolean)) continue;
+      const posCost = projects.reduce((s, p, i) => s + (M[i].npv > 0 && p !== S ? p.cost : 0), 0);
+      const bmin = Math.max(Math.ceil(posCost * 0.45 * 2) / 2, Math.ceil((big.cost + star.cost + 0.5) * 2) / 2);
+      const cands = []; for (let b = bmin; b <= posCost * 0.75; b += 0.5) cands.push(b);
+      for (const budget of shuffle(cands)) {
+        const A = analyze({ budget, projects });
+        const checks = [
+          A.tot(A.strat.irr) <= 0.9 * A.bestV,                                       // ranking by IRR leaves money on the table
+          A.tot(A.strat.pi) >= 0.85 * A.bestV && A.tot(A.strat.pi) < A.bestV - 0.01,  // PI is close, not exact
+          A.strat.pb.includes(iT),
+          budget < posCost - 0.5,
+        ];
+        if (checks.every(Boolean)) return { title: 'Round code ' + code, code, budget, note: `A random menu. Every pitch is judged at the same ${Math.round(w * 100)}% WACC.`, projects, attempt };
+      }
+    }
+    return null;
+  }
+  return { npv, irr, payback, metrics, analyze, roles, ROUNDS, generate };
+})();
+if (typeof module !== 'undefined') module.exports = CB;
+</script>
+
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs, parent, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; if (parent) parent.appendChild(e); return e; };
+  const MINUS = '−';
+  const m2 = v => (v < -0.0049 ? MINUS : '') + '$' + Math.abs(v).toFixed(2) + 'M';
+  const m1 = v => '$' + (Math.round(v * 10) / 10).toFixed(Number.isInteger(Math.round(v * 10) / 10) ? 0 : 1) + 'M';
+  const cfTxt = v => (v < 0 ? MINUS : '') + Math.abs(v).toFixed(2);
+  const pct = (v, d = 2) => (v < 0 ? MINUS : '') + Math.abs(v * 100).toFixed(d) + '%';
+  const wTxt = w => Math.round(w * 100) + '%';
+  const yrs = v => v == null ? 'never' : v.toFixed(2) + ' yrs';
+  const piTxt = v => v.toFixed(3);
+  const LET = 'ABCDEFGH';
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  const S = { round: 0, code: null, menu: null, A: null, R: null, picks: new Set(), revealed: false, sort: 'menu', sel: 0, rival: true };
+
+  // ---------- load a menu ----------
+  function load(menu) {
+    S.menu = menu; S.A = CB.analyze(menu); S.R = CB.roles(menu, S.A);
+    S.picks = new Set(); S.revealed = false; S.sel = S.R.L != null ? S.R.L : 0;
+    $('roundSeg').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', S.code == null && +b.dataset.round === S.round));
+    $('roundCode').innerHTML = S.code == null ? esc(menu.title) : `Round code <b>${S.code}</b>`;
+    const sitePair = S.A.me.map(i => LET[i]);
+    $('rules').innerHTML = `<b>Budget: ${m1(menu.budget)}.</b> ${esc(menu.note)} ${sitePair.length === 2 ? `Projects ${sitePair[0]} and ${sitePair[1]} want the same site, so you can fund only one of them.` : ''} Fund any mix that fits. Unspent money just sits in the bank.`;
+    const sel = $('projSel'); sel.innerHTML = menu.projects.map((p, i) => `<option value="${i}">${LET[i]} · ${esc(p.name)}</option>`).join('');
+    renderAll();
+  }
+  function loadRound(k) { S.round = k; S.code = null; $('codeMsg').hidden = true; load(CB.ROUNDS[k]); }
+  function loadCode(code) {
+    const m = CB.generate(code);
+    if (!m) { $('codeMsg').hidden = false; $('codeMsg').textContent = `Code ${code} did not build a menu. Try another code.`; return; }
+    S.code = code; $('codeMsg').hidden = true; load(m);
+  }
+
+  // ---------- section 1: cards + budget ----------
+  const spent = () => [...S.picks].reduce((a, i) => a + S.menu.projects[i].cost, 0);
+  function blockReason(i) {
+    if (S.picks.has(i)) return '';
+    const p = S.menu.projects[i];
+    const rival = S.A.me.length === 2 && S.A.me.includes(i) ? S.A.me.find(j => j !== i) : null;
+    if (rival != null && S.picks.has(rival)) return `Site taken by ${LET[rival]}`;
+    if (spent() + p.cost > S.menu.budget + 1e-9) return 'Not enough capital left';
+    return '';
+  }
+  function miniSvg(p) {
+    const cfs = [-p.cost, ...p.cf], n = cfs.length, W = 260, H = 76, base = 40;
+    const maxPos = Math.max(...p.cf), s = Math.min(34 / maxPos, 22 / p.cost);
+    const slot = (W - 4) / n, bw = Math.min(18, slot - 3);
+    let out = `<line class="base" x1="0" x2="${W}" y1="${base}" y2="${base}"/>`;
+    cfs.forEach((c, t) => {
+      const x = 2 + t * slot + (slot - bw) / 2, h = Math.abs(c) * s;
+      out += `<rect class="${c < 0 ? 'barneg' : 'bar'}" x="${x.toFixed(1)}" y="${(c < 0 ? base : base - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1, h).toFixed(1)}" rx="1.5"><title>Year ${t}: ${cfTxt(c)}</title></rect>`;
+      if (n <= 8 || t % 2 === 0 || t === n - 1) out += `<text x="${(x + bw / 2).toFixed(1)}" y="${H - 1}" text-anchor="middle">${t}</text>`;
+    });
+    return `<svg class="mini" viewBox="0 0 ${W} ${H}" role="img" aria-label="Cash flows by year: ${cfs.map((c, t) => 'year ' + t + ' ' + cfTxt(c)).join(', ')}">${out}</svg>`;
+  }
+  function cfChips(p) {
+    const parts = [`<span>Yr 0 <b>${cfTxt(-p.cost)}</b></span>`];
+    let t = 0;
+    while (t < p.cf.length) {
+      let u = t; while (u + 1 < p.cf.length && p.cf[u + 1] === p.cf[t]) u++;
+      parts.push(`<span>Yr ${t + 1}${u > t ? '–' + (u + 1) : ''} <b>${cfTxt(p.cf[t])}</b>${u > t ? ' each' : ''}</span>`);
+      t = u + 1;
+    }
+    return parts.join('');
+  }
+  function renderCards() {
+    const A = S.A, P = S.menu.projects, best = new Set(A.strat.best);
+    $('cards').innerHTML = P.map((p, i) => {
+      const m = A.M[i], picked = S.picks.has(i), why = blockReason(i);
+      const rival = A.me.includes(i) ? A.me.find(j => j !== i) : null;
+      const metrics = S.revealed ? `<div class="metrics">
+          <div><span>NPV</span> <b class="${m.npv < 0 ? 'neg' : 'pos'}">${m2(m.npv)}</b></div>
+          <div><span>IRR</span> <b>${pct(m.irr)}</b></div>
+          <div><span>Payback</span> <b>${yrs(m.pb)}</b></div>
+          <div><span>PI</span> <b>${piTxt(m.pi)}</b></div>
+        </div>
+        <div class="badges">${best.has(i) ? '<span class="badge best">In the best set</span>' : ''}${i === S.R.star ? '<span class="badge">Highest IRR</span>' : ''}${i === S.R.fastest ? '<span class="badge">Fastest payback</span>' : ''}${m.npv < 0 ? '<span class="badge">NPV &lt; 0: reject</span>' : ''}</div>` : '';
+      return `<article class="card${picked ? ' picked' : ''}" aria-labelledby="pn${i}">
+        <div class="cardhead"><span class="letter" aria-hidden="true">${LET[i]}</span><h3 id="pn${i}">${esc(p.name)}</h3></div>
+        <p class="pitch">${esc(p.pitch)}</p>
+        <div class="facts"><div><small>Invest now</small><b>${m2(p.cost)}</b></div><div><small>Life</small><b>${p.cf.length} yrs</b></div><div><small>WACC</small><b>${wTxt(p.w)}</b></div></div>
+        ${miniSvg(p)}
+        <div class="cfchips">${cfChips(p)}</div>
+        ${rival != null ? `<div class="sitetag">Same site as ${LET[rival]} (${esc(p.site)}): fund one or neither</div>` : ''}
+        ${metrics}
+        <div class="cardfoot"><button class="btn invest" type="button" data-i="${i}" aria-pressed="${picked}" ${why ? 'disabled' : ''} aria-label="${picked ? 'Remove' : 'Invest in'} project ${LET[i]}, ${esc(p.name)}">${picked ? '✓ Invested' : 'Invest ' + m2(p.cost)}</button><span class="why">${why}</span></div>
+      </article>`;
+    }).join('');
+  }
+  function renderBudget() {
+    const B = S.menu.budget, used = spent(), P = S.menu.projects;
+    $('budText').innerHTML = `Used <b>${m2(used)}</b> of ${m2(B)} · <b>${m2(B - used)}</b> left · ${S.picks.size} project${S.picks.size === 1 ? '' : 's'}`;
+    const segs = [...S.picks].sort((a, b) => a - b).map(i => `<span style="width:${(P[i].cost / B * 100).toFixed(3)}%" title="${LET[i]} · ${esc(P[i].name)}: ${m2(P[i].cost)}">${P[i].cost / B > 0.06 ? LET[i] : ''}</span>`).join('');
+    $('budTrack').innerHTML = segs;
+    $('budTrack').setAttribute('aria-label', `Budget used ${m2(used)} of ${m2(B)}` + (S.picks.size ? ': projects ' + [...S.picks].sort().map(i => LET[i]).join(', ') : ''));
+    $('revealBtn').textContent = S.revealed ? 'Hide numbers, play again' : 'Reveal the numbers';
+  }
+  $('cards').addEventListener('click', e => {
+    const b = e.target.closest('button.invest'); if (!b || b.disabled) return;
+    const i = +b.dataset.i;
+    if (S.picks.has(i)) S.picks.delete(i); else S.picks.add(i);
+    renderCards(); renderBudget(); if (S.revealed) renderResults();
+    const nb = document.querySelector(`button.invest[data-i="${i}"]`); if (nb) nb.focus();
+  });
+  $('clearBtn').addEventListener('click', () => { S.picks.clear(); renderAll(); });
+  $('revealBtn').addEventListener('click', () => {
+    if (S.revealed) { S.revealed = false; S.picks.clear(); renderAll(); return; }
+    S.revealed = true; renderAll();
+    $('s2').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  });
+
+  // ---------- section 2: score, strategy chart, table ----------
+  const setTxt = s => s.length ? s.map(i => LET[i]).join(', ') : 'nothing';
+  function renderResults() {
+    const A = S.A, P = S.menu.projects, mine = [...S.picks].sort((a, b) => a - b);
+    const myV = A.tot(mine), bestV = A.bestV, sc = bestV > 0 ? myV / bestV : 0;
+    const scTxt = Math.abs(sc - 1) < 1e-9 ? '100%' : (Math.round(sc * 1000) / 10).toFixed(1).replace(/^100\.0$/, '99.9') + '%';
+    $('score').innerHTML = `
+      <div class="stat"><small>Your portfolio (${setTxt(mine)})</small><b>${m2(myV)}</b><span>total NPV · ${m2(A.cost(mine))} invested</span></div>
+      <div class="stat"><small>Best possible (${setTxt(A.strat.best)})</small><b>${m2(bestV)}</b><span>total NPV · ${m2(A.cost(A.strat.best))} invested</span></div>
+      <div class="stat hi"><small>Your score</small><b>${scTxt.replace('-', MINUS)}</b><span>of the best achievable NPV</span></div>`;
+    let v;
+    const negs = mine.filter(i => A.M[i].npv < 0);
+    if (!mine.length) v = 'You kept the money in the bank: NPV of zero. Pick some projects and watch the score change; the numbers stay revealed.';
+    else if (sc > 0.999) v = '<b>Perfect portfolio.</b> No other affordable combination adds more value.';
+    else if (sc >= 0.9) v = `<b>Close.</b> You captured ${scTxt} of the value. ${negs.length ? '' : 'Compare your set with the best set to see which swap closes the gap.'}`;
+    else v = `<b>Money left on the table:</b> ${m2(bestV - myV)} of NPV.`;
+    if (negs.length) v += ` You funded ${negs.map(i => LET[i]).join(', ')} with NPV &lt; 0, which destroys value at ${negs.length > 1 ? 'their' : 'its'} WACC.`;
+    $('verdict').innerHTML = v;
+
+    // strategy bars
+    const rows = [
+      { k: 'mine', lab: 'Your pick', set: mine, color: 'var(--s1)' },
+      { k: 'irr', lab: 'Rank by IRR', set: A.strat.irr, sub: 'highest IRR first, IRR > WACC' },
+      { k: 'pb', lab: 'Rank by payback', set: A.strat.pb, sub: 'fastest payback first' },
+      { k: 'pi', lab: 'Rank by PI', set: A.strat.pi, sub: 'highest PI first, PI > 1' },
+      { k: 'best', lab: 'Best combination', set: A.strat.best, color: 'var(--s2)', sub: `checked all ${A.nCombos} combinations` },
+    ].map(r => Object.assign(r, { v: A.tot(r.set), c: A.cost(r.set) }));
+    drawBars(rows);
+    $('tbl1').innerHTML = '<thead><tr><th>Rule</th><th>Projects</th><th>Invested</th><th>Total NPV</th><th>% of best</th></tr></thead><tbody>' +
+      rows.map(r => `<tr><td>${r.lab}</td><td>${setTxt(r.set)}</td><td>${m2(r.c)}</td><td>${m2(r.v)}</td><td>${(r.v / bestV * 100).toFixed(1)}%</td></tr>`).join('') + '</tbody>';
+    const ri = rows[1], rp = rows[2], rpi = rows[3];
+    $('ruleNote').innerHTML = `Ranking by <b>IRR</b> earns ${(ri.v / bestV * 100).toFixed(0)}% of the best and ranking by <b>payback</b> ${(rp.v / bestV * 100).toFixed(0)}%. Ranking by <b>PI</b>, value per dollar invested, gets ${(rpi.v / bestV * 100).toFixed(1)}%: close, but only checking combinations finds the exact best set under the ${m1(S.menu.budget)} budget.`;
+    $('bestNote').innerHTML = `How the best set was found: of the ${A.nCombos} possible combinations of ${P.length} projects, ${A.nFeasible} fit the budget and the one-per-site rule. The best of those is ${A.strat.best.map(i => LET[i] + ' (' + m2(A.M[i].npv) + ')').join(' + ')} = ${m2(bestV)}${S.menu.budget - A.cost(A.strat.best) > 0.001 ? `, leaving ${m2(S.menu.budget - A.cost(A.strat.best))} unspent` : ''}.`;
+
+    // results table
+    const order = [...P.keys()];
+    const key = { menu: i => i, npv: i => -A.M[i].npv, irr: i => -A.M[i].irr, pi: i => -A.M[i].pi, pb: i => A.M[i].pb == null ? 1e9 : A.M[i].pb }[S.sort];
+    order.sort((a, b) => key(a) - key(b) || a - b);
+    const best = new Set(A.strat.best);
+    $('resTbl').innerHTML = `<thead><tr><th>Project</th><th>Cost</th><th>WACC</th><th>NPV</th><th>IRR</th><th>Payback</th><th>Disc. payback</th><th>PI</th><th class="c">You</th><th class="c">Best</th></tr></thead><tbody>` +
+      order.map(i => { const m = A.M[i]; return `<tr class="${S.picks.has(i) ? 'cur' : ''}"><td>${LET[i]} · ${esc(P[i].name)}</td><td>${m2(P[i].cost)}</td><td>${wTxt(P[i].w)}</td><td class="${m.npv < 0 ? 'neg' : 'pos'}">${m2(m.npv)}</td><td>${pct(m.irr)}</td><td>${yrs(m.pb)}</td><td>${yrs(m.dpb)}</td><td>${piTxt(m.pi)}</td><td class="c">${S.picks.has(i) ? '✓' : ''}</td><td class="c">${best.has(i) ? '✓' : ''}</td></tr>`; }).join('') +
+      `</tbody><tfoot><tr><td>Totals (your pick · best)</td><td>${m2(A.cost(mine))} · ${m2(A.cost(A.strat.best))}</td><td></td><td>${m2(myV)} · ${m2(bestV)}</td><td colspan="6"></td></tr></tfoot>`;
+  }
+  $('sortSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.sort = b.dataset.sort; $('sortSeg').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); renderResults(); });
+
+  function placeTip(tip, wrap, svg, xView, yView, W, H) {
+    tip.hidden = false;
+    const wr = wrap.getBoundingClientRect(), sr = svg.getBoundingClientRect();
+    const px = sr.left - wr.left + xView / W * sr.width, py = sr.top - wr.top + yView / H * sr.height;
+    const tw = tip.offsetWidth;
+    tip.style.left = Math.max(0, Math.min(wr.width - tw, px + (px > wr.width / 2 ? -tw - 12 : 12))) + 'px';
+    tip.style.top = py + 'px';
+  }
+  function drawBars(rows) {
+    const svg = $('chart1'), nar = narrow($('c1wrap')), W = nar ? 380 : 560, rowH = 52, top = 10, H = top + rows.length * rowH + 30, m = { l: nar ? 118 : 150, r: 60 };
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.textContent = '';
+    const vals = rows.map(r => r.v), lo = Math.min(0, ...vals), hi = Math.max(...vals, 0.01);
+    const step = niceStep((hi - lo) / (nar ? 3 : 4));
+    const x0 = Math.floor(lo / step) * step, x1 = Math.ceil(hi / step) * step;
+    const X = v => m.l + (v - x0) / (x1 - x0) * (W - m.l - m.r);
+    for (let v = x0; v <= x1 + 1e-9; v += step) {
+      el('line', { x1: X(v), x2: X(v), y1: top, y2: H - 26, class: Math.abs(v) < 1e-9 ? 'zero' : 'gridl' }, svg);
+      el('text', { x: X(v), y: H - 10, 'text-anchor': 'middle', class: 'tick' }, svg, (v < -1e-9 ? MINUS : '') + '$' + Math.abs(v).toFixed(step < 0.1 ? 2 : 1) + 'M');
+    }
+    const hls = [];
+    rows.forEach((r, k) => {
+      const y = top + k * rowH;
+      hls.push(el('rect', { x: 0, y, width: W, height: rowH, class: 'hl', opacity: 0 }, svg));
+      el('text', { x: 0, y: y + 21, class: 'rowlab' }, svg, r.lab);
+      el('text', { x: 0, y: y + 38, class: 'rowsub' }, svg, r.set.length ? 'Projects ' + setTxt(r.set) : 'No projects');
+      const a = X(Math.min(0, r.v)), b = X(Math.max(0, r.v));
+      el('rect', { x: a, y: y + 12, width: Math.max(1.5, b - a), height: 26, rx: 3, fill: r.color || 'var(--neutral)' }, svg);
+      const right = r.v >= 0;
+      el('text', { x: right ? b + 6 : a - 6, y: y + 30, 'text-anchor': right ? 'start' : 'end', class: 'val' }, svg, m2(r.v));
+    });
+    const hit = el('rect', { x: 0, y: top, width: W, height: rows.length * rowH, fill: 'transparent' }, svg);
+    const tip = $('tip1'), wrap = $('c1wrap');
+    const toRow = e => { const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const p = pt.matrixTransform(svg.getScreenCTM().inverse()); return Math.max(0, Math.min(rows.length - 1, Math.floor((p.y - top) / rowH))); };
+    const show = e => {
+      const k = toRow(e), r = rows[k];
+      hls.forEach((h, j) => h.setAttribute('opacity', j === k ? 1 : 0));
+      tip.innerHTML = `<div><b>${r.lab}</b>${r.sub ? ` <span style="color:var(--muted)">(${r.sub})</span>` : ''}</div>` +
+        (r.set.length ? r.set.map(i => `<div>${LET[i]} · ${esc(S.menu.projects[i].name)}: ${m2(S.A.M[i].npv)}</div>`).join('') : '<div>No projects</div>') +
+        `<div style="color:var(--muted)">Invested ${m2(r.c)} · total NPV <b style="color:var(--fg)">${m2(r.v)}</b></div>`;
+      placeTip(tip, wrap, svg, X(Math.max(0, r.v)), top + k * rowH + rowH, W, H);
+    };
+    const hide = () => { tip.hidden = true; hls.forEach(h => h.setAttribute('opacity', 0)); };
+    hit.addEventListener('pointermove', show); hit.addEventListener('pointerdown', show); hit.addEventListener('pointerleave', hide);
+  }
+  const narrow = wrap => wrap.clientWidth > 0 && wrap.clientWidth < 520;
+  function niceStep(raw) { const p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p; }
+
+  // ---------- section 3: close-up ----------
+  const npvAt = (i, r) => CB.npv(r, S.A.M[i].cfs);
+  function crossover(a, b, xmax) { // rate where the two NPV profiles cross (searched on 0..xmax)
+    const f = r => npvAt(a, r) - npvAt(b, r); let lo = 0, hi = xmax;
+    if (f(lo) * f(hi) > 0) return null;
+    for (let k = 0; k < 100; k++) { const m = (lo + hi) / 2; if (f(lo) * f(m) <= 0) hi = m; else lo = m; }
+    return (lo + hi) / 2;
+  }
+  function renderCloseup() {
+    const A = S.A, P = S.menu.projects, i = S.sel, p = P[i], m = A.M[i];
+    $('projSel').value = i;
+    const rival = A.me.includes(i) ? A.me.find(j => j !== i) : null;
+    $('rivalWrap').hidden = rival == null;
+    const ser = [i]; if (rival != null && S.rival) ser.push(rival);
+    const colors = ['var(--s1)', 'var(--s2)'];
+    const maxIrr = Math.max(...ser.map(j => A.M[j].irr));
+    const xmax = Math.min(100, Math.max(20, Math.ceil(Math.max(maxIrr * 1.3, p.w * 2.2) * 100 / 5) * 5)) / 100;
+    $('c2title').textContent = `NPV profile: ${LET[i]} · ${p.name}`;
+    $('leg2').innerHTML = ser.map((j, k) => `<span><i style="background:${colors[k]}"></i>${LET[j]} · ${esc(P[j].name)}</span>`).join('');
+    const xo = ser.length === 2 ? crossover(ser[0], ser[1], xmax) : null;
+    drawProfile(ser, colors, xmax, xo);
+    // table
+    const rates = []; for (let r = 0; r <= xmax * 100 + 1e-9; r += xmax > 0.5 ? 10 : 5) rates.push(r / 100);
+    [p.w].concat(ser.map(j => A.M[j].irr)).forEach(r => { if (!rates.some(x => Math.abs(x - r) < 1e-6)) rates.push(r); });
+    rates.sort((a, b) => a - b);
+    $('tbl2').innerHTML = `<thead><tr><th>Discount rate</th>${ser.map(j => `<th>NPV of ${LET[j]}</th>`).join('')}</tr></thead><tbody>` +
+      rates.map(r => { const tag = Math.abs(r - p.w) < 1e-9 ? ' (WACC)' : ser.map(j => Math.abs(r - A.M[j].irr) < 1e-9 ? ` (IRR ${LET[j]})` : '').join(''); return `<tr class="${tag ? 'cur' : ''}"><td>${pct(r)}${tag}</td>${ser.map(j => `<td>${m2(npvAt(j, r))}</td>`).join('')}</tr>`; }).join('') + '</tbody>';
+    // note
+    let note = `At the ${wTxt(p.w)} WACC, ${LET[i]}'s NPV is <b>${m2(m.npv)}</b>. The curve crosses zero at the IRR, <b>${pct(m.irr)}</b>, so ${m.irr > p.w ? 'IRR > WACC and NPV > 0: accept if capital allows.' : 'IRR < WACC and NPV < 0: reject.'}`;
+    if (ser.length === 2) {
+      const j = ser[1], L = A.M[i].npv >= A.M[j].npv ? i : j, Sx = L === i ? j : i;
+      note += ` ${LET[Sx]} has the higher IRR (${pct(A.M[Sx].irr)} vs ${pct(A.M[L].irr)}), but at the WACC ${LET[L]} has the higher NPV. Because they share a site, choose ${LET[L]}, the one that adds more value.` + (xo != null ? ` The profiles cross at about ${pct(xo, 1)}; above that rate, ${LET[Sx]} would win.` : '');
+    }
+    $('profNote').innerHTML = note;
+    renderKeys(i);
+  }
+  function drawProfile(ser, colors, xmax, xo) {
+    const svg = $('chart2'), nar = narrow($('c2wrap')), W = nar ? 380 : 560, H = nar ? 340 : 330, m = { l: 66, r: 14, t: 18, b: 44 }, A = S.A, P = S.menu.projects, i = ser[0], p = P[i];
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.textContent = '';
+    const N = 120, pts = ser.map(j => Array.from({ length: N + 1 }, (_, k) => { const r = xmax * k / N; return [r, npvAt(j, r)]; }));
+    const all = pts.flat().map(q => q[1]);
+    let lo = Math.min(0, ...all), hi = Math.max(0, ...all);
+    const step = niceStep((hi - lo) / 5); lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
+    const X = r => m.l + r / xmax * (W - m.l - m.r), Y = v => H - m.b - (v - lo) / (hi - lo) * (H - m.t - m.b);
+    for (let v = lo; v <= hi + 1e-9; v += step) { el('line', { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: Math.abs(v) < 1e-9 ? 'zero' : 'gridl' }, svg); el('text', { x: m.l - 8, y: Y(v) + 4, 'text-anchor': 'end', class: 'tick' }, svg, (v < -1e-9 ? MINUS : '') + '$' + Math.abs(v).toFixed(step < 0.1 ? 2 : 1) + 'M'); }
+    const xs = xmax > 0.5 || (nar && xmax > 0.3) ? 0.1 : 0.05;
+    for (let r = 0; r <= xmax + 1e-9; r += xs) el('text', { x: X(r), y: H - m.b + 18, 'text-anchor': 'middle', class: 'tick' }, svg, Math.round(r * 100) + '%');
+    el('line', { x1: m.l, x2: m.l, y1: m.t, y2: H - m.b, class: 'axisl' }, svg);
+    el('text', { x: (m.l + W - m.r) / 2, y: H - 6, 'text-anchor': 'middle', class: 'axtitle' }, svg, 'Discount rate');
+    el('text', { x: 14, y: (m.t + H - m.b) / 2, 'text-anchor': 'middle', class: 'axtitle', transform: `rotate(-90 14 ${(m.t + H - m.b) / 2})` }, svg, 'NPV ($ millions)');
+    // WACC reference
+    el('line', { x1: X(p.w), x2: X(p.w), y1: m.t, y2: H - m.b, class: 'ref' }, svg);
+    ['WACC ' + wTxt(p.w)].concat(ser.map(j => `NPV ${LET[j]} ${m2(npvAt(j, p.w))}`)).forEach((t, k) => el('text', { x: X(p.w) + 5, y: m.t + 10 + k * 14, class: 'reflab' }, svg, t));
+    ser.forEach((j, k) => {
+      el('path', { d: pts[k].map((q, n) => (n ? 'L' : 'M') + X(q[0]).toFixed(1) + ' ' + Y(q[1]).toFixed(1)).join(' '), class: 'series', stroke: colors[k] }, svg);
+    });
+    // labels and marks
+    ser.forEach((j, k) => {
+      const mm = A.M[j], ir = mm.irr;
+      if (ir != null && ir <= xmax) {
+        el('circle', { cx: X(ir), cy: Y(0), r: 5, fill: colors[k], class: 'dot' }, svg);
+        const above = k === 0;
+        el('text', { x: X(ir) + (above ? 6 : -6), y: Y(0) + (above ? -9 : 17), 'text-anchor': above ? 'start' : 'end', class: 'dlab' }, svg, `IRR ${LET[j]} ${pct(ir, 1)}`);
+      }
+      const v = npvAt(j, p.w);
+      el('circle', { cx: X(p.w), cy: Y(v), r: 5, fill: colors[k], class: 'dot' }, svg);
+    });
+    if (xo != null) el('circle', { cx: X(xo), cy: Y(npvAt(ser[0], xo)), r: 4, fill: 'var(--panel)', stroke: 'var(--axis)', 'stroke-width': 2 }, svg);
+    // hover
+    const cross = el('line', { y1: m.t, y2: H - m.b, class: 'cross', visibility: 'hidden' }, svg);
+    const hd = ser.map((_, k) => el('circle', { r: 5, fill: colors[k], class: 'dot', visibility: 'hidden' }, svg));
+    const hit = el('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: 'transparent', style: 'cursor:crosshair' }, svg);
+    const tip = $('tip2'), wrap = $('c2wrap');
+    const show = e => {
+      const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const q = pt.matrixTransform(svg.getScreenCTM().inverse());
+      const r = Math.max(0, Math.min(xmax, Math.round((q.x - m.l) / (W - m.l - m.r) * xmax * 200) / 200));
+      cross.setAttribute('x1', X(r)); cross.setAttribute('x2', X(r)); cross.setAttribute('visibility', 'visible');
+      tip.innerHTML = `<div style="color:var(--muted)">Discount rate ${pct(r, 1)}</div>` + ser.map((j, k) => { const v = npvAt(j, r); hd[k].setAttribute('cx', X(r)); hd[k].setAttribute('cy', Y(v)); hd[k].setAttribute('visibility', 'visible'); return `<div><i style="background:${colors[k]}"></i>NPV ${LET[j]}: <b>${m2(v)}</b></div>`; }).join('');
+      placeTip(tip, wrap, svg, X(r), m.t + 4, W, H);
+    };
+    const hide = () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); hd.forEach(d => d.setAttribute('visibility', 'hidden')); };
+    hit.addEventListener('pointermove', show); hit.addEventListener('pointerdown', show); hit.addEventListener('pointerleave', hide);
+    svg.setAttribute('aria-label', `NPV profile of ${ser.map(j => LET[j] + ' ' + P[j].name).join(' and ')}: NPV falls as the discount rate rises and crosses zero at the IRR.`);
+  }
+  const cap = (t, cls = '') => `<span class="cap ${cls}">${t}</span>`;
+  const numk = t => `<span class="cap">${t}</span>`;
+  const kn = v => String(+v.toFixed(2));
+  function renderKeys(i) {
+    const p = S.menu.projects[i], m = S.A.M[i];
+    // group repeated cash flows, as the F (frequency) entries on the calculator allow
+    const groups = []; p.cf.forEach(c => { const g = groups[groups.length - 1]; if (g && g.c === c) g.f++; else groups.push({ c, f: 1 }); });
+    const steps = [];
+    steps.push([cap('CF') + cap('2ND CLR WORK', 's2'), 'Open the cash flow worksheet and clear cash flows from an earlier problem.']);
+    steps.push([numk(kn(p.cost) + ' +|−') + cap('ENTER'), `CF0 = ${MINUS}${kn(p.cost)}, the initial investment (in $ millions). +|− makes it negative.`]);
+    groups.forEach((g, k) => {
+      const nn = String(k + 1).padStart(2, '0'), yr = groups.slice(0, k).reduce((a, x) => a + x.f, 0) + 1;
+      const keysTxt = cap('↓') + numk(kn(g.c)) + cap('ENTER') + cap('↓') + (g.f > 1 ? numk(String(g.f)) + cap('ENTER') : '');
+      steps.push([keysTxt, `C${nn} = ${kn(g.c)}${g.f > 1 ? `, and F${nn} = ${g.f} because it repeats for years ${yr}–${yr + g.f - 1}` : ` for year ${yr}; F${nn} stays at 1`}.`]);
+    });
+    steps.push([cap('NPV') + numk(String(Math.round(p.w * 100))) + cap('ENTER'), `Open NPV. I = ${Math.round(p.w * 100)}, the WACC.`]);
+    steps.push([cap('↓') + cap('CPT'), `NPV = <b>${(m.npv < 0 ? MINUS : '') + Math.abs(m.npv).toFixed(2)}</b> ($ millions). ${m.npv > 0 ? 'Positive: the project adds value.' : 'Negative: reject.'}`]);
+    steps.push([cap('IRR') + cap('CPT'), `IRR = <b>${pct(m.irr)}</b>, ${m.irr > p.w ? 'above' : 'below'} the ${wTxt(p.w)} WACC.`]);
+    $('keys').innerHTML = steps.map(s => `<li><span class="seq">${s[0]}</span> ${s[1]}</li>`).join('');
+    const sgn = v => (v < 0 ? MINUS : '') + Math.abs(v).toFixed(4);
+    $('excel').innerHTML = esc(`=NPV(${p.w.toFixed(2)}, ${p.cf.map(kn).join(', ')}) + (-${kn(p.cost)})  →  ${sgn(m.npv)}`) + '<br>' +
+      esc(`=IRR({-${kn(p.cost)}, ${p.cf.map(kn).join(', ')}})  →  ${pct(m.irr, 4)}`);
+    $('kv').innerHTML = `<span>PV of future CFs</span><b>${m2(m.npv + p.cost)}</b><span>PI</span><b>${m2(m.npv + p.cost).replace('M', '')} ÷ ${kn(p.cost)} = ${piTxt(m.pi)}</b><span>Payback</span><b>${yrs(m.pb)}</b><span>Discounted payback</span><b>${yrs(m.dpb)}</b>`;
+    let cum = -p.cost, dcum = -p.cost;
+    const rows = [`<tr><td>0</td><td>${cfTxt(-p.cost)}</td><td>${cfTxt(cum)}</td><td>${cfTxt(-p.cost)}</td><td>${cfTxt(dcum)}</td></tr>`];
+    p.cf.forEach((c, t) => { const pv = c / Math.pow(1 + p.w, t + 1); cum += c; dcum += pv; rows.push(`<tr><td>${t + 1}</td><td>${cfTxt(c)}</td><td class="${cum >= 0 ? 'pos' : ''}">${cfTxt(cum)}</td><td>${cfTxt(pv)}</td><td class="${dcum >= 0 ? 'pos' : ''}">${cfTxt(dcum)}</td></tr>`); });
+    $('pbTbl').innerHTML = `<thead><tr><th>Year</th><th>CF</th><th>Cumulative CF</th><th>PV at ${wTxt(p.w)}</th><th>Cumulative PV</th></tr></thead><tbody>${rows.join('')}</tbody>`;
+  }
+  $('projSel').addEventListener('change', e => { S.sel = +e.target.value; renderCloseup(); });
+  $('rivalChk').addEventListener('change', e => { S.rival = e.target.checked; renderCloseup(); });
+
+  // ---------- section 4: what to notice ----------
+  function renderNotice() {
+    const A = S.A, P = S.menu.projects, R = S.R, M = A.M, bestV = A.bestV;
+    const nm = i => `${LET[i]} (${esc(P[i].name)})`;
+    const irrV = A.tot(A.strat.irr), piV = A.tot(A.strat.pi);
+    const items = [];
+    items.push(`<b class="h">The highest IRR is a small check.</b> ${nm(R.star)} has the top IRR, ${pct(M[R.star].irr)}, but it can absorb only ${m2(P[R.star].cost)} of the ${m1(S.menu.budget)} budget, adding ${m2(M[R.star].npv)} of NPV. Ranking by IRR fills the budget with small, high-percentage projects and earns ${m2(irrV)}, ${(irrV / bestV * 100).toFixed(0)}% of the best ${m2(bestV)}. IRR is a rate of return; NPV is the dollars of value created.`);
+    if (R.trap != null) items.push(`<b class="h">Fast payback is not the same as value.</b> ${nm(R.trap)} pays back in ${yrs(M[R.trap].pb)}${R.trap === R.fastest ? ', the fastest on the menu' : ''}, yet its NPV is ${m2(M[R.trap].npv)} at a ${wTxt(P[R.trap].w)} WACC (IRR ${pct(M[R.trap].irr)}). Payback ignores the time value of money and every cash flow after the payback date; its discounted payback is ${M[R.trap].dpb == null ? 'never' : yrs(M[R.trap].dpb)}.`);
+    let third = `<b class="h">With a budget, compare combinations.</b> With unlimited money you would accept every project with NPV &gt; 0. With ${m1(S.menu.budget)}, ranking by PI (PV of future CFs ÷ cost) earns ${m2(piV)}, ${(piV / bestV * 100).toFixed(1)}% of the best; checking all ${A.nCombos} combinations finds ${setTxt(A.strat.best)} at ${m2(bestV)}.`;
+    if (R.L != null) third += ` ${nm(R.S)} and ${nm(R.L)} share ${esc(P[R.L].site)}: ${LET[R.S]} has the higher IRR (${pct(M[R.S].irr)} vs ${pct(M[R.L].irr)}) but ${LET[R.L]} adds more value (NPV ${m2(M[R.L].npv)} vs ${m2(M[R.S].npv)}). For mutually exclusive projects, take the higher positive NPV.`;
+    items.push(third);
+    $('notice').innerHTML = items.map(t => `<li><div>${t}</div></li>`).join('');
+  }
+
+  function renderAll() {
+    renderCards(); renderBudget();
+    const r = S.revealed;
+    ['lock2', 'lock3', 'lock4'].forEach(id => $(id).hidden = r);
+    $('res2').hidden = !r; $('res3').hidden = !r; $('notice').hidden = !r;
+    if (r) { renderResults(); renderCloseup(); renderNotice(); }
+  }
+
+  // ---------- round controls ----------
+  $('roundSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) loadRound(+b.dataset.round); });
+  $('randBtn').addEventListener('click', () => { const c = 1000 + Math.floor(Math.random() * 9000); $('codeIn').value = ''; loadCode(c); });
+  const go = () => {
+    const v = $('codeIn').value.trim();
+    if (!/^\d{4}$/.test(v) || +v < 1000) { $('codeMsg').hidden = false; $('codeMsg').textContent = 'Enter a 4-digit round code from 1000 to 9999.'; return; }
+    loadCode(+v);
+  };
+  $('codeGo').addEventListener('click', go);
+  $('codeIn').addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+
+  loadRound(0);
+  let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (S.revealed) { renderResults(); renderCloseup(); } }, 150); });
+})();
+</script>
+</body></html>

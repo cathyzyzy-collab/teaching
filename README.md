@@ -14,3 +14,4 @@ Apps (all listed at https://cathyzyzy-collab.github.io/teaching/):
 - [Country Risk Premiums](https://cathyzyzy-collab.github.io/teaching/country-risk/)
 - [PPP Over the Decades](https://cathyzyzy-collab.github.io/teaching/ppp-decades/)
 - [Hedge or Gamble?](https://cathyzyzy-collab.github.io/teaching/fx-hedging/)
+- [Shark Tank Capital Budgeting](https://cathyzyzy-collab.github.io/teaching/capital-budgeting-game/)
