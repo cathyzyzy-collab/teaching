@@ -1,0 +1,796 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Who Gets Paid?</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: three short lessons and a takeaway panel stacked top to bottom. Charts are drawn in real pixels so text stays readable on phones. */
+:root {
+  color-scheme: light;
+  --bg: #eef1f1; --fg: #1a2328; --muted: #5b6a70; --panel: #ffffff; --line: #d5dcde;
+  --accent: #0f7c71; --cap: #f3f6f6; --neg: #a1402f; --pos: #1d6b3a;
+  --grid: #e3e8e9; --axis: #8a989d;
+  --s1: #2a78d6; --s1d: #1b569e; --s2: #eb6834; --s3: #1baf7a;
+  --beam: #33444d; --sand: #b4ab9a; --box: #ffffff;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-cond: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #11171a; --fg: #e2e8ea; --muted: #9aaab0; --panel: #182024; --line: #29343a;
+    --accent: #5cc9bb; --cap: #1f292e; --neg: #e3826f; --pos: #6fcf8f;
+    --grid: #253035; --axis: #6f7f85;
+    --s1: #3987e5; --s1d: #8dbcf2; --s2: #d95926; --s3: #199e70;
+    --beam: #c9d4d8; --sand: #8a8473; --box: #1f292e;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #11171a; --fg: #e2e8ea; --muted: #9aaab0; --panel: #182024; --line: #29343a;
+  --accent: #5cc9bb; --cap: #1f292e; --neg: #e3826f; --pos: #6fcf8f;
+  --grid: #253035; --axis: #6f7f85;
+  --s1: #3987e5; --s1d: #8dbcf2; --s2: #d95926; --s3: #199e70;
+  --beam: #c9d4d8; --sand: #8a8473; --box: #1f292e;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+[hidden] { display: none !important; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 28px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); }
+header.top { display: grid; gap: 6px; margin-bottom: 22px; }
+header.top h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+header.top p { margin: 0; color: var(--muted); max-width: 74ch; }
+nav.steps { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+nav.steps a { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 999px; padding: 3px 12px; }
+nav.steps a:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+nav.steps a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+section.lesson { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px 22px; margin-bottom: 22px; display: grid; gap: 16px; min-width: 0; }
+.lesson > h2 { margin: 0; font-size: 19px; font-weight: 600; display: flex; gap: 10px; align-items: baseline; }
+.lesson > h2 .num { font-family: var(--font-cond); font-size: 13px; color: var(--panel); background: var(--accent); border-radius: 999px; padding: 1px 9px; flex: none; }
+.lesson > p.lead { margin: -8px 0 0; color: var(--muted); max-width: 82ch; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.grid2.wideR { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); }
+@media (max-width: 860px) { .grid2, .grid2.wideR { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 480px) { section.lesson { padding: 16px 14px 18px; } }
+
+/* controls */
+.controls { display: grid; gap: 14px; min-width: 0; }
+.ctl { display: grid; gap: 4px; }
+.ctl label, .ctl .lab { font-size: 13px; font-weight: 600; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.ctl .lab label { display: inline; }
+.ctl .lab b { color: var(--fg); font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ctl.big .lab b { font-size: 22px; color: var(--accent); }
+input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; margin: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { font: 600 13px var(--font-body); color: var(--accent); background: transparent; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+.btn:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.btn.primary { background: var(--accent); color: var(--panel); border-color: var(--accent); }
+.btn:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+select { font: 500 14px var(--font-body); color: var(--fg); background: var(--cap); border: 1px solid var(--line); border-radius: 8px; padding: 3px 6px; }
+.presets { display: grid; gap: 6px; }
+.presets .lab { font-size: 13px; font-weight: 600; color: var(--muted); }
+
+/* amounts owed */
+fieldset.owed { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px 12px; margin: 0; display: grid; gap: 8px; min-width: 0; }
+fieldset.owed legend { font-size: 13px; font-weight: 600; color: var(--muted); padding: 0 6px; }
+.orow { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.orow .sw { width: 12px; height: 12px; border-radius: 3px; }
+.orow .nm { font-size: 14px; font-weight: 600; line-height: 1.3; }
+.orow .nm small { display: block; font-weight: 400; font-size: 12.5px; color: var(--muted); }
+.orow .nm label { cursor: pointer; }
+.orow.off .nm, .orow.off .amt { opacity: .5; }
+.amt { display: inline-flex; align-items: center; gap: 3px; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.amt input { width: 64px; font: 500 14px var(--font-body); color: var(--fg); background: var(--cap); border: 1px solid var(--line); border-radius: 8px; padding: 3px 6px; text-align: right; font-variant-numeric: tabular-nums; }
+.amt .resid { font-size: 13px; color: var(--muted); }
+.chk { display: inline-flex; align-items: center; gap: 6px; }
+.chk input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+
+/* hourglass */
+.hg { width: 100%; height: auto; display: block; }
+.hg .wall { fill: none; stroke: var(--beam); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.hg .wall.open { stroke-dasharray: 4 5; stroke-width: 1.5; opacity: .75; }
+.hg .cupbg { fill: var(--cap); }
+.hg .bulb { fill: var(--cap); stroke: var(--beam); stroke-width: 2; stroke-linejoin: round; }
+.hg .sand { fill: var(--sand); }
+.hg .stream { fill: none; stroke: var(--sand); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 0.1 7; }
+.hg.flowing .stream { animation: fall .45s linear infinite; }
+@keyframes fall { to { stroke-dashoffset: -7.1; } }
+.hg .nm { font: 600 14px var(--font-body); fill: var(--fg); }
+.hg .val { font: 500 13.5px var(--font-body); fill: var(--fg); font-variant-numeric: tabular-nums; }
+.hg .sub { font: 500 12.5px var(--font-body); fill: var(--muted); font-variant-numeric: tabular-nums; }
+.hg .big { font: 600 22px var(--font-body); fill: var(--accent); font-variant-numeric: tabular-nums; }
+.hg .tag { font: 600 11px var(--font-cond); fill: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.hg.compact .nm { font-size: 12.5px; } .hg.compact .val { font-size: 12.5px; } .hg.compact .sub { font-size: 11.5px; } .hg.compact .big { font-size: 19px; }
+.say { margin: 0; font-size: 15px; padding: 10px 14px; border-radius: 10px; background: var(--cap); border: 1px solid var(--line); }
+
+/* calculation card + tables */
+.calc { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; background: color-mix(in srgb, var(--cap) 60%, var(--panel)); min-width: 0; }
+.calc h3 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.tblwrap { overflow-x: auto; }
+table.data { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+table.data th, table.data td { padding: 5px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.data th { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+table.data th:first-child, table.data td:first-child { text-align: left; }
+table.data tr.cur td { background: color-mix(in srgb, var(--accent) 10%, transparent); font-weight: 600; }
+table.data tr.tot td { font-weight: 600; border-top: 2px solid var(--line); }
+table.data td .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 7px; vertical-align: -1px; }
+td.neg { color: var(--neg); } td.pos { color: var(--pos); }
+details.tbl summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--accent); }
+details.tbl summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+details.tbl[open] summary { margin-bottom: 8px; }
+
+/* charts */
+.chart { position: relative; min-width: 0; }
+.chart svg.plot { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.chart .gridl { stroke: var(--grid); stroke-width: 1; }
+.chart .axisl { stroke: var(--axis); stroke-width: 1; }
+.chart .tick { font: 500 11.5px var(--font-body); fill: var(--muted); font-variant-numeric: tabular-nums; }
+.chart .axtitle { font: 600 12px var(--font-body); fill: var(--muted); }
+.chart .ref { stroke: var(--axis); stroke-width: 1.5; stroke-dasharray: 5 4; fill: none; }
+.chart .reflab { font: 500 11.5px var(--font-body); fill: var(--muted); paint-order: stroke; stroke: var(--panel); stroke-width: 4px; stroke-linejoin: round; }
+.chart .nowl { stroke: var(--accent); stroke-width: 1.5; }
+.chart .nowlab { font: 600 12px var(--font-body); fill: var(--accent); font-variant-numeric: tabular-nums; }
+.chart .dlab { paint-order: stroke; stroke: var(--panel); stroke-width: 4px; stroke-linejoin: round; }
+.chart .zone { fill: var(--neg); opacity: .06; }
+.chart .region { font: 600 12px var(--font-body); fill: var(--muted); paint-order: stroke; stroke: var(--panel); stroke-width: 4px; stroke-linejoin: round; }
+.chart .series { fill: none; stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
+.chart .dlab { font: 600 12.5px var(--font-body); fill: var(--fg); }
+.chart .blab { font: 500 12.5px var(--font-body); fill: var(--fg); font-variant-numeric: tabular-nums; }
+.chart .btot { font: 600 13px var(--font-body); fill: var(--fg); font-variant-numeric: tabular-nums; }
+.chart .gname { font: 600 13px var(--font-body); fill: var(--fg); }
+.chart .cross { stroke: var(--axis); stroke-width: 1; }
+.chart .dot { stroke: var(--panel); stroke-width: 2; }
+.chart .bar { stroke: var(--panel); stroke-width: 1; }
+.chart .bar.hl { stroke: var(--fg); stroke-width: 2; }
+.tip { position: absolute; pointer-events: none; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; font-size: 12.5px; line-height: 1.45; box-shadow: 0 4px 14px rgba(0,0,0,.12); white-space: nowrap; font-variant-numeric: tabular-nums; z-index: 2; }
+.tip i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--muted); }
+.legend span i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: 3px; }
+.legend span i.dash { height: 0; border-top: 2px dashed var(--axis); background: none !important; border-radius: 0; }
+.legend span i.blk { height: 10px; width: 10px; vertical-align: -1px; }
+.charthead { display: flex; justify-content: space-between; align-items: baseline; gap: 6px 10px; flex-wrap: wrap; }
+.charthead h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.note { margin: 0; font-size: 13px; color: var(--muted); }
+.takeaway { margin: 0; padding: 10px 14px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); border-radius: 0 8px 8px 0; font-size: 14.5px; }
+.takeaway.warn { border-left-color: var(--neg); background: color-mix(in srgb, var(--neg) 7%, transparent); }
+
+/* what to notice */
+.notice { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .notice { grid-template-columns: minmax(0, 1fr); } }
+.notice .card { border: 1px solid var(--line); border-top: 3px solid var(--accent); border-radius: 10px; padding: 12px 14px; background: color-mix(in srgb, var(--cap) 60%, var(--panel)); }
+.notice h3 { margin: 0 0 6px; font-size: 15px; font-weight: 600; }
+.notice p { margin: 0; font-size: 14px; }
+.notice p + p { margin-top: 6px; }
+.notice q { font-style: italic; }
+footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 84ch; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head><body>
+<div class="wrap">
+  <header class="top">
+    <h1>Who Gets Paid?</h1>
+    <p>A corporation's value is divided among the people who put money into it. Lenders hold <b>fixed claims</b>: a legal promise to be repaid with interest. Shareholders hold the <b>residual claim</b>: no repayment promise, but ownership of whatever is left. Think of an hourglass: the firm's value pours down and fills each claimant's cup in order.</p>
+    <nav class="steps" aria-label="Sections"><a href="#s1">1 · The hourglass</a><a href="#s2">2 · Payoff diagram</a><a href="#s3">3 · Who wants the risky project?</a><a href="#s4">What to notice</a></nav>
+  </header>
+
+  <!-- ===================== 1. THE HOURGLASS ===================== -->
+  <section class="lesson" id="s1" aria-labelledby="h1">
+    <h2 id="h1"><span class="num">1</span>The hourglass: pour the firm's value through its claimants</h2>
+    <p class="lead">When the firm pays out (its debt comes due, it is sold, or it is liquidated), claimants are paid in priority order. Each cup must be full before a single dollar spills into the next one. Drag the firm's value and watch the cups fill.</p>
+    <div class="grid2 wideR">
+      <div class="controls">
+        <div class="ctl big">
+          <div class="lab"><label for="v1">Firm value (cash available to pay out)</label><b id="v1Out">$45M</b></div>
+          <input type="range" id="v1" min="0" max="210" step="0.5" value="45" aria-describedby="say1">
+        </div>
+        <div class="row">
+          <button class="btn primary" type="button" id="pour">▶ Pour from $0</button>
+          <button class="btn" type="button" id="reset1">Reset to class example</button>
+        </div>
+        <div class="presets">
+          <span class="lab">Jump to</span>
+          <div class="row" id="jumps"></div>
+        </div>
+        <fieldset class="owed">
+          <legend>What the firm owes, in priority order ($ millions, principal + interest due)</legend>
+          <div class="orow" id="r_sec">
+            <i class="sw" style="background:var(--s1d)"></i>
+            <div class="nm"><label for="o_sec">1 · Secured debt</label><small>Bank loan backed by collateral, paid first</small></div>
+            <span class="amt">$<input type="number" id="o_sec" min="0" max="300" step="1" value="20" inputmode="decimal">M</span>
+          </div>
+          <div class="orow" id="r_unsec">
+            <i class="sw" style="background:var(--s1)"></i>
+            <div class="nm"><label for="o_unsec">2 · Unsecured bonds</label><small>$1,000-face corporate bonds</small></div>
+            <span class="amt">$<input type="number" id="o_unsec" min="0" max="300" step="1" value="40" inputmode="decimal">M</span>
+          </div>
+          <div class="orow" id="r_pref">
+            <i class="sw" style="background:var(--s2)"></i>
+            <div class="nm"><span class="chk"><input type="checkbox" id="prefOn" checked><label for="prefOn">3 · Preferred stock</label></span><small>Stock-bond hybrid: a fixed claim, $100 par per share</small></div>
+            <span class="amt">$<input type="number" id="o_pref" min="0" max="300" step="1" value="10" inputmode="decimal" aria-label="Preferred stock claim, $ millions">M</span>
+          </div>
+          <div class="orow">
+            <i class="sw" style="background:var(--s3)"></i>
+            <div class="nm">4 · Common stock<small>The owners: whatever is left, with no cap</small></div>
+            <span class="amt"><span class="resid">residual</span></span>
+          </div>
+        </fieldset>
+        <div class="ctl">
+          <div class="lab"><label for="shares">Common shares outstanding</label>
+            <select id="shares"><option value="500000">500,000</option><option value="1000000" selected>1,000,000</option><option value="2000000">2,000,000</option><option value="5000000">5,000,000</option><option value="10000000">10,000,000</option></select>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;gap:12px;min-width:0">
+        <div class="chart" id="hgwrap">
+          <svg class="hg" id="hg" role="img" aria-label="Hourglass of claims"></svg>
+          <div class="tip" id="tipH" hidden></div>
+        </div>
+        <p class="say" id="say1" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <div class="calc" aria-labelledby="hcalc1">
+      <h3 id="hcalc1">Who gets what (table view)</h3>
+      <div class="tblwrap"><table class="data" id="tbl1"></table></div>
+      <p class="note">Recovered = paid ÷ owed, which is also the cents each claimant gets per dollar it is owed. Per-unit values assume $1,000 of debt claim per bond and $100 par per preferred share.</p>
+    </div>
+  </section>
+
+  <!-- ===================== 2. PAYOFF DIAGRAM ===================== -->
+  <section class="lesson" id="s2" aria-labelledby="h2">
+    <h2 id="h2"><span class="num">2</span>The payoff diagram: fixed claims vs. the residual claim</h2>
+    <p class="lead">The same claims, drawn for every possible firm value. Debt rises dollar for dollar until it is paid in full, then goes flat. Common equity is $0 until every fixed claim is covered, then takes every extra dollar: the "hockey stick". It never drops below $0, because shareholders have limited liability.</p>
+    <div class="grid2">
+      <div class="chart" id="c2wrap">
+        <div class="charthead"><h3>Payoff to each claimant</h3><span class="note">Hover to read · click to set the firm value</span></div>
+        <div class="legend" id="leg2" style="margin:4px 0 2px"></div>
+        <svg class="plot" id="chart2" aria-label="Payoff to debt, preferred and common equity at each firm value"></svg>
+        <div class="tip" id="tip2" hidden></div>
+        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="tbl2"></table></div></details>
+      </div>
+      <div class="controls">
+        <div class="ctl big">
+          <div class="lab"><label for="v2">Firm value (linked to section 1)</label><b id="v2Out">$45M</b></div>
+          <input type="range" id="v2" min="0" max="210" step="0.5" value="45">
+        </div>
+        <div class="ctl">
+          <div class="lab"><label for="swing">Suppose firm value could end up this much lower or higher</label>
+            <select id="swing"><option value="10">± $10M</option><option value="20" selected>± $20M</option><option value="30">± $30M</option></select>
+          </div>
+        </div>
+        <div class="tblwrap"><table class="data" id="tblSwing"></table></div>
+        <p class="takeaway" id="swingTake" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 3. RISKY PROJECT ===================== -->
+  <section class="lesson" id="s3" aria-labelledby="h3">
+    <h2 id="h3"><span class="num">3</span>Who wants the risky project?</h2>
+    <p class="lead">A firm that owes its bondholders money must pick one of two projects. Payoffs arrive in one year; we compare expected (probability-weighted) payoffs and ignore discounting. Whose cup does each project fill?</p>
+    <div class="grid2">
+      <div class="controls">
+        <div class="presets">
+          <span class="lab">Scenarios</span>
+          <div class="row" id="presets3"></div>
+        </div>
+        <div class="ctl"><div class="lab"><label for="d3">Debt owed next year (face + interest)</label><b id="d3Out"></b></div><input type="range" id="d3" min="0" max="120" step="1"></div>
+        <div class="ctl"><div class="lab"><label for="safe3">Safe project: firm value for sure</label><b id="safe3Out"></b></div><input type="range" id="safe3" min="0" max="150" step="1"></div>
+        <div class="ctl"><div class="lab"><label for="good3">Risky project: firm value if it works</label><b id="good3Out"></b></div><input type="range" id="good3" min="0" max="200" step="1"></div>
+        <div class="ctl"><div class="lab"><label for="bad3">Risky project: firm value if it fails</label><b id="bad3Out"></b></div><input type="range" id="bad3" min="0" max="150" step="1"></div>
+        <div class="ctl"><div class="lab"><label for="p3">Chance the risky project works</label><b id="p3Out"></b></div><input type="range" id="p3" min="5" max="95" step="5"></div>
+      </div>
+      <div class="chart" id="c3wrap">
+        <div class="charthead"><h3>Expected payoff, split by claimant</h3><div class="legend" id="leg3"></div></div>
+        <svg class="plot" id="chart3" aria-label="Expected payoff to bondholders and shareholders under each project"></svg>
+        <div class="tip" id="tip3" hidden></div>
+      </div>
+    </div>
+    <p class="takeaway" id="take3" aria-live="polite"></p>
+    <p class="takeaway warn" id="ll3"></p>
+    <div class="calc" aria-labelledby="hcalc3">
+      <h3 id="hcalc3">Outcome by outcome (table view)</h3>
+      <div class="tblwrap"><table class="data" id="tbl3"></table></div>
+      <p class="note">Bondholders get min(firm value, debt owed). Shareholders get max(firm value − debt owed, 0). Expected payoff = chance × payoff if it works + (1 − chance) × payoff if it fails.</p>
+    </div>
+  </section>
+
+  <!-- ===================== WHAT TO NOTICE ===================== -->
+  <section class="lesson" id="s4" aria-labelledby="h4">
+    <h2 id="h4"><span class="num">✓</span>What to notice</h2>
+    <div class="notice">
+      <div class="card">
+        <h3>1. Shareholders are the residual claimants, and the owners</h3>
+        <p>Debt is <q>a legal obligation</q>: the firm promises to repay it with interest, so lenders hold a fixed claim and are paid first. Equity has <q>no repayment promise but ownership in the firm, a share in the company's future</q>. Shareholders get only what is left, with no cap. That makes common equity the riskiest claim, so investors demand the highest expected return on it.</p>
+      </div>
+      <div class="card">
+        <h3>2. Limited liability puts a floor at $0</h3>
+        <p>A corporation's shareholders can lose what they invested but never more: their payoff stops at $0 even when the firm owes more than it is worth. Proprietors and partners have <b>unlimited liability</b> and would have to cover the shortfall personally. In the BP story, the stock lost more than half its value, but the bill for the spill went to the company, not to shareholders' personal wealth.</p>
+      </div>
+      <div class="card">
+        <h3>3. The goal, and the conflicts it creates</h3>
+        <p>The main financial goal is <b>shareholder wealth maximization</b>: making the residual claim as valuable as possible, ideally its long-run intrinsic value. But with debt outstanding, shareholders can gain from risk at bondholders' expense (section 3), even when it shrinks the firm. Lenders respond with covenants and higher interest rates, and the same tension raises the question in the opening story: whose interests should the corporation serve?</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="note">Simplifying assumptions: one payout date; strict priority (each class is paid in full before the next gets anything); no bankruptcy or legal costs; amounts owed include any interest due; expected values ignore the time value of money and investors' attitudes toward risk. Real bankruptcies often deviate from strict priority, and legal costs shrink what everyone receives.</footer>
+</div>
+
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs, parent, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; if (parent) parent.appendChild(e); return e; };
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const r2 = (v, d) => Math.round(v * Math.pow(10, d)) / Math.pow(10, d);
+  const trim = (v, d = 2) => r2(v, d).toLocaleString('en-US', { maximumFractionDigits: d });
+  const M = v => (v < -1e-9 ? '−' : '') + '$' + trim(Math.abs(v)) + 'M';
+  const M1 = v => (v < -1e-9 ? '−' : '') + '$' + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + 'M';
+  const money = (v, d = 2) => '$' + v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const pctS = r => trim(r * 100, 1) + '%';
+  const cents = r => trim(r * 100, 1) + '¢';
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const niceStep = (span, target) => { const raw = span / target, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p; };
+  const ticks = (a, b, s) => { const t = []; for (let v = a; v <= b + 1e-9; v += s) t.push(+v.toFixed(6)); return t; };
+  function placeTip(wrap, tip, px, py) {
+    tip.hidden = false;
+    const wr = wrap.getBoundingClientRect(), tw = tip.offsetWidth;
+    tip.style.left = Math.max(0, Math.min(wr.width - tw, px + (px > wr.width / 2 ? -tw - 14 : 14))) + 'px';
+    tip.style.top = Math.max(0, py) + 'px';
+  }
+
+  // ===================== shared state: claims and the waterfall =====================
+  const DEF = { v: 45, sec: 20, unsec: 40, pref: 10, prefOn: true, shares: 1000000 };
+  const st = Object.assign({}, DEF);
+  const LAYERS = [
+    { id: 'sec', name: 'Secured debt', color: 'var(--s1d)', unit: 1000, unitName: '$1,000 owed' },
+    { id: 'unsec', name: 'Unsecured bonds', color: 'var(--s1)', unit: 1000, unitName: '$1,000 bond' },
+    { id: 'pref', name: 'Preferred stock', color: 'var(--s2)', unit: 100, unitName: '$100 pref. share' },
+  ];
+  const EQ = { id: 'eq', name: 'Common equity', color: 'var(--s3)' };
+  const fixedLayers = () => LAYERS.filter(l => l.id !== 'pref' || st.prefOn).map(l => Object.assign({}, l, { owed: st[l.id] }));
+  const totals = () => { const D = st.sec + st.unsec, P = st.prefOn ? st.pref : 0; return { D, P, T: D + P }; };
+  function waterfall(V) {
+    let rem = Math.max(0, V);
+    const layers = fixedLayers().map(l => { const paid = Math.min(l.owed, rem); rem -= paid; return Object.assign(l, { paid, rec: l.owed > 0 ? paid / l.owed : null }); });
+    return { layers, eq: rem };
+  }
+  const maxV = () => Math.max(30, Math.ceil(totals().T * 3 / 10) * 10);
+  const debtPay = V => Math.min(Math.max(0, V), totals().D);
+  const prefPay = V => { const t = totals(); return clamp(V - t.D, 0, t.P); };
+  const eqPay = V => Math.max(0, V - totals().T);
+  const perShare = eq => eq * 1e6 / st.shares;
+
+  // ===================== 1. HOURGLASS =====================
+  let disp = st.v, tween = null, flowTimer = null;
+  function drawHG(V) {
+    const svg = $('hg'), wrap = $('hgwrap');
+    const W = Math.max(280, Math.round(wrap.clientWidth));
+    const compact = W < 470;
+    svg.classList.toggle('compact', compact);
+    svg.textContent = '';
+    const mx = maxV(), T = totals().T;
+    const res = waterfall(V);
+    const cups = res.layers.filter(l => l.owed > 0);
+    const n = cups.length + 1;
+    const textW = compact ? 128 : 196, s = compact ? 14 : 24, padL = 6;
+    const cw = Math.max(70, Math.min(compact ? 150 : 230, W - textW - padL - 14 - s * (n - 1)));
+    const hC = compact ? 52 : 60, hE = compact ? 84 : 100, gap = compact ? 30 : 34;
+    const bulbT = 8, bh = compact ? 54 : 64;
+    const xOf = k => padL + s * (n - 1 - k);
+    const tx = padL + s * (n - 1) + cw + 14;
+    const tops = []; let y = bulbT + bh + 26;
+    for (let k = 0; k < n; k++) { tops.push(y); y += (k < n - 1 ? hC : hE) + gap; }
+    const H = tops[n - 1] + hE + 8;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const uid = 'hg';
+    const defs = el('defs', {}, svg);
+
+    // top bulb: the firm's value
+    const cx0 = xOf(0) + cw / 2, bw = Math.min(cw * 0.92, 180), bb = bulbT + bh;
+    const bulbD = `M${cx0 - bw / 2} ${bulbT} L${cx0 + bw / 2} ${bulbT} L${cx0 + 5} ${bb} L${cx0 - 5} ${bb} Z`;
+    el('path', { d: bulbD }, el('clipPath', { id: uid + 'b' }, defs));
+    el('path', { d: bulbD, class: 'bulb' }, svg);
+    const f = clamp(V / mx, 0, 1), hs = bh * Math.sqrt(f); // sand area grows with value (triangle area ~ height^2)
+    if (hs > 0.2) el('rect', { x: cx0 - bw / 2, y: bb - hs, width: bw, height: hs, class: 'sand', 'clip-path': `url(#${uid}b)` }, svg);
+    el('path', { d: bulbD, fill: 'none', stroke: 'var(--beam)', 'stroke-width': 2, 'stroke-linejoin': 'round' }, svg);
+    el('text', { x: tx, y: bulbT + 16, class: 'tag' }, svg, 'Firm value');
+    el('text', { x: tx, y: bulbT + 42, class: 'big' }, svg, M(V));
+    el('text', { x: tx, y: bulbT + 60, class: 'sub' }, svg, 'pours down in order');
+
+    // cups
+    const geo = [];
+    cups.forEach((c, k) => { geo.push({ x: xOf(k), top: tops[k], h: hC, frac: c.paid / c.owed, c }); });
+    const eqCap = Math.max(1e-9, mx - T);
+    geo.push({ x: xOf(n - 1), top: tops[n - 1], h: hE, frac: clamp(res.eq / eqCap, 0, 1), c: Object.assign({}, EQ, { paid: res.eq }), eq: true });
+    const surf = g => g.top + g.h - g.frac * g.h;
+    // streams: neck -> first cup, then each full cup spills over its left lip into the next
+    if (V > 0) {
+      el('path', { d: `M${cx0} ${bb + 3} L${cx0} ${Math.max(bb + 4, surf(geo[0]) - 3)}`, class: 'stream' }, svg);
+      let cum = 0;
+      for (let k = 0; k < geo.length - 1; k++) {
+        cum += geo[k].c.owed;
+        if (V > cum + 1e-9) {
+          const g = geo[k], lx = g.x - 5, ny = Math.max(geo[k + 1].top + 4, surf(geo[k + 1]) - 3);
+          el('path', { d: `M${g.x + 4} ${g.top - 1} Q${g.x - 5} ${g.top - 7} ${lx} ${g.top + 8} L${lx} ${ny}`, class: 'stream' }, svg);
+        }
+      }
+    }
+    const ix = (g) => { const r = 9, x = g.x, w = cw, t = g.top, b = g.top + g.h; return `M${x} ${t} L${x} ${b - r} Q${x} ${b} ${x + r} ${b} L${x + w - r} ${b} Q${x + w} ${b} ${x + w} ${b - r} L${x + w} ${t}`; };
+    geo.forEach((g, k) => {
+      const d = ix(g);
+      el('path', { d: d + ' Z' }, el('clipPath', { id: uid + 'c' + k }, defs));
+      el('path', { d: d + ' Z', class: 'cupbg' }, svg);
+      const fh = g.frac * g.h;
+      if (fh > 0.1) el('rect', { x: g.x, y: g.top + g.h - fh, width: cw, height: fh, fill: g.c.color, 'clip-path': `url(#${uid}c${k})` }, svg);
+      if (g.eq) {
+        const cut = g.top + g.h * 0.32;
+        el('path', { d: `M${g.x} ${g.top} L${g.x} ${cut} M${g.x + cw} ${g.top} L${g.x + cw} ${cut}`, class: 'wall open' }, svg);
+        el('path', { d: `M${g.x} ${cut} L${g.x} ${g.top + g.h - 9} Q${g.x} ${g.top + g.h} ${g.x + 9} ${g.top + g.h} L${g.x + cw - 9} ${g.top + g.h} Q${g.x + cw} ${g.top + g.h} ${g.x + cw} ${g.top + g.h - 9} L${g.x + cw} ${cut}`, class: 'wall' }, svg);
+        el('text', { x: g.x + cw / 2, y: g.top + 4, 'text-anchor': 'middle', class: 'tag' }, svg, 'no cap');
+      } else {
+        el('path', { d, class: 'wall' }, svg);
+      }
+      // labels in the right-hand column
+      const ty = g.top + (g.eq ? 26 : 16);
+      el('text', { x: tx, y: ty, class: 'nm' }, svg, `${k + 1} · ${g.c.name}`);
+      if (g.eq) {
+        el('text', { x: tx, y: ty + 19, class: 'val' }, svg, `${M(g.c.paid)} residual`);
+        el('text', { x: tx, y: ty + 37, class: 'sub' }, svg, `${money(perShare(g.c.paid))} per share`);
+      } else {
+        el('text', { x: tx, y: ty + 19, class: 'val' }, svg, `${M(g.c.paid)} of ${M(g.c.owed)}`);
+        el('text', { x: tx, y: ty + 37, class: 'sub' }, svg, `${pctS(g.c.paid / g.c.owed)} recovered`);
+      }
+    });
+    // hover targets for each row, drawn last so nothing covers them
+    geo.forEach((g, k) => {
+      const hit = el('rect', { x: 0, y: g.top - 8, width: W, height: g.h + 16, fill: 'transparent' }, svg);
+      const tipH = () => {
+        const c = g.c;
+        if (g.eq) return `<div><i style="background:${c.color}"></i><b>Common equity</b> (priority ${k + 1}, last)</div><div>Gets the residual: ${M(c.paid)}</div><div>${money(perShare(c.paid))} per share × ${st.shares.toLocaleString('en-US')} shares</div><div style="color:var(--muted)">No cap: every extra $1 of value is theirs</div>`;
+        const lay = LAYERS.find(l => l.id === c.id);
+        return `<div><i style="background:${c.color}"></i><b>${c.name}</b> (priority ${k + 1})</div><div>Owed ${M(c.owed)} · paid ${M(c.paid)}</div><div>Recovers ${cents(c.paid / c.owed)} per dollar</div><div>${money(c.paid / c.owed * lay.unit)} per ${lay.unitName}</div>`;
+      };
+      hit.addEventListener('pointermove', e => { const tip = $('tipH'); tip.innerHTML = tipH(); const wr = wrap.getBoundingClientRect(); placeTip(wrap, tip, e.clientX - wr.left, e.clientY - wr.top + 14); });
+      hit.addEventListener('pointerleave', () => { $('tipH').hidden = true; });
+    });
+    svg.setAttribute('aria-label', 'Hourglass of claims at firm value ' + M(V) + '. ' + geo.map((g, k) => g.eq ? `Common equity gets ${M(g.c.paid)}` : `${g.c.name} gets ${M(g.c.paid)} of ${M(g.c.owed)}`).join('; ') + '.');
+  }
+
+  function sentence(V) {
+    const res = waterfall(V), t = totals();
+    const at = `At ${M(V)}, `;
+    const byId = id => res.layers.find(l => l.id === id);
+    const sec = byId('sec'), un = byId('unsec'), pr = byId('pref');
+    const shareholders = st.prefOn && t.P > 0 ? 'preferred and common shareholders get nothing' : 'shareholders get nothing';
+    if (V <= 0) return 'At $0 there is nothing to divide: every claimant gets $0. Shareholders lose their whole investment, but no more than that.';
+    const dPaid = sec.paid + un.paid;
+    if (dPaid < t.D - 1e-9) {
+      const parts = [];
+      if (sec.owed > 0 && un.owed > 0) {
+        parts.push(`debt holders recover ${cents(dPaid / t.D)} per dollar overall`);
+        const sp = sec.paid >= sec.owed - 1e-9 ? 'the secured lender is paid in full' : `the secured lender recovers ${cents(sec.rec)} per dollar`;
+        const up = un.paid <= 1e-9 ? 'unsecured bondholders get nothing' : `unsecured bondholders recover ${cents(un.rec)} per dollar`;
+        return `${at}${parts[0]}: ${sp} and ${up}. ${shareholders[0].toUpperCase() + shareholders.slice(1)}.`;
+      }
+      return `${at}bondholders recover ${cents(dPaid / t.D)} per dollar; ${shareholders}.`;
+    }
+    if (st.prefOn && t.P > 0 && pr.paid <= 1e-9) return `${at}all ${M(t.D)} of debt is paid exactly in full and nothing is left: preferred and common shareholders get nothing.`;
+    if (st.prefOn && t.P > 0 && pr.paid < t.P - 1e-9) {
+      return `${at}all ${M(t.D)} of debt is paid in full. Preferred shareholders recover ${cents(pr.rec)} per dollar of their claim (${money(pr.rec * 100)} per $100 share), and common shareholders get nothing.`;
+    }
+    if (res.eq <= 1e-9) return `${at}every fixed claim is paid exactly in full and nothing is left: common shareholders get $0. From here on, each extra $1 of value goes to them.`;
+    return `${at}every fixed claim (${M(t.T)}) is paid in full, and common shareholders keep the residual ${M(res.eq)}, or ${money(perShare(res.eq))} per share. Each extra $1 of value now goes entirely to them.`;
+  }
+
+  function table1(V) {
+    const res = waterfall(V), t = totals();
+    const rows = fixedLayers().map((l, i) => {
+      const r = res.layers[i];
+      const rec = l.owed > 0 ? r.paid / l.owed : null;
+      return `<tr><td><span class="sw" style="background:${l.color}"></span>${i + 1} · ${l.name}</td><td>${M1(l.owed)}</td><td>${M1(r.paid)}</td><td>${rec == null ? '–' : pctS(rec)}</td><td>${rec == null ? '–' : money(rec * l.unit) + ' per ' + l.unitName}</td></tr>`;
+    });
+    const k = rows.length + 1;
+    rows.push(`<tr><td><span class="sw" style="background:var(--s3)"></span>${k} · Common equity</td><td>residual</td><td>${M1(res.eq)}</td><td>–</td><td>${money(perShare(res.eq))} per share</td></tr>`);
+    rows.push(`<tr class="tot"><td>Total</td><td>${M1(t.T)} + residual</td><td>${M1(Math.max(0, V))}</td><td></td><td></td></tr>`);
+    $('tbl1').innerHTML = '<thead><tr><th>Claimant (priority)</th><th>Owed</th><th>Paid</th><th>Recovered</th><th>Per unit</th></tr></thead><tbody>' + rows.join('') + '</tbody>';
+  }
+
+  function renderJumps() {
+    const t = totals(), mx = maxV();
+    const J = [
+      { t: 'Half the debt', v: t.D / 2 },
+      { t: 'Debt just paid', v: t.D },
+    ];
+    if (st.prefOn && t.P > 0) J.push({ t: 'All fixed claims paid', v: t.T });
+    J.push({ t: 'Boom', v: Math.min(mx, 2 * t.T) });
+    const box = $('jumps'); box.textContent = '';
+    J.forEach(j => { const v = Math.round(j.v * 2) / 2; const b = document.createElement('button'); b.className = 'btn'; b.type = 'button'; b.textContent = `${j.t} (${M(v)})`; b.addEventListener('click', () => { stopPour(); setV(v, true); }); box.appendChild(b); });
+  }
+
+  function flow() {
+    if (reduce) return;
+    $('hg').classList.add('flowing');
+    clearTimeout(flowTimer); flowTimer = setTimeout(() => $('hg').classList.remove('flowing'), 900);
+  }
+  function animateTo(v) {
+    if (reduce) { disp = v; drawHG(disp); return; }
+    if (tween) cancelAnimationFrame(tween.id);
+    const from = disp, t0 = performance.now(), dur = 260;
+    tween = { id: 0 };
+    const step = now => { const u = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - u, 3); disp = from + (v - from) * e; drawHG(disp); if (u < 1) tween.id = requestAnimationFrame(step); else tween = null; };
+    tween.id = requestAnimationFrame(step);
+  }
+  function setV(v, animate) {
+    st.v = clamp(v, 0, maxV());
+    $('v1').value = st.v; $('v2').value = st.v;
+    $('v1Out').textContent = M(st.v); $('v2Out').textContent = M(st.v);
+    flow();
+    if (animate) animateTo(st.v); else { if (tween) { cancelAnimationFrame(tween.id); tween = null; } disp = st.v; drawHG(disp); }
+    $('say1').textContent = sentence(st.v);
+    table1(st.v);
+    render2();
+  }
+  function claimsChanged() {
+    const mx = maxV();
+    ['v1', 'v2'].forEach(id => { $(id).max = mx; });
+    $('r_pref').classList.toggle('off', !st.prefOn);
+    $('o_pref').disabled = !st.prefOn;
+    renderJumps();
+    setV(Math.min(st.v, mx), false);
+  }
+  $('v1').addEventListener('input', e => { stopPour(); setV(+e.target.value, true); });
+  $('v2').addEventListener('input', e => { stopPour(); setV(+e.target.value, true); });
+  [['o_sec', 'sec'], ['o_unsec', 'unsec'], ['o_pref', 'pref']].forEach(([id, key]) => {
+    $(id).addEventListener('input', e => { const v = parseFloat(e.target.value); if (!isFinite(v)) return; st[key] = clamp(v, 0, 300); claimsChanged(); });
+    $(id).addEventListener('change', e => { e.target.value = st[key]; });
+  });
+  $('prefOn').addEventListener('change', e => { st.prefOn = e.target.checked; claimsChanged(); });
+  $('shares').addEventListener('change', e => { st.shares = +e.target.value; setV(st.v, false); });
+  $('reset1').addEventListener('click', () => {
+    stopPour(); Object.assign(st, DEF);
+    $('o_sec').value = st.sec; $('o_unsec').value = st.unsec; $('o_pref').value = st.pref; $('prefOn').checked = st.prefOn; $('shares').value = String(st.shares);
+    claimsChanged(); setV(DEF.v, true);
+  });
+
+  // pour animation: sweep firm value from $0 to the slider maximum
+  let pour = null;
+  function stopPour() { if (pour) { cancelAnimationFrame(pour.id); $('pour').textContent = '▶ Pour from $0'; pour = null; $('hg').classList.remove('flowing'); } }
+  $('pour').addEventListener('click', () => {
+    if (pour) { stopPour(); return; }
+    $('pour').textContent = '■ Stop';
+    const mx = maxV(), dur = reduce ? 1200 : 8000, t0 = performance.now();
+    pour = { id: 0 };
+    const step = now => {
+      const u = Math.min(1, (now - t0) / dur);
+      setV(Math.round(mx * u * 2) / 2, false);
+      if (!reduce) $('hg').classList.add('flowing');
+      if (u < 1) pour.id = requestAnimationFrame(step); else stopPour();
+    };
+    pour.id = requestAnimationFrame(step);
+  });
+
+  // ===================== generic pixel-sized line chart with hover =====================
+  function lineChart(cfg) {
+    const svg = cfg.svg, wrap = svg.parentNode;
+    const W = Math.max(280, Math.round(wrap.clientWidth)), compact = W < 480;
+    const H = compact ? 280 : 340;
+    const m = { l: compact ? 56 : 58, r: cfg.rightPad(compact), t: 30, b: 46 };
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.textContent = '';
+    const [x0, x1] = cfg.x, [y0, y1] = cfg.y;
+    const X = v => m.l + (v - x0) / (x1 - x0) * (W - m.l - m.r);
+    const Y = v => H - m.b - (v - y0) / (y1 - y0) * (H - m.t - m.b);
+    (cfg.zones || []).forEach(z => { el('rect', { x: X(z.a), y: m.t, width: Math.max(0, X(z.b) - X(z.a)), height: H - m.t - m.b, class: 'zone' }, svg); if (z.label && X(z.b) - X(z.a) > 84) el('text', { x: X(z.a) + 8, y: m.t + 16, class: 'region' }, svg, z.label); });
+    cfg.yTicks.forEach(v => { el('line', { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: 'gridl' }, svg); el('text', { x: m.l - 8, y: Y(v) + 4, 'text-anchor': 'end', class: 'tick' }, svg, cfg.yFmt(v)); });
+    cfg.xTicks.forEach(v => el('text', { x: X(v), y: H - m.b + 18, 'text-anchor': 'middle', class: 'tick' }, svg, cfg.xFmt(v)));
+    el('line', { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, class: 'axisl' }, svg);
+    el('text', { x: (m.l + W - m.r) / 2, y: H - 6, 'text-anchor': 'middle', class: 'axtitle' }, svg, cfg.xTitle);
+    el('text', { x: 13, y: (m.t + H - m.b) / 2, 'text-anchor': 'middle', class: 'axtitle', transform: `rotate(-90 13 ${(m.t + H - m.b) / 2})` }, svg, cfg.yTitle);
+    (cfg.refs || []).forEach(r => {
+      if (r.pts) el('path', { d: r.pts.map((p, k) => (k ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1)).join(' '), class: 'ref' }, svg);
+      if (r.x != null) {
+        el('line', { x1: X(r.x), x2: X(r.x), y1: m.t, y2: H - m.b, class: 'ref' }, svg);
+        // label runs up the line, starting just above where the series meet it
+        if (r.label) { const lx = X(r.x) + (r.side === 'left' ? -5 : 14), ly = Y(r.labelY || 0) - 10; el('text', { x: lx, y: ly, class: 'reflab', transform: `rotate(-90 ${lx} ${ly})` }, svg, r.label); }
+      }
+    });
+    if (cfg.now != null) {
+      const nx = X(cfg.now);
+      el('line', { x1: nx, x2: nx, y1: m.t - 6, y2: H - m.b, class: 'nowl' }, svg);
+      const anchor = nx > m.l + (W - m.l - m.r) * 0.75 ? 'end' : nx < m.l + 40 ? 'start' : 'middle';
+      el('text', { x: nx, y: m.t - 11, 'text-anchor': anchor, class: 'nowlab' }, svg, cfg.nowLabel);
+    }
+    // series, then direct labels at the right end with simple collision avoidance
+    const labs = [];
+    cfg.series.forEach(s => {
+      const d = s.pts.map((p, k) => (k ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(clamp(p[1], y0, y1)).toFixed(1)).join(' ');
+      el('path', { d, class: 'series', stroke: s.color }, svg);
+      const last = s.pts[s.pts.length - 1];
+      labs.push({ y: Y(last[1]) + 4, x: X(last[0]) + 6, text: compact ? s.short : s.label });
+    });
+    labs.sort((a, b) => b.y - a.y);
+    for (let k = 1; k < labs.length; k++) if (labs[k - 1].y - labs[k].y < 15) labs[k].y = labs[k - 1].y - 15;
+    labs.forEach(l => el('text', { x: l.x, y: l.y, class: 'dlab' }, svg, l.text));
+    (cfg.marks || []).forEach(p => el('circle', { cx: X(p.x), cy: Y(p.y), r: 5.5, fill: p.color, class: 'dot' }, svg));
+    // hover layer
+    const cross = el('line', { y1: m.t, y2: H - m.b, class: 'cross', visibility: 'hidden' }, svg);
+    const hdots = cfg.series.map(s => el('circle', { r: 4.5, fill: s.color, class: 'dot', visibility: 'hidden' }, svg));
+    const hit = el('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: 'transparent', style: 'cursor:crosshair' }, svg);
+    const tip = cfg.tip;
+    const toX = e => { const sr = svg.getBoundingClientRect(); const px = (e.clientX - sr.left) * W / sr.width; return x0 + (px - m.l) / (W - m.l - m.r) * (x1 - x0); };
+    const show = e => {
+      let xv = clamp(toX(e), x0, x1); if (cfg.snap) xv = cfg.snap(xv);
+      cross.setAttribute('x1', X(xv)); cross.setAttribute('x2', X(xv)); cross.setAttribute('visibility', 'visible');
+      const rows = cfg.series.map((s, k) => { const yv = s.at(xv); hdots[k].setAttribute('cx', X(xv)); hdots[k].setAttribute('cy', Y(clamp(yv, y0, y1))); hdots[k].setAttribute('visibility', 'visible'); return `<div><i style="background:${s.color}"></i>${s.name}: <b>${cfg.yFmtTip(yv)}</b></div>`; });
+      tip.innerHTML = `<div style="color:var(--muted)">${cfg.xFmtTip(xv)}</div>` + rows.join('') + (cfg.tipExtra ? cfg.tipExtra(xv) : '');
+      const wr = wrap.getBoundingClientRect(), sr = svg.getBoundingClientRect();
+      placeTip(wrap, tip, sr.left - wr.left + X(xv) / W * sr.width, sr.top - wr.top + m.t / H * sr.height + 18);
+    };
+    const hide = () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); hdots.forEach(d => d.setAttribute('visibility', 'hidden')); };
+    hit.addEventListener('pointermove', show); hit.addEventListener('pointerdown', show); hit.addEventListener('pointerleave', hide);
+    if (cfg.onClick) hit.addEventListener('click', e => cfg.onClick(clamp(toX(e), x0, x1)));
+  }
+
+  // ===================== 2. PAYOFF DIAGRAM =====================
+  function render2() {
+    const t = totals(), mx = maxV(), V = st.v;
+    const prefShown = st.prefOn && t.P > 0;
+    const series = [{ name: 'Debt (secured + bonds)', label: `Debt ${M(t.D)}`, short: 'Debt', color: 'var(--s1)', pts: [[0, 0], [t.D, t.D], [mx, t.D]], at: debtPay }];
+    if (prefShown) series.push({ name: 'Preferred stock', label: `Preferred ${M(t.P)}`, short: 'Pref.', color: 'var(--s2)', pts: [[0, 0], [t.D, 0], [t.T, t.P], [mx, t.P]], at: prefPay });
+    series.push({ name: 'Common equity', label: 'Common equity', short: 'Equity', color: 'var(--s3)', pts: [[0, 0], [t.T, 0], [mx, mx - t.T]], at: eqPay });
+    const ys = niceStep(mx, 6);
+    const refs = [{ pts: [[0, 0], [mx, mx]] }];
+    if (t.D > 0) refs.push({ x: t.D, label: `Debt owed ${M(t.D)}`, side: 'left', labelY: t.D });
+    if (prefShown) refs.push({ x: t.T, label: `All fixed claims ${M(t.T)}`, side: 'right', labelY: t.T });
+    lineChart({
+      svg: $('chart2'), tip: $('tip2'), x: [0, mx], y: [0, mx], xTicks: ticks(0, mx, ys), yTicks: ticks(0, mx, ys),
+      rightPad: c => c ? 52 : (prefShown ? 120 : 110),
+      xFmt: v => '$' + v, yFmt: v => '$' + v, xTitle: 'Firm value at payout ($ millions)', yTitle: 'Payoff ($ millions)',
+      xFmtTip: v => 'Firm value ' + M(v), yFmtTip: v => M(v),
+      tipExtra: v => `<div style="color:var(--muted)">Equity per share: ${money(perShare(eqPay(v)))}</div>`,
+      zones: t.D > 0 ? [{ a: 0, b: t.D, label: 'Default zone' }] : [],
+      refs, series, now: V, nowLabel: 'Now ' + M(V),
+      marks: series.map(s => ({ x: V, y: s.at(V), color: s.color })),
+      snap: v => Math.round(v * 2) / 2,
+      onClick: v => { stopPour(); setV(Math.round(v * 2) / 2, true); }
+    });
+    $('leg2').innerHTML = series.map(s => `<span><i style="background:${s.color}"></i>${s.name}</span>`).join('') + '<span><i class="dash"></i>Firm value (sum of all payoffs)</span>';
+    // table view
+    const vs = [0, t.D / 2, t.D, t.T, (t.T + mx) / 2, mx].map(v => Math.round(v * 2) / 2);
+    if (!vs.includes(V)) vs.push(V);
+    const uniq = [...new Set(vs)].sort((a, b) => a - b);
+    $('tbl2').innerHTML = `<thead><tr><th>Firm value</th><th>Debt</th>${prefShown ? '<th>Preferred</th>' : ''}<th>Common equity</th><th>Per share</th></tr></thead><tbody>` +
+      uniq.map(v => `<tr class="${v === V ? 'cur' : ''}"><td>${M1(v)}</td><td>${M1(debtPay(v))}</td>${prefShown ? `<td>${M1(prefPay(v))}</td>` : ''}<td>${M1(eqPay(v))}</td><td>${money(perShare(eqPay(v)))}</td></tr>`).join('') + '</tbody>';
+    renderSwing();
+  }
+  function renderSwing() {
+    const t = totals(), V = st.v, s = +$('swing').value;
+    const lo = Math.max(0, V - s), hi = V + s;
+    const rows = [{ n: 'Debt', c: 'var(--s1)', f: debtPay }];
+    if (st.prefOn && t.P > 0) rows.push({ n: 'Preferred', c: 'var(--s2)', f: prefPay });
+    rows.push({ n: 'Common equity', c: 'var(--s3)', f: eqPay });
+    $('tblSwing').innerHTML = `<thead><tr><th>Payoff</th><th>Low ${M(lo)}</th><th>Now ${M(V)}</th><th>High ${M(hi)}</th><th>Swing</th></tr></thead><tbody>` +
+      rows.map(r => `<tr><td><span class="sw" style="background:${r.c}"></span>${r.n}</td><td>${M1(r.f(lo))}</td><td>${M1(r.f(V))}</td><td>${M1(r.f(hi))}</td><td><b>${M1(r.f(hi) - r.f(lo))}</b></td></tr>`).join('') + '</tbody>';
+    const dR = debtPay(hi) - debtPay(lo), pR = prefPay(hi) - prefPay(lo), eR = eqPay(hi) - eqPay(lo);
+    const fixedSw = `debt swings ${M(dR)}` + (st.prefOn && t.P > 0 ? `, preferred ${M(pR)}` : '');
+    let txt;
+    if (lo >= t.T) txt = `Every fixed claim is safe across this whole range, so their payoffs do not move while common equity absorbs the entire ${M(eR)} swing. As the residual claim, equity is the riskiest claim, which is why shareholders demand the highest expected return.`;
+    else if (hi <= t.D) txt = `The firm is in default at both ends: shareholders get $0 either way, and bondholders bear the entire ${M(dR)} swing. When a firm is this far underwater, its creditors have effectively become the residual claimants.`;
+    else if (hi <= t.T) txt = `Even the high case (${M(hi)}) does not cover all ${M(t.T)} of fixed claims, so common equity gets $0 throughout and the fixed claims absorb the swing (${fixedSw}). Shareholders have nothing left to lose: a long-shot gamble that might lift value above ${M(t.T)} costs them nothing, which is why they may prefer a risky project (section 3).`;
+    else txt = `Here the payoffs are lopsided: if value falls, the fixed claims take the loss (${fixedSw}); if it rises, shareholders keep the gain (equity swings ${M(eR)}) and can never get less than $0. Shareholders share in the upside more than the downside, which is why they may prefer a risky project (section 3).`;
+    $('swingTake').textContent = txt;
+  }
+  $('swing').addEventListener('change', renderSwing);
+
+  // ===================== 3. RISKY PROJECT =====================
+  const s3 = { d: 60, safe: 70, good: 120, bad: 10, p: 50 };
+  const P3 = [
+    { t: 'Class example: risky is worth less', s: { d: 60, safe: 70, good: 120, bad: 10, p: 50 } },
+    { t: 'Same expected value', s: { d: 60, safe: 70, good: 130, bad: 10, p: 50 } },
+    { t: 'Little debt ($10M)', s: { d: 10, safe: 70, good: 120, bad: 10, p: 50 } },
+    { t: 'No debt', s: { d: 0, safe: 70, good: 120, bad: 10, p: 50 } },
+  ];
+  const pb = $('presets3');
+  P3.forEach(p => { const b = document.createElement('button'); b.className = 'btn'; b.type = 'button'; b.textContent = p.t; b.addEventListener('click', () => { Object.assign(s3, p.s); sync3(); }); pb.appendChild(b); });
+  const split = (V, D) => ({ V, debt: Math.min(V, D), eq: Math.max(0, V - D) });
+  function calc3() {
+    const p = s3.p / 100, D = s3.d;
+    const safe = split(s3.safe, D), g = split(s3.good, D), b = split(s3.bad, D);
+    const risky = { V: p * g.V + (1 - p) * b.V, debt: p * g.debt + (1 - p) * b.debt, eq: p * g.eq + (1 - p) * b.eq };
+    return { p, D, safe, g, b, risky };
+  }
+  function sync3() { ['d3', 'safe3', 'good3', 'bad3', 'p3'].forEach(id => { $(id).value = s3[id.replace('3', '')]; }); render3(); }
+  function render3() {
+    const c = calc3();
+    $('d3Out').textContent = M(s3.d); $('safe3Out').textContent = M(s3.safe); $('good3Out').textContent = M(s3.good); $('bad3Out').textContent = M(s3.bad); $('p3Out').textContent = s3.p + '%';
+    barChart(c);
+    $('leg3').innerHTML = '<span><i class="blk" style="background:var(--s1)"></i>Bondholders</span><span><i class="blk" style="background:var(--s3)"></i>Shareholders</span>';
+    // verdict
+    const dEq = c.risky.eq - c.safe.eq, dDebt = c.risky.debt - c.safe.debt, dV = c.risky.V - c.safe.V;
+    const vNote = Math.abs(dV) < 1e-9 ? 'even though both projects have the same expected firm value' : dV < 0 ? `even though it lowers the firm's expected value by ${M(-dV)} (${M(c.safe.V)} → ${M(c.risky.V)})` : `and it also raises the firm's expected value by ${M(dV)}`;
+    let txt;
+    if (dEq > 1e-9) {
+      txt = `Shareholders prefer the risky project: their expected payoff is ${M(c.risky.eq)} versus ${M(c.safe.eq)}, ${vNote}. `;
+      txt += dDebt < -1e-9 ? `Bondholders pay for it: their expected payoff falls from ${M(c.safe.debt)} to ${M(c.risky.debt)}. Shareholders keep the upside, bondholders absorb the downside. This is the risk-shifting incentive, an agency conflict between shareholders and bondholders.` : `Bondholders are no worse off here.`;
+    } else if (dEq < -1e-9) {
+      txt = `Shareholders prefer the safe project: ${M(c.safe.eq)} versus ${M(c.risky.eq)} expected. ` + (s3.d <= 1e-9 ? 'With no debt, shareholders bear every dollar of the downside themselves, so they simply pick the project with the higher expected value.' : s3.bad >= s3.d ? 'Even if the risky project fails, the firm can still repay its debt, so shareholders bear every dollar of the downside themselves and the gamble no longer pays.' : 'With this little debt, shareholders bear most of the downside themselves, so the gamble no longer pays.');
+    } else {
+      txt = `Shareholders are indifferent: ${M(c.safe.eq)} expected either way.`;
+    }
+    $('take3').textContent = txt;
+    // limited liability contrast
+    const ulSafe = c.safe.V - c.D, ulRisky = c.risky.V - c.D, short = Math.max(0, c.D - s3.bad);
+    let ll;
+    if (short > 1e-9 && s3.d > 0) {
+      ll = `Why limited liability matters: if the risky project fails, the firm is ${M(short)} short of what it owes, and corporate shareholders simply walk away with $0. An owner with unlimited liability (a proprietor or partner) would have to cover that ${M(short)} personally. The risky project would then be worth ${M(ulRisky)} to the owner versus ${M(ulSafe)} for the safe one`;
+      ll += ulRisky < ulSafe - 1e-9 ? ', so the incentive to gamble disappears.' : ulRisky > ulSafe + 1e-9 ? ', so the risky project would still win, but by less.' : ', so the owner would be indifferent.';
+    } else {
+      ll = `Why limited liability matters: here the firm can pay its debt in full even if the risky project fails, so the $0 floor on equity never binds. Shareholders bear the whole downside and the project with the higher expected value wins.`;
+    }
+    $('ll3').textContent = ll;
+    // table
+    const pr = c.p, row = (name, prob, o, cls) => `<tr class="${cls || ''}"><td>${name}</td><td>${prob}</td><td>${M1(o.V)}</td><td>${M1(o.debt)}</td><td>${M1(o.eq)}</td></tr>`;
+    $('tbl3').innerHTML = '<thead><tr><th>Project and outcome</th><th>Chance</th><th>Firm value</th><th>Bondholders</th><th>Shareholders</th></tr></thead><tbody>' +
+      row('Safe: certain', '100%', c.safe, 'tot') +
+      row('Risky: works', s3.p + '%', c.g) + row('Risky: fails', (100 - s3.p) + '%', c.b) +
+      row('Risky: expected', '', c.risky, 'tot') + '</tbody>';
+  }
+  function barChart(c) {
+    const svg = $('chart3'), wrap = svg.parentNode;
+    const W = Math.max(280, Math.round(wrap.clientWidth)), compact = W < 480;
+    const H = compact ? 280 : 320;
+    const m = { l: compact ? 54 : 58, r: 8, t: 30, b: 34 };
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.textContent = '';
+    const groups = [{ name: 'Safe project', o: c.safe }, { name: 'Risky project', o: c.risky }];
+    const top = Math.max(10, ...groups.map(g => g.o.V)) * 1.12;
+    const step = niceStep(top, 5), ymax = Math.ceil(top / step) * step;
+    const Y = v => H - m.b - v / ymax * (H - m.t - m.b);
+    ticks(0, ymax, step).forEach(v => { el('line', { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: 'gridl' }, svg); el('text', { x: m.l - 8, y: Y(v) + 4, 'text-anchor': 'end', class: 'tick' }, svg, '$' + v); });
+    el('line', { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, class: 'axisl' }, svg);
+    el('text', { x: 13, y: (m.t + H - m.b) / 2, 'text-anchor': 'middle', class: 'axtitle', transform: `rotate(-90 13 ${(m.t + H - m.b) / 2})` }, svg, 'Expected payoff ($ millions)');
+    const gw = (W - m.l - m.r) / 2, labW = compact ? 50 : 132, bw = Math.min(compact ? 54 : 86, gw - labW - 16);
+    const tip = $('tip3');
+    groups.forEach((g, i) => {
+      const gc = m.l + gw * i + gw / 2, bx = gc - (bw + labW) / 2;
+      const segs = [{ n: 'Bondholders', v: g.o.debt, c: 'var(--s1)', y0: 0 }, { n: 'Shareholders', v: g.o.eq, c: 'var(--s3)', y0: g.o.debt }];
+      const labs = [];
+      segs.forEach(sg => {
+        const yTop = Y(sg.y0 + sg.v), h = Y(sg.y0) - yTop;
+        if (h > 0.1) {
+          const r = el('rect', { x: bx, y: yTop, width: bw, height: h, fill: sg.c, class: 'bar' }, svg);
+          r.addEventListener('pointermove', e => {
+            r.classList.add('hl');
+            const isR = i === 1, o = sg.n === 'Bondholders' ? 'debt' : 'eq';
+            tip.innerHTML = `<div style="color:var(--muted)">${g.name}</div><div><i style="background:${sg.c}"></i>${sg.n}: <b>${M(sg.v)}</b> expected</div>` + (isR ? `<div style="color:var(--muted)">= ${s3.p}% × ${M(c.g[o])} + ${100 - s3.p}% × ${M(c.b[o])}</div>` : `<div style="color:var(--muted)">certain payoff</div>`);
+            const wr = wrap.getBoundingClientRect(); placeTip(wrap, tip, e.clientX - wr.left, e.clientY - wr.top + 14);
+          });
+          r.addEventListener('pointerleave', () => { r.classList.remove('hl'); tip.hidden = true; });
+        }
+        labs.push({ y: (Y(sg.y0) + yTop) / 2 + 4, text: (compact ? '' : sg.n + ' ') + M(sg.v), c: sg.c });
+      });
+      // keep the two segment labels apart
+      if (labs[0].y - labs[1].y < 16) { const mid = (labs[0].y + labs[1].y) / 2; labs[0].y = mid + 8; labs[1].y = mid - 8; }
+      labs[0].y = Math.min(labs[0].y, H - m.b - 2);
+      labs.forEach(l => {
+        el('rect', { x: bx + bw + 6, y: l.y - 8, width: 3, height: 10, fill: l.c }, svg);
+        el('text', { x: bx + bw + 13, y: l.y, class: 'blab' }, svg, l.text);
+      });
+      el('text', { x: bx + bw / 2, y: Y(g.o.V) - 8, 'text-anchor': 'middle', class: 'btot' }, svg, M(g.o.V));
+      el('text', { x: bx + bw / 2, y: H - m.b + 20, 'text-anchor': 'middle', class: 'gname' }, svg, g.name);
+    });
+    svg.setAttribute('aria-label', `Expected payoffs. Safe project: bondholders ${M(c.safe.debt)}, shareholders ${M(c.safe.eq)}, total ${M(c.safe.V)}. Risky project: bondholders ${M(c.risky.debt)}, shareholders ${M(c.risky.eq)}, total ${M(c.risky.V)}.`);
+  }
+  [['d3', 'd'], ['safe3', 'safe'], ['good3', 'good'], ['bad3', 'bad'], ['p3', 'p']].forEach(([id, k]) => $(id).addEventListener('input', e => { s3[k] = +e.target.value; render3(); }));
+
+  // ===================== init =====================
+  claimsChanged(); setV(DEF.v, false); sync3();
+  let rz, lastW = window.innerWidth;
+  window.addEventListener('resize', () => { if (window.innerWidth === lastW) return; lastW = window.innerWidth; clearTimeout(rz); rz = setTimeout(() => { drawHG(disp); render2(); render3(); }, 150); });
+})();
+</script>
+</body></html>
