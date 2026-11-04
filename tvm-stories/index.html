@@ -167,279 +167,232 @@ footer.note p { margin: 0; }
 .chart.masked svg, .chart.masked details { filter: blur(8px); pointer-events: none; user-select: none; }
 .chart .maskmsg { position: absolute; inset: 40% 10% auto; text-align: center; font-weight: 600; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
 .blurred { filter: blur(7px); pointer-events: none; user-select: none; }
+/* simplified layout: controls row, big visual, folded details */
+section.lesson { gap: 14px; }
+.lesson > p.lead { font-size: 15.5px; color: var(--fg); }
+.ctlrow { gap: 12px 28px; align-items: end; }
+.ctlrow .ctl { flex: 1 1 220px; min-width: 0; }
+.takeaway { font-size: 15.5px; }
+.playrow { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: end; }
+.playrow .scrub { flex: 1 1 200px; min-width: 0; }
+.panels { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px 22px; }
+.panel { min-width: 0; display: grid; gap: 4px; align-content: start; }
+.panel h3 { margin: 0; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.panel h3 i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.panel.merged { grid-column: 1 / -1; border-top: 1px solid var(--line); padding-top: 10px; }
+.bigline { margin: 0; font-size: 16px; }
+@media (max-width: 700px) { .panels { grid-template-columns: minmax(0, 1fr); } }
+.chart .lane { font: 600 12.5px var(--font-body); fill: var(--fg); }
+.chart .lanenote { font: 500 12px var(--font-body); fill: var(--muted); }
+.chart .bracket { fill: none; stroke: var(--axis); stroke-width: 1.25; }
+.chart .big { font: 600 17px var(--font-body); fill: var(--fg); font-variant-numeric: tabular-nums; }
+.chart .halo { paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
+.chart .rowsub { font: 500 11.5px var(--font-body); fill: var(--muted); }
+.chart.masked .bigline { filter: blur(8px); }
+details.more, details.how { border-top: 1px solid var(--line); padding-top: 10px; }
+details.more > summary, details.how > summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var(--accent); width: max-content; max-width: 100%; }
+details .dbody { display: grid; gap: 12px; margin-top: 12px; min-width: 0; }
+details .dbody > * { min-width: 0; }
+details.more, details.how { min-width: 0; }
+details .dbody h4 { margin: 6px 0 0; font-size: 14px; }
+details .dbody p { margin: 0; }
+.locked { opacity: .45; }
+.locked > summary { cursor: default; }
+footer.note details { border-top: 0; }
+#e_wrap .maskmsg { inset: 28% 10% auto; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 </style>
 </head><body>
 <div class="wrap">
   <header class="top">
     <h1>TVM Stories</h1>
-    <p>Seven short stories about the time value of money. Each one is a real situation you can play with: move a slider, watch the picture change, then check the five keys, N, I/Y, PV, PMT, FV. Sign convention as in class: money you pay out is negative, money you receive is positive.</p>
-    <nav class="steps" aria-label="Stories"><a href="#s1">1 · Start early</a><a href="#s2">2 · What $1 became</a><a href="#s3">3 · The timeline</a><a href="#s4">4 · The $2 billion jackpot</a><a href="#s5">5 · Minimum payments</a><a href="#s6">6 · Easy money</a><a href="#s7">7 · Rule of 72</a></nav>
+    <p>Five short stories about money and time. Guess first, then reveal the answer.</p>
+    <nav class="steps" aria-label="Stories"><a href="#s1">1 · Start early</a><a href="#s2">2 · What $1 became</a><a href="#s3">3 · Timing</a><a href="#s4">4 · The jackpot</a><a href="#s5">5 · Easy money</a></nav>
   </header>
 
   <!-- ===================== 1. START EARLY ===================== -->
   <section class="lesson" id="s1" aria-labelledby="h1">
-    <h2 id="h1"><span class="num">1</span>Start early or start late?</h2>
-    <p class="lead">Saver A invests every year from age 20 to 30, then stops and never adds another dollar. Saver B waits, then invests the same amount every year from age 30 until retirement, three times as many deposits. Both earn the same return. Who retires with more?</p>
-    <div class="grid2">
-      <div class="controls">
-        <div class="ctl">
-          <div class="lab"><label for="e_amt">Deposit each year</label><b id="e_amtOut"></b></div>
-          <input type="range" id="e_amt" min="1000" max="20000" step="500" value="5000">
-        </div>
-        <div class="ctl big">
-          <div class="lab"><label for="e_r">Annual return, I/Y</label><b id="e_rOut"></b></div>
-          <input type="range" id="e_r" min="1" max="15" step="0.1" value="10">
-        </div>
-        <div class="row">
-          <span class="lab2">Retire at</span>
-          <div class="seg" role="group" aria-label="Retirement age"><button type="button" id="e_60" aria-pressed="true">60</button><button type="button" id="e_65" aria-pressed="false">65</button></div>
-          <button class="btn" type="button" id="e_be">Set I/Y to break-even</button>
-          <button class="btn" type="button" id="e_sp">Long-run stocks (10%)</button>
-        </div>
-        <div class="stats">
-          <div class="stat"><span class="k"><i style="background:var(--s1)"></i><span>Saver A (ages 20–30)</span></span><span class="v" id="e_A"></span><span class="s" id="e_Asub"></span></div>
-          <div class="stat"><span class="k"><i style="background:var(--s2)"></i><span>Saver B (ages 30–<span class="e_R">60</span>)</span></span><span class="v" id="e_B"></span><span class="s" id="e_Bsub"></span></div>
-        </div>
-        <p class="verdict" id="e_verdict" aria-live="polite"></p>
-        <div class="cbars" id="e_bars"></div>
-        <p class="src">Default return: 10%, close to the S&amp;P 500's compound (geometric) average annual return of 10.02% with dividends reinvested, 1928–2025 (Damodaran, NYU Stern, <i>Historical Returns on Stocks, Bonds and Bills</i>, updated January 2026). Past returns are not a promise; stocks can lose money in any year.</p>
-      </div>
-      <div class="chart" id="e_wrap">
-        <div class="charthead"><h3>Account balance by age</h3><div class="legend"><span><i style="background:var(--s1)"></i>Saver A</span><span><i style="background:var(--s2)"></i>Saver B</span></div></div>
-        <svg id="e_svg" role="img" aria-label="Balances of Saver A and Saver B by age"></svg>
-        <div class="tip" hidden></div>
-        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="e_tbl"></table></div></details>
-      </div>
+    <h2 id="h1"><span class="num">1</span>Start early beats save more</h2>
+    <p class="lead">Saver A saves for 10 years, then stops. Saver B starts 10 years later and saves for 30.</p>
+    <div class="row ctlrow">
+      <div class="ctl"><div class="lab"><label for="e_amt">Each year, both save</label><b id="e_amtOut"></b></div><input type="range" id="e_amt" min="1000" max="20000" step="500" value="5000"></div>
+      <div class="ctl"><div class="lab"><label for="e_r">Return per year</label><b id="e_rOut"></b></div><input type="range" id="e_r" min="1" max="15" step="0.1" value="10"></div>
     </div>
-    <div class="calc">
-      <h3>The keystrokes (END mode, P/Y = 1)</h3>
-      <div class="calcgrid" id="e_calc"></div>
-      <p class="note">Deposits are made at the end of each year: Saver A makes 10 deposits during ages 20–30, Saver B one deposit a year from age 30 until retirement. In Excel the deposit is negative (cash out), so FV comes out positive.</p>
+    <div class="chart" id="e_wrap">
+      <div class="playrow">
+        <button class="btn primary" type="button" id="e_play">▶ Play ages 20 → <span class="e_R">60</span></button>
+        <div class="ctl scrub"><div class="lab"><label for="e_age">Age</label><b id="e_ageOut">60</b></div><input type="range" id="e_age" min="20" max="60" step="1" value="60"></div>
+      </div>
+      <div class="panels">
+        <div class="panel"><h3><i style="background:var(--s1)"></i>Saver A · starts at 20</h3><svg id="e_svgA" role="img" aria-label="Saver A: deposits from age 20 to 30, then the balance keeps growing"></svg></div>
+        <div class="panel"><h3><i style="background:var(--s2)"></i>Saver B · starts at 30</h3><svg id="e_svgB" role="img" aria-label="Saver B: deposits from age 30 until retirement"></svg></div>
+        <div class="panel merged"><h3 id="e_mTitle">Side by side</h3><svg id="e_svgM" role="img" aria-label="Both balances compared"></svg><p class="bigline" id="e_mNote" aria-live="polite"></p></div>
+      </div>
+      <div class="legend"><span><i class="sq" style="background:var(--axis)"></i>Your own money put in</span><span><i class="sq" style="background:linear-gradient(90deg,var(--s1) 50%,var(--s2) 50%)"></i>Growth (interest on interest)</span></div>
+      <div class="tip" hidden></div>
     </div>
     <p class="takeaway" id="e_take"></p>
-    <p class="try"><b>Try this.</b> Click <i>Set I/Y to break-even</i>. Below that rate B's extra deposits win; above it A's head start wins. Now switch retirement to 65: B keeps saving five more years, so how much higher does the break-even rate move?</p>
+    <details class="more"><summary>More options</summary><div class="dbody">
+      <div class="row"><span class="lab2">Retire at</span><div class="seg" role="group" aria-label="Retirement age"><button type="button" id="e_60" aria-pressed="true">60</button><button type="button" id="e_65" aria-pressed="false">65</button></div>
+      <button class="btn" type="button" id="e_be">Set return to break-even</button><button class="btn" type="button" id="e_sp">Long-run stocks (10%)</button></div>
+      <p class="note">At 65, Saver B keeps saving until 65. The 10% default is close to the S&amp;P 500's 10.02% a year, 1928–2025 (see Sources). Past returns are not a promise.</p>
+    </div></details>
+    <details class="how" id="e_how"><summary>How it's calculated</summary><div class="dbody">
+      <p class="note">Deposits at the end of each year (END mode). A makes 10 deposits (ages 20–30); B one a year from 30 until retirement.</p>
+      <p class="verdict" id="e_verdict"></p>
+      <div class="calcgrid" id="e_calc"></div>
+      <div class="tblwrap"><table class="data" id="e_tbl"></table></div>
+    </div></details>
   </section>
 
   <!-- ===================== 2. WHAT $1 BECAME ===================== -->
   <section class="lesson" id="s2" aria-labelledby="h2">
-    <h2 id="h2"><span class="num">2</span>What $1 became</h2>
-    <p class="lead">One dollar invested at the start of the year you choose, left alone, with every dividend and interest payment reinvested. Real U.S. returns, year by year. Compounding at a few extra percent a year, for decades, is the whole story.</p>
-    <div class="grid2">
-      <div class="controls">
-        <div class="ctl big">
-          <div class="lab"><label for="h_start">Invest $1 at the start of</label><b id="h_startOut"></b></div>
-          <input type="range" id="h_start" min="1928" max="2016" step="1" value="1928">
-        </div>
-        <div class="row">
-          <div class="seg" role="group" aria-label="Dollars"><button type="button" id="h_nom" aria-pressed="true">Nominal $</button><button type="button" id="h_real" aria-pressed="false">After inflation</button></div>
-          <div class="seg" role="group" aria-label="Scale"><button type="button" id="h_log" aria-pressed="true">Log scale</button><button type="button" id="h_lin" aria-pressed="false">Linear scale</button></div>
-        </div>
-        <div class="stats" id="h_stats"></div>
-        <div class="calc">
-          <h3>Solve for I/Y: the compound annual return</h3>
-          <div class="keys" id="h_keys"></div>
-          <div class="formula" id="h_excel"></div>
-        </div>
-      </div>
-      <div class="chart" id="h_wrap">
-        <div class="charthead"><h3 id="h_title">Growth of $1</h3><div class="legend"><span><i style="background:var(--s1)"></i>S&amp;P 500 (with dividends)</span><span><i style="background:var(--s2)"></i>10-year Treasury bond</span><span><i style="background:var(--s3)"></i>3-month T-bill</span></div></div>
-        <svg id="h_svg" role="img" aria-label="Growth of one dollar in stocks, bonds and bills"></svg>
-        <div class="tip" hidden></div>
-        <p class="note" id="h_scalenote"></p>
-        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="h_tbl"></table></div></details>
-      </div>
+    <h2 id="h2"><span class="num">2</span>A few extra percent a year becomes a fortune</h2>
+    <p class="lead">$1 invested in U.S. stocks, bonds or T-bills, with all income reinvested. Real data.</p>
+    <div class="row ctlrow">
+      <div class="ctl"><div class="lab"><label for="h_start">Invest $1 at the start of</label><b id="h_startOut"></b></div><input type="range" id="h_start" min="1928" max="2016" step="1" value="1928"></div>
+      <div class="seg" role="group" aria-label="Dollars"><button type="button" id="h_nom" aria-pressed="true">Dollars</button><button type="button" id="h_real" aria-pressed="false">After inflation</button></div>
     </div>
-    <p class="src" id="h_src"></p>
+    <div class="chart" id="h_wrap">
+      <div class="charthead"><h3 id="h_title">Growth of $1</h3><div class="legend"><span><i style="background:var(--s1)"></i>Stocks (S&amp;P 500)</span><span><i style="background:var(--s2)"></i>10-year Treasury bonds</span><span><i style="background:var(--s3)"></i>T-bills</span></div></div>
+      <svg id="h_svg" role="img" aria-label="Growth of one dollar in stocks, bonds and bills"></svg>
+      <div class="tip" hidden></div>
+      <p class="note" id="h_scalenote"></p>
+    </div>
     <p class="takeaway" id="h_take"></p>
-    <p class="try"><b>Try this.</b> Switch to <i>After inflation</i>. How much purchasing power did T-bills, the "safe" choice, add over the whole period? Then switch to <i>Linear scale</i>: why do the bond and bill lines vanish, and why does a log scale make equal percentage gains look like equal steps?</p>
+    <details class="more"><summary>More options</summary><div class="dbody">
+      <div class="seg" role="group" aria-label="Scale"><button type="button" id="h_log" aria-pressed="true">Log scale</button><button type="button" id="h_lin" aria-pressed="false">Linear scale</button></div>
+      <p class="note">On a log scale each gridline is 10 times the one below, so steady growth is a straight line. Switch to linear to see why we use it.</p>
+    </div></details>
+    <details class="how" id="h_how"><summary>How it's calculated</summary><div class="dbody">
+      <div class="stats" id="h_stats"></div>
+      <h4>Solve for I/Y, the compound annual return</h4>
+      <div class="keys" id="h_keys"></div>
+      <div class="formula" id="h_excel"></div>
+      <h4>Rule of 72: a quick check</h4>
+      <div class="ctl"><div class="lab"><label for="d_r">Growth rate</label><b id="d_rOut"></b></div><input type="range" id="d_r" min="1" max="30" step="0.1" value="10"></div>
+      <p class="note" id="d_text"></p>
+      <div class="keys" id="d_keys"></div>
+      <div class="tblwrap"><table class="data" id="h_tbl"></table></div>
+    </div></details>
   </section>
 
   <!-- ===================== 3. TIMELINE ===================== -->
   <section class="lesson" id="s3" aria-labelledby="h3">
-    <h2 id="h3"><span class="num">3</span>The cash-flow timeline</h2>
-    <p class="lead">Every TVM problem starts with a timeline. Put a cash flow at each tick, and each one is discounted back to t = 0 by dividing by (1 + I)<sup>t</sup>. Add the pieces and you have the present value. Pick a problem from class or type your own.</p>
-    <div class="grid2">
-      <div class="controls">
-        <div class="row" id="t_presets" role="group" aria-label="Examples from class"></div>
-        <div class="ctl">
-          <div class="lab"><label for="t_n">Periods, N</label><b id="t_nOut"></b></div>
-          <input type="range" id="t_n" min="1" max="10" step="1" value="3">
-        </div>
-        <div class="ctl big">
-          <div class="lab"><label for="t_r">Rate per period, I/Y</label><b id="t_rOut"></b></div>
-          <input type="range" id="t_r" min="0" max="20" step="0.1" value="4">
-        </div>
-        <div class="row">
-          <span class="lab2">Payment timing</span>
-          <div class="seg" role="group" aria-label="Payment timing"><button type="button" id="t_end" aria-pressed="true">END (ordinary)</button><button type="button" id="t_bgn" aria-pressed="false">BGN (annuity due)</button></div>
-        </div>
-        <div>
-          <div class="lab2" style="margin-bottom:4px">Cash flow for each period (+ in, − out)</div>
-          <div class="cfgrid" id="t_cfs"></div>
-        </div>
-      </div>
-      <div class="chart" id="t_wrap">
-        <div class="charthead"><h3>Each cash flow and its value today</h3><div class="legend"><span><i class="sq" style="background:var(--s2)"></i>Cash flow at time t</span><span><i class="sq" style="background:var(--s1)"></i>Its value at t = 0 (PV)</span><span id="t_ghostkey" hidden><i class="dash"></i>Where END would put it</span></div></div>
-        <svg id="t_svg" role="img" aria-label="Cash-flow timeline with present values"></svg>
-        <div class="tip" hidden></div>
-        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="t_tbl"></table></div></details>
-      </div>
+    <h2 id="h3"><span class="num">3</span>Money sooner is worth more</h2>
+    <p class="lead">Each payment shrinks when moved back to today. Paid at the start of each year (BGN), it shrinks less.</p>
+    <div class="row ctlrow">
+      <div class="ctl"><div class="lab"><label for="t_r">Interest rate, I/Y</label><b id="t_rOut"></b></div><input type="range" id="t_r" min="0" max="20" step="0.1" value="4"></div>
+      <div class="seg" role="group" aria-label="Payment timing"><button type="button" id="t_end" aria-pressed="true">END: end of year</button><button type="button" id="t_bgn" aria-pressed="false">BGN: start of year</button></div>
     </div>
-    <div class="stats" id="t_stats"></div>
-    <p class="verdict" id="t_mode" aria-live="polite"></p>
-    <div class="calc">
-      <h3>The keystrokes</h3>
+    <div class="chart" id="t_wrap">
+      <div class="charthead"><h3>Each payment and its value today</h3><div class="legend"><span><i class="sq" style="background:var(--s2)"></i>Payment</span><span><i class="sq" style="background:var(--s1)"></i>Value today</span><span id="t_ghostkey" hidden><i class="dash"></i>Where END puts it</span></div></div>
+      <svg id="t_svg" role="img" aria-label="Cash-flow timeline with present values"></svg>
+      <div class="tip" hidden></div>
+    </div>
+    <p class="takeaway" id="t_take"></p>
+    <details class="more"><summary>More options: class examples and your own cash flows</summary><div class="dbody">
+      <div class="row" id="t_presets" role="group" aria-label="Examples from class"></div>
+      <div class="ctl"><div class="lab"><label for="t_n">Periods, N</label><b id="t_nOut"></b></div><input type="range" id="t_n" min="1" max="10" step="1" value="3"></div>
+      <div class="cfgrid" id="t_cfs"></div>
+    </div></details>
+    <details class="how" id="t_how"><summary>How it's calculated</summary><div class="dbody">
+      <div class="stats" id="t_stats"></div>
+      <p class="note" id="t_mode"></p>
       <div class="calcgrid" id="t_calc"></div>
-    </div>
-    <p class="try"><b>Try this.</b> Load <i>Stipend (error clinic 01)</i>: "at the beginning of each of four academic years, the first of which begins one year from today." Flip between END and BGN. Which one matches the words, and why is the BGN answer exactly (1 + I) times too big? Then load <i>Deferred $500s</i> and see why N = 5 overstates the value.</p>
+      <div class="tblwrap"><table class="data" id="t_tbl"></table></div>
+    </div></details>
   </section>
 
   <!-- ===================== 4. LOTTERY ===================== -->
   <section class="lesson" id="s4" aria-labelledby="h4">
-    <h2 id="h4"><span class="num">4</span>The $2.04 billion jackpot that was really $997.6 million</h2>
-    <p class="lead">On November 8, 2022, one Powerball ticket sold in California won an advertised $2.04 billion. The winner could choose 30 payments over 29 years (the first right away, each 5% larger than the one before) or $997.6 million in cash today, both before taxes. Which is worth more depends on one number: the discount rate.</p>
-    <div class="grid2">
-      <div class="controls">
-        <div class="ctl big">
-          <div class="lab"><label for="l_r">Discount rate, I/Y</label><b id="l_rOut"></b></div>
-          <input type="range" id="l_r" min="0" max="10" step="0.01" value="6">
-        </div>
-        <div class="row"><button class="btn" type="button" id="l_be">Set to break-even rate</button></div>
-        <div class="stats">
-          <div class="stat"><span class="k"><i style="background:var(--s1)"></i>PV of the 30 payments</span><span class="v" id="l_pv"></span><span class="s">first payment <span id="l_p1"></span>, last <span id="l_p30"></span></span></div>
-          <div class="stat"><span class="k"><i style="background:var(--axis)"></i>Cash option today</span><span class="v">$997.6 million</span><span class="s">49% of the advertised $2.04 billion</span></div>
-        </div>
-        <p class="verdict" id="l_verdict" aria-live="polite"></p>
-      </div>
-      <div class="chart" id="l_wrap">
-        <div class="charthead"><h3>What the payments are worth today, at each discount rate</h3><div class="legend"><span><i style="background:var(--s1)"></i>PV of the annuity</span><span><i class="dash"></i>Cash option</span></div></div>
-        <svg id="l_svg" role="img" aria-label="Present value of the jackpot annuity by discount rate"></svg>
-        <div class="tip" hidden></div>
-        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="l_tbl"></table></div></details>
-      </div>
+    <h2 id="h4"><span class="num">4</span>A $2.04 billion jackpot is worth less today</h2>
+    <p class="lead">A 2022 Powerball winner could take 30 payments totalling $2.04 billion, or $997.6 million cash now.</p>
+    <div class="row ctlrow">
+      <div class="ctl"><div class="lab"><label for="l_r">Discount rate, I/Y</label><b id="l_rOut"></b></div><input type="range" id="l_r" min="0" max="10" step="0.01" value="6"></div>
     </div>
-    <div class="calc">
-      <h3>The calculation</h3>
+    <div class="chart" id="l_wrap">
+      <div class="charthead"><h3>What the 30 payments are worth today</h3><div class="legend"><span><i style="background:var(--s1)"></i>Value of the payments today</span><span><i class="dash"></i>Cash option</span></div></div>
+      <svg id="l_svg" role="img" aria-label="Present value of the jackpot annuity by discount rate"></svg>
+      <div class="tip" hidden></div>
+    </div>
+    <p class="takeaway" id="l_take"></p>
+    <details class="more"><summary>More options</summary><div class="dbody">
+      <div class="row"><button class="btn" type="button" id="l_be">Set to break-even rate</button></div>
+    </div></details>
+    <details class="how" id="l_how"><summary>How it's calculated</summary><div class="dbody">
+      <p class="note">Payments: the first today, then one a year for 29 years, each 5% bigger. They add up to $2.04 billion. Before taxes.</p>
       <div class="calcgrid" id="l_calc"></div>
-    </div>
-    <p class="src">Source: Powerball, “Ticket in California wins world record $2.04 billion Powerball jackpot,” November 8, 2022 (powerball.com). Payment schedule (30 graduated payments over 29 years, rising 5% a year) as described by Powerball for its annuity option. Taxes are ignored here.</p>
-    <p class="try"><b>Try this.</b> The break-even rate is the I/Y "built into" the annuity. Would you rather take the cash and invest it at that rate yourself? Compare it with the class version (slide 28): $3,025,000 today or $250,000 a year for 20 years, first payment in one year: 20 <span class="keys"><span class="cap">N</span></span> −3,025,000 <span class="keys"><span class="cap">PV</span></span> 250,000 <span class="keys"><span class="cap">PMT</span></span> 0 <span class="keys"><span class="cap">FV</span></span> <span class="keys"><span class="cap">CPT</span> <span class="cap">I/Y</span></span> = 5.35%.</p>
+      <p class="note">Class version (slide 28): $3,025,000 today or $250,000 a year for 20 years, first in one year: 20 <span class="cap">N</span> −3,025,000 <span class="cap">PV</span> 250,000 <span class="cap">PMT</span> 0 <span class="cap">FV</span> <span class="cap">CPT</span> <span class="cap">I/Y</span> = 5.35%.</p>
+      <div class="tblwrap"><table class="data" id="l_tbl"></table></div>
+    </div></details>
   </section>
 
-  <!-- ===================== 5. CREDIT CARD ===================== -->
+  <!-- ===================== 5. EASY MONEY ===================== -->
   <section class="lesson" id="s5" aria-labelledby="h5">
-    <h2 id="h5"><span class="num">5</span>The minimum-payment trap</h2>
-    <p class="lead">A credit-card balance is a loan you pay back as an annuity. Pay only the minimum and the payment shrinks as the balance shrinks, so the loan drags on for years. Pay a fixed amount and it is an ordinary annuity you can solve for N.</p>
-    <div class="grid2">
-      <div class="controls">
-        <div class="ctl">
-          <div class="lab"><label for="c_bal">Balance owed</label><b id="c_balOut"></b></div>
-          <input type="range" id="c_bal" min="500" max="20000" step="100" value="5000">
-        </div>
-        <div class="ctl">
-          <div class="lab"><label for="c_apr">APR</label><b id="c_aprOut"></b></div>
-          <input type="range" id="c_apr" min="5" max="36" step="0.01" value="22.36">
-        </div>
-        <div class="ctl big">
-          <div class="lab"><label for="c_pmt">Your fixed monthly payment</label><b id="c_pmtOut"></b></div>
-          <input type="range" id="c_pmt" min="25" max="1000" step="5" value="200">
-        </div>
-        <div class="stats">
-          <div class="stat"><span class="k"><i style="background:var(--s2)"></i>Minimum payment only</span><span class="v" id="c_minT"></span><span class="s" id="c_minI"></span></div>
-          <div class="stat"><span class="k"><i style="background:var(--s1)"></i>Fixed payment</span><span class="v" id="c_fixT"></span><span class="s" id="c_fixI"></span></div>
-        </div>
-        <p class="verdict" id="c_verdict" aria-live="polite"></p>
-        <p class="src">Example only. Default APR 22.36% is the average rate on credit-card accounts assessed interest at U.S. commercial banks, August 2026 (Federal Reserve G.19 via FRED, series TERMCBCCINTNS). Minimum payment here = that month's interest + 1% of the balance, at least $25, a common formula; your card's rule may differ. Interest is charged monthly at APR ÷ 12.</p>
-      </div>
-      <div class="chart" id="c_wrap">
-        <div class="charthead"><h3>Balance still owed</h3><div class="legend"><span><i style="background:var(--s2)"></i>Minimum payment</span><span><i style="background:var(--s1)"></i>Fixed payment</span></div></div>
-        <svg id="c_svg" role="img" aria-label="Credit card balance over time under two payment plans"></svg>
-        <div class="tip" hidden></div>
-        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="c_tbl"></table></div></details>
-      </div>
-    </div>
-    <div class="calc">
-      <h3>Solve for N with a fixed payment (P/Y = 1, monthly rate)</h3>
-      <div class="keys" id="c_keys"></div>
-      <div class="formula" id="c_excel"></div>
-    </div>
-    <p class="try"><b>Try this.</b> Set the fixed payment to the first month's minimum payment (shown in the table) and compare. Then find the smallest fixed payment that clears the balance in 3 years: set N = 36 and <span class="keys"><span class="cap">CPT</span> <span class="cap">PMT</span></span>.</p>
-  </section>
-
-  <!-- ===================== 6. RULE OF 72 ===================== -->
-  <!-- ===================== 6. EASY MONEY ===================== -->
-  <section class="lesson" id="s6" aria-labelledby="h6">
-    <h2 id="h6"><span class="num">6</span>The true cost of “easy” money</h2>
-    <p class="lead">Short-term credit is usually advertised as a small fee: $15 per $100, a $7 late fee, “just $20 a week.” Turn each fee into a rate per period, then an annual rate. The APR simply multiplies the periodic rate by the number of periods a year, m. The effective annual rate (EAR) also counts interest on interest: EAR = (1 + APR/m)<sup>m</sup> − 1.</p>
-    <div class="grid2">
-      <div class="controls">
-        <div><div class="lab2" style="margin-bottom:4px">Pick a product to edit</div>
-        <div class="seg" role="group" aria-label="Product" id="m_pick"></div></div>
-        <div class="cfgrid" id="m_inputs" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr))"></div>
-        <p class="note" id="m_desc"></p>
-        <div class="stats" id="m_stats"></div>
-      </div>
-      <div class="chart" id="m_wrap">
-        <div class="charthead"><h3>APR vs. effective annual rate</h3><div class="legend"><span><i class="sq" style="background:var(--s1)"></i>APR (quoted)</span><span><i class="sq" style="background:var(--s2)"></i>EAR (effective)</span><span><i class="dash"></i>Stocks, 10.02% a year</span></div></div>
-        <svg id="m_svg" role="img" aria-label="APR and effective annual rate for four kinds of credit, log scale"></svg>
-        <div class="tip" hidden></div>
-        <p class="note">Log scale: each gridline is 10 times the one before, and bars start at 1%. A bar twice as long is not twice the rate.</p>
-        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="m_tbl"></table></div></details>
-      </div>
-    </div>
-    <div class="calc">
-      <h3>From fee to APR to EAR</h3>
-      <div class="calcgrid" id="m_calc"></div>
+    <h2 id="h5"><span class="num">5</span>Small fees can be huge interest rates</h2>
+    <p class="lead">A small fee for a short time becomes a huge rate when you turn it into a yearly rate.</p>
+    <div class="chart" id="m_wrap">
+      <div class="charthead"><h3>Yearly cost of four ways to borrow</h3><div class="legend"><span><i class="sq" style="background:var(--s1)"></i>APR (the quoted rate)</span><span><i class="sq" style="background:var(--s2)"></i>Effective rate (with compounding)</span></div></div>
+      <svg id="m_svg" role="img" aria-label="APR and effective annual rate for four kinds of credit, log scale"></svg>
+      <div class="tip" hidden></div>
+      <p class="note">Log scale: each gridline is 10 times the one before.</p>
     </div>
     <p class="takeaway" id="m_take"></p>
-    <p class="src">Payday loan default: the CFPB reported that payday loans “have finance charges of $15 or $20 for each $100 borrowed” over a typical two-week term, an APR of 391% to 521% (Consumer Financial Protection Bureau, “Consumer Financial Protection Bureau examines payday lending,” January 19, 2012). Credit card default: 22.36%, the average rate on accounts assessed interest, August 2026 (Federal Reserve G.19 via FRED, TERMCBCCINTNS). The buy-now-pay-later late fee and the rent-to-own deal are illustrative examples, not quotes from any company. Fees, terms and legal limits vary by lender and by state. EAR assumes the same deal is repeated all year.</p>
-    <p class="try"><b>Try this.</b> For the payday loan, change the fee from $15 to $20 per $100: the APR rises by a third, but by how much does the EAR rise? Then make the rent-to-own payment $15 a week. Finally, check the credit card on the calculator: 2ND ICONV, NOM = 22.36, C/Y = 12, CPT EFF.</p>
-  </section>
-
-  <section class="lesson" id="s7" aria-labelledby="h7">
-    <h2 id="h7"><span class="num">7</span>The Rule of 72, checked</h2>
-    <p class="lead">A quick mental shortcut: money doubles in about 72 ÷ (rate in %) years. How close is it to the exact answer from the calculator? Slide 15 asked the same question: sales growing 10% a year double in about 7.3 years.</p>
-    <div class="grid2">
-      <div class="controls">
-        <div class="ctl big">
-          <div class="lab"><label for="d_r">Growth rate, I/Y</label><b id="d_rOut"></b></div>
-          <input type="range" id="d_r" min="1" max="30" step="0.1" value="10">
+    <details class="more"><summary>More options: change the deals</summary><div class="dbody">
+      <div class="seg" role="group" aria-label="Product" id="m_pick"></div>
+      <div class="cfgrid" id="m_inputs" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr))"></div>
+      <p class="note" id="m_desc"></p>
+    </div></details>
+    <details class="how" id="m_how"><summary>How it's calculated</summary><div class="dbody">
+      <p class="note">APR = rate per period × periods per year (m). Effective annual rate EAR = (1 + APR/m)<sup>m</sup> − 1.</p>
+      <div class="stats" id="m_stats"></div>
+      <div class="calcgrid" id="m_calc"></div>
+      <div class="tblwrap"><table class="data" id="m_tbl"></table></div>
+      <h4>Credit card: the minimum-payment trap (example)</h4>
+      <div class="grid2 even">
+        <div class="controls">
+          <div class="ctl"><div class="lab"><label for="c_bal">Balance owed</label><b id="c_balOut"></b></div><input type="range" id="c_bal" min="500" max="20000" step="100" value="5000"></div>
+          <div class="ctl"><div class="lab"><label for="c_apr">APR</label><b id="c_aprOut"></b></div><input type="range" id="c_apr" min="5" max="36" step="0.01" value="22.36"></div>
+          <div class="ctl"><div class="lab"><label for="c_pmt">Fixed monthly payment</label><b id="c_pmtOut"></b></div><input type="range" id="c_pmt" min="25" max="1000" step="5" value="200"></div>
+          <div class="stats">
+            <div class="stat"><span class="k"><i style="background:var(--s2)"></i>Minimum payment only</span><span class="v" id="c_minT"></span><span class="s" id="c_minI"></span></div>
+            <div class="stat"><span class="k"><i style="background:var(--s1)"></i>Fixed payment</span><span class="v" id="c_fixT"></span><span class="s" id="c_fixI"></span></div>
+          </div>
+          <p class="note" id="c_verdict"></p>
         </div>
-        <div class="stats">
-          <div class="stat"><span class="k"><i style="background:var(--s2)"></i>Rule of 72</span><span class="v" id="d_72"></span><span class="s" id="d_72s"></span></div>
-          <div class="stat"><span class="k"><i style="background:var(--s1)"></i>Exact (CPT N)</span><span class="v" id="d_ex"></span><span class="s" id="d_err"></span></div>
-        </div>
-        <div class="calc">
-          <h3>Solve for N</h3>
-          <div class="keys" id="d_keys"></div>
-          <div class="formula" id="d_excel"></div>
+        <div class="chart" id="c_wrap">
+          <div class="charthead"><h3>Balance still owed</h3><div class="legend"><span><i style="background:var(--s2)"></i>Minimum payment</span><span><i style="background:var(--s1)"></i>Fixed payment</span></div></div>
+          <svg id="c_svg" role="img" aria-label="Credit card balance over time under two payment plans"></svg>
+          <div class="tip" hidden></div>
         </div>
       </div>
-      <div class="chart" id="d_wrap">
-        <div class="charthead"><h3>How far off is the Rule of 72?</h3><div class="legend"><span><i style="background:var(--s2)"></i>Rule of 72 minus exact answer (years)</span><span><i class="dash"></i>Half a year off</span></div></div>
-        <svg id="d_svg" role="img" aria-label="Rule of 72 error in years, by growth rate"></svg>
-        <div class="tip" hidden></div>
-        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="d_tbl"></table></div></details>
-      </div>
-    </div>
-    <p class="takeaway" id="d_take"></p>
-    <p class="try"><b>Try this.</b> Back to story 1: at 10% Saver A's money doubles about every 7.3 years. From age 30 to 60 that is roughly four doublings, 2<sup>4</sup> = 16. Check it: 1.10<sup>30</sup> = 17.45. Where on the chart does the rule start to drift by more than half a year?</p>
+      <div class="keys" id="c_keys"></div>
+      <div class="formula" id="c_excel"></div>
+      <p class="note">Minimum payment = that month's interest + 1% of the balance, at least $25 (a common rule; cards differ). Interest is charged monthly at APR ÷ 12.</p>
+      <div class="tblwrap"><table class="data" id="c_tbl"></table></div>
+    </div></details>
   </section>
 
   <footer class="note">
-    <p>All calculations assume annual compounding (P/Y = C/Y = 1) unless a story says otherwise, and are made in your browser. Nothing is stored or sent anywhere.</p>
-    <p>Data sources: Aswath Damodaran, <i>Historical Returns on Stocks, Bonds and Bills: 1928–2025</i> (histretSP, NYU Stern, updated January 2026); U.S. Bureau of Labor Statistics CPI-U, not seasonally adjusted (FRED series CPIAUCNS); Federal Reserve G.19 (FRED series TERMCBCCINTNS); Powerball press release, November 8, 2022; Consumer Financial Protection Bureau, payday lending release, January 19, 2012.</p>
+    <details class="how"><summary>Sources and notes</summary><div class="dbody">
+      <p id="h_src"></p>
+      <p>Stock-return default in story 1: the S&amp;P 500's compound (geometric) average of 10.02% a year with dividends reinvested, 1928–2025, from the same Damodaran dataset.</p>
+      <p>Powerball: “Ticket in California wins world record $2.04 billion Powerball jackpot,” November 8, 2022 (powerball.com). Annuity: 30 graduated payments over 29 years, rising 5% a year. Taxes ignored.</p>
+      <p>Payday loan default: the Consumer Financial Protection Bureau reported finance charges of “$15 or $20 for each $100 borrowed” over a typical two-week term, an APR of 391% to 521% (“Consumer Financial Protection Bureau examines payday lending,” January 19, 2012).</p>
+      <p>Credit card default: 22.36%, the average rate on credit-card accounts assessed interest at U.S. commercial banks, August 2026 (Federal Reserve G.19 via FRED, series TERMCBCCINTNS).</p>
+      <p>The buy-now-pay-later late fee, the rent-to-own deal and the credit-card balances are illustrative examples, not quotes from any company. Fees, terms and legal limits vary by lender and by state. An effective annual rate assumes the same deal is repeated all year.</p>
+      <p>Unless a story says otherwise, rates are annual with annual compounding (P/Y = C/Y = 1). Sign convention as in class: money paid out is negative, money received is positive. Everything is calculated in your browser; nothing is stored or sent.</p>
+    </div></details>
   </footer>
 </div>
-
 <script>
 (function () {
   'use strict';
   const HIST = {"first":1928,"last":2025,"sp":[0.4381116,-0.0829795,-0.2512364,-0.4383755,-0.0864236,0.4998223,-0.0118857,0.4674042,0.3194341,-0.3533673,0.2928265,-0.0109756,-0.1067287,-0.1277146,0.1917376,0.2506131,0.1903068,0.3582108,-0.0842915,0.052,0.0570458,0.1830322,0.3080554,0.2367846,0.1815099,-0.012082,0.5256332,0.3259733,0.0743951,-0.1045736,0.4371995,0.1205646,0.0033654,0.2663771,-0.0881146,0.2261193,0.1641546,0.1239924,-0.0997095,0.2380297,0.1081486,-0.0824137,0.0356114,0.1422115,0.1875536,-0.1430805,-0.2590179,0.3699514,0.23831,-0.069797,0.0650928,0.1851949,0.3173525,-0.0470239,0.2041906,0.2233716,0.0614614,0.3123515,0.1849458,0.0581272,0.1653719,0.3147518,-0.0306445,0.3023484,0.0749373,0.0996705,0.0132592,0.371952,0.2268097,0.3310365,0.2833795,0.2088535,-0.0903182,-0.1184976,-0.2196605,0.283558,0.1074278,0.0483448,0.1561256,0.0548474,-0.3655234,0.2593523,0.1482109,0.0209837,0.1589059,0.3214509,0.1352442,0.0137889,0.1177308,0.2160548,-0.0422687,0.3121168,0.180232,0.2846885,-0.1803751,0.2606068,0.2487861,0.1772366],"tb":[0.0308,0.0316,0.0455,0.0231,0.0107,0.0096,0.0027833,0.001675,0.001725,0.0027583,0.00065,0.0004583,0.0003583,0.0012917,0.003425,0.0038,0.0038,0.0038,0.0038,0.0060083,0.01045,0.01115,0.0120333,0.015175,0.017225,0.0189083,0.0093752,0.0172434,0.0262139,0.0322457,0.0176655,0.0338602,0.0287297,0.0235249,0.0277237,0.0315602,0.0354574,0.0394908,0.0485572,0.0429345,0.053376,0.0666847,0.06391,0.0433426,0.0406184,0.0703544,0.0784578,0.0578639,0.049766,0.0526096,0.0717831,0.1005427,0.1139188,0.1403618,0.1109,0.0895,0.0992,0.0772,0.0615,0.0596,0.0689,0.0839,0.0775,0.0554,0.0351,0.0307,0.0437,0.0566,0.0515,0.052,0.0491,0.0478,0.06,0.0348,0.0164,0.0103,0.014,0.0322,0.0485,0.0448,0.014,0.0015,0.0014,0.0005,0.0009,0.0006,0.0003,0.0005,0.0032,0.0095,0.0197,0.0211,0.0036,0.0004,0.0209,0.0528,0.0518,0.0421],"bd":[0.0083547,0.042038,0.0454093,-0.0255886,0.0879031,0.0185527,0.0796344,0.0447205,0.0501788,0.0137915,0.0421325,0.0441226,0.0540248,-0.020222,0.0229487,0.0249,0.0257761,0.0380442,0.0312837,0.009197,0.0195104,0.0466349,0.004296,-0.0029531,0.02268,0.0414384,0.032898,-0.0133644,-0.0225577,0.0679701,-0.0209902,-0.0264663,0.116395,0.0206092,0.0569354,0.0168416,0.0372806,0.0071886,0.0290794,-0.0158062,0.0327462,-0.0501405,0.1675474,0.097869,0.0281845,0.0365866,0.0198861,0.0360525,0.1598456,0.0128996,-0.0077758,0.0067072,-0.0298974,0.0819922,0.3281455,0.0320021,0.1373336,0.2571249,0.2428422,-0.0496051,0.082236,0.1769365,0.0623538,0.1500451,0.0936164,0.1421096,-0.0803666,0.2348078,0.0142861,0.0993913,0.1492143,-0.0825421,0.1665527,0.0557218,0.151164,0.0037532,0.0449068,0.0286753,0.01961,0.1020992,0.2010128,-0.111167,0.0846293,0.1603533,0.0297157,-0.0910457,0.1074618,0.012843,0.0069055,0.0280172,-0.0001669,0.0963563,0.113319,-0.0441603,-0.1782817,0.0388,-0.0163718,0.0779548],"cpi":[17.3,17.1,17.2,16.1,14.6,13.1,13.2,13.4,13.8,14.0,14.4,14.0,14.0,14.1,15.5,16.9,17.4,17.8,18.2,21.5,23.4,24.1,23.6,25.0,26.5,26.7,26.9,26.7,26.8,27.6,28.4,28.9,29.4,29.8,30.0,30.4,30.9,31.2,31.8,32.9,33.9,35.5,37.7,39.8,41.1,42.5,46.2,51.9,55.5,58.2,62.1,67.7,76.7,86.3,94.0,97.6,101.3,105.3,109.3,110.5,115.4,120.5,126.1,133.8,137.9,141.9,145.8,149.7,153.5,158.6,161.3,163.9,168.3,174.0,176.7,180.9,184.3,190.3,196.8,201.8,210.036,210.228,215.949,219.179,225.672,229.601,233.049,234.812,236.525,241.432,246.524,251.233,256.974,260.474,278.802,296.797,306.746,315.605,324.054]};
   // Predict-first mode is the default; ?mode=reveal (or explore) opens every section revealed.
   const START_HIDDEN = !['reveal', 'explore'].includes(new URLSearchParams(location.search).get('mode'));
-  const PM = {}; ['e', 'h', 't', 'l', 'c', 'm', 'd'].forEach(k => { PM[k] = { hidden: START_HIDDEN, fb: false }; });
+  const PM = {}; ['e', 'h', 't', 'l', 'm'].forEach(k => { PM[k] = { hidden: START_HIDDEN, fb: false }; });
   const $ = id => document.getElementById(id);
   const NS = 'http://www.w3.org/2000/svg';
   const el = (tag, attrs, parent, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; if (parent) parent.appendChild(e); return e; };
@@ -487,7 +440,7 @@ footer.note p { margin: 0; }
       const d = s.pts.map((p, k) => (k ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1)).join(' ');
       el('path', { d, class: 'series', style: `stroke:${s.color}` + (s.dash ? ';stroke-dasharray:6 4' : '') }, svg);
     });
-    (o.marks || []).forEach(p => el('circle', { cx: X(p.x), cy: Y(p.y), r: 5.5, class: 'dot', style: `fill:${p.color}` }, svg));
+    (o.marks || []).forEach(p => { el('circle', { cx: X(p.x), cy: Y(p.y), r: 5.5, class: 'dot', style: `fill:${p.color}` }, svg); if (p.label) el('text', { x: X(p.x) + (p.left ? -10 : 10), y: Y(p.y) - 10, 'text-anchor': p.left ? 'end' : 'start', class: 'big halo' }, svg, p.label); });
     // direct labels at the line ends, nudged apart
     if (o.labels) {
       const L = o.series.filter(s => s.label).map(s => { const p = s.pts[s.pts.length - 1]; return { s, x: X(p[0]), y: Y(p[1]) }; }).sort((a, b) => a.y - b.y);
@@ -522,66 +475,160 @@ footer.note p { margin: 0; }
   }
   const table = (tbl, head, rows, curIdx) => { tbl.innerHTML = `<thead><tr>${head.map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead><tbody>${rows.map((r, k) => `<tr${k === curIdx ? ' class="cur"' : ''}>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>`; };
 
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const big$ = v => v >= 100 ? money(v, 0) : money(v);
+  // position a tooltip inside its .chart wrapper, next to screen x (px) and y (py), both relative to the wrapper
+  function placeTip(tip, wrap, px, py) {
+    tip.hidden = false; const wr = wrap.getBoundingClientRect(), tw = tip.offsetWidth;
+    tip.style.left = Math.max(0, Math.min(wr.width - tw, px + (px > wr.width / 2 ? -tw - 12 : 12))) + 'px'; tip.style.top = py + 'px';
+  }
+
   // ===================== 1. START EARLY =====================
-  const E = { amt: 5000, r: 10, R: 60 };
+  // Deposits at the end of each year (END). A: 10 deposits during ages 20–30. B: one a year from 30 to retirement R.
+  const E = { amt: 5000, r: 10, R: 60, age: 60, playing: false, raf: 0 };
   const eA = (x, r, age) => age <= 20 ? 0 : age <= 30 ? x * fvAnn(age - 20, r) : x * fvAnn(10, r) * Math.pow(1 + r, age - 30);
   const eB = (x, r, age) => age <= 30 ? 0 : x * fvAnn(age - 30, r);
+  const eBal = (w, x, r, a) => w === 'A' ? eA(x, r, a) : eB(x, r, a);
+  const ePaid = (w, x, R, a) => w === 'A' ? x * Math.max(0, Math.min(10, a - 20)) : x * Math.max(0, Math.min(R, a) - 30);
+  const lerpAt = (f, a) => { const i = Math.floor(a), t = a - i; return t > 1e-9 ? f(i) * (1 - t) + f(i + 1) * t : f(i); };
   function eBreakEven(R) { let lo = 1e-6, hi = 1; for (let k = 0; k < 200; k++) { const mid = (lo + hi) / 2; if (eA(1, mid, R) > eB(1, mid, R)) hi = mid; else lo = mid; } return (lo + hi) / 2 * 100; }
+  let eY = niceTicks(0, 1, 4);
+  const eFinal = () => { const r = E.r / 100; return { A: eA(E.amt, r, E.R), B: eB(E.amt, r, E.R), pA: 10 * E.amt, pB: (E.R - 30) * E.amt }; };
+  const eWho = f => Math.abs(f.A - f.B) < 0.005 * Math.max(f.A, f.B) ? 'tie' : f.A > f.B ? 'A' : 'B';
+  const fracWord = q => Math.abs(q - 1 / 3) < 1e-9 ? 'a third' : Math.round(q * 100) + '%';
+
+  function drawSaver(w) {
+    const svg = $('e_svg' + w), W = Math.max(260, Math.round(svg.parentNode.clientWidth)), narrow = W < 440;
+    const H = narrow ? 230 : 250, x = E.amt, r = E.r / 100, R = E.R, age = E.age, col = w === 'A' ? 'var(--s1)' : 'var(--s2)';
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.textContent = '';
+    const m = { l: 44, r: narrow ? 56 : 64, t: 52, b: 24 };
+    const X = a => m.l + (a - 20) / (R - 20) * (W - m.l - m.r), Y = v => H - m.b - v / eY.max * (H - m.t - m.b);
+    eY.ticks.forEach(v => { el('line', { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: 'gridl' }, svg); el('text', { x: m.l - 6, y: Y(v) + 4, 'text-anchor': 'end', class: 'tick' }, svg, compact(v)); });
+    [20, 30, 40, 50, 60, 65].filter(a => a <= R).forEach(a => el('text', { x: X(a), y: H - m.b + 15, 'text-anchor': 'middle', class: 'tick' }, svg, a));
+    el('line', { x1: m.l, x2: W - m.r, y1: Y(0), y2: Y(0), class: 'axisl' }, svg);
+    // the deposit lane: one grey block per deposit, dropping in as the age passes
+    const d0 = w === 'A' ? 20 : 30, d1 = w === 'A' ? 30 : R;
+    el('text', { x: X(d0), y: 13, class: 'lane' }, svg, narrow ? `${compact(x)} a year · ages ${d0}–${d1}` : `Saves ${money(x, 0)} a year · ages ${d0}–${d1}`);
+    const cw = Math.max(3, Math.min(12, (X(21) - X(20)) * 0.62));
+    for (let d = d0 + 1; d <= d1; d++) {
+      const p = Math.max(0, Math.min(1, (age - (d - 1)) / 0.7)); if (p <= 0) continue;
+      el('rect', { x: X(d - 0.5) - cw / 2, y: 19 - 9 * (1 - p), width: cw, height: 10, rx: 2, style: `fill:var(--axis);opacity:${p.toFixed(2)}` }, svg);
+    }
+    el('path', { d: `M${X(d0)} 33 v5 H${X(d1)} v-5`, class: 'bracket' }, svg);
+    if (w === 'A') el('text', { x: X(30) + 6, y: 42, class: 'lanenote' }, svg, narrow ? 'Stops at 30 · keeps growing →' : 'No more deposits · the money keeps growing →');
+    else el('text', { x: X(20), y: 26, class: 'lanenote' }, svg, narrow ? 'Not yet' : 'Not saving yet');
+    // stacked area: grey = own money put in, colour = growth
+    const pts = []; for (let a = 20; a <= Math.floor(age + 1e-9); a++) pts.push([a, eBal(w, x, r, a), ePaid(w, x, R, a)]);
+    if (age - Math.floor(age) > 1e-9) pts.push([age, lerpAt(a => eBal(w, x, r, a), age), lerpAt(a => ePaid(w, x, R, a), age)]);
+    const path = k => pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(p[k]).toFixed(1)).join(' ');
+    const last = pts[pts.length - 1], xe = X(last[0]);
+    el('path', { d: `${path(2)} L${xe.toFixed(1)} ${Y(0)} L${X(20)} ${Y(0)} Z`, style: 'fill:var(--axis);opacity:.6' }, svg);
+    el('path', { d: `${path(1)} ${pts.slice().reverse().map(p => 'L' + X(p[0]).toFixed(1) + ' ' + Y(p[2]).toFixed(1)).join(' ')} Z`, style: `fill:${col};opacity:.75` }, svg);
+    el('path', { d: path(1), class: 'series', style: `stroke:${col}` }, svg);
+    if (age < R) el('line', { x1: xe, x2: xe, y1: m.t - 4, y2: Y(0), class: 'ref' }, svg);
+    const yb = Math.max(m.t + 8, Math.min(Y(last[1]) + 6, H - m.b - 20));
+    el('text', { x: xe + 6, y: yb, class: 'big' }, svg, compact(last[1]));
+    if (last[2] > 0) {
+      const room = xe - m.l > 96;
+      const yp = room ? Math.min(H - m.b - 5, Y(last[2]) - 6) : Math.min(H - m.b - 5, yb + 17);
+      el('text', { x: room ? xe - 5 : xe + 6, y: yp, 'text-anchor': room ? 'end' : 'start', class: 'dlab halo' }, svg, `put in ${compact(ePaid(w, x, R, Math.floor(age + 1e-9)))}`);
+    }
+    // hover: exact values for any age already drawn
+    const cross = el('line', { y1: m.t, y2: Y(0), class: 'cross', visibility: 'hidden' }, svg);
+    const hit = el('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: 'transparent', style: 'cursor:crosshair' }, svg);
+    const wrap = $('e_wrap'), tip = wrap.querySelector('.tip');
+    const show = e => {
+      const rr = svg.getBoundingClientRect(); let a = Math.round(20 + ((e.clientX - rr.left) * W / rr.width - m.l) / (W - m.l - m.r) * (R - 20));
+      a = Math.max(20, Math.min(Math.floor(age + 1e-9), a));
+      const b = eBal(w, x, r, a), pd = ePaid(w, x, R, a);
+      cross.setAttribute('x1', X(a)); cross.setAttribute('x2', X(a)); cross.setAttribute('visibility', 'visible');
+      tip.innerHTML = `<div style="color:var(--muted)">Saver ${w} · age ${a}</div><div><i style="background:${col}"></i>Balance: <b>${money(b)}</b></div><div><i style="background:var(--axis)"></i>Put in: <b>${money(pd, 0)}</b></div><div>Growth: <b>${money(b - pd)}</b></div>`;
+      const wr = wrap.getBoundingClientRect();
+      placeTip(tip, wrap, rr.left - wr.left + X(a) / W * rr.width, rr.top - wr.top + m.t);
+    };
+    hit.addEventListener('pointermove', show); hit.addEventListener('pointerdown', show);
+    hit.addEventListener('pointerleave', () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); });
+  }
+  function drawMerged() {
+    const svg = $('e_svgM'), W = Math.max(260, Math.round(svg.parentNode.clientWidth));
+    const x = E.amt, r = E.r / 100, R = E.R, age = E.age, H = 116, m = { l: 4, r: 8 };
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.textContent = '';
+    const X = v => m.l + v / eY.max * (W - m.l - m.r);
+    const wrap = $('e_wrap'), tip = wrap.querySelector('.tip');
+    ['A', 'B'].forEach((w, k) => {
+      const bal = lerpAt(a => eBal(w, x, r, a), age), pd = lerpAt(a => ePaid(w, x, R, a), age), col = w === 'A' ? 'var(--s1)' : 'var(--s2)', y = 4 + k * 56;
+      const t = el('text', { x: m.l, y: y + 16, class: 'lane' }, svg, `Saver ${w}  `);
+      el('tspan', { class: 'big' }, t, compact(bal));
+      el('tspan', { class: 'lanenote', dx: 8 }, t, `put in ${compact(ePaid(w, x, R, Math.floor(age + 1e-9)))}`);
+      el('rect', { x: X(0), y: y + 24, width: Math.max(0, X(pd) - X(0)), height: 22, style: 'fill:var(--axis);opacity:.6' }, svg);
+      el('rect', { x: X(pd), y: y + 24, width: Math.max(0, X(bal) - X(pd)), height: 22, style: `fill:${col};opacity:.75` }, svg);
+      const hit = el('rect', { x: 0, y, width: W, height: 52, fill: 'transparent' }, svg);
+      const show = () => { tip.innerHTML = `<div style="color:var(--muted)">Saver ${w} · age ${Math.round(age)}</div><div><i style="background:${col}"></i>Balance: <b>${money(bal)}</b></div><div><i style="background:var(--axis)"></i>Put in: <b>${money(pd, 0)}</b></div>`;
+        const wr = wrap.getBoundingClientRect(), sr = svg.getBoundingClientRect(); placeTip(tip, wrap, sr.left - wr.left + sr.width * 0.4, sr.top - wr.top + (y + 50) / H * sr.height); };
+      hit.addEventListener('pointerenter', show); hit.addEventListener('pointerdown', show); hit.addEventListener('pointerleave', () => { tip.hidden = true; });
+    });
+    const f = eFinal(), done = age >= R - 1e-9;
+    $('e_mTitle').textContent = done ? `At ${R}: side by side` : `At age ${Math.floor(age)}: side by side`;
+    const who = eWho(f);
+    $('e_mNote').innerHTML = !done ? '&nbsp;' : who === 'A' ? `A put in <b>${fracWord(f.pA / f.pB)}</b> as much money as B, and ends with <b>${num(f.A / f.B, 1)}×</b> as much.`
+      : who === 'B' ? `B ends with <b>${num(f.B / f.A, 1)}×</b> as much, but put in <b>${num(f.pB / f.pA, 1)}×</b> as much money.` : `About a tie: ${pct(E.r)} is close to the break-even return.`;
+  }
+  function drawE() {
+    drawSaver('A'); drawSaver('B'); drawMerged();
+    $('e_age').value = Math.floor(E.age + 1e-9); $('e_ageOut').textContent = Math.floor(E.age + 1e-9);
+  }
+  function ePlayBtn() { $('e_play').textContent = E.playing ? '❚❚ Pause' : `▶ Play ages 20 → ${E.R}`; }
+  function eStop() { E.playing = false; cancelAnimationFrame(E.raf); ePlayBtn(); }
+  function ePlay(fromStart) {
+    eStop();
+    if (reduceMotion) { E.age = E.R; drawE(); return; } // reduced motion: show the end state
+    if (fromStart || E.age >= E.R) E.age = 20;
+    let prev = performance.now(); E.playing = true; ePlayBtn();
+    const tick = now => { E.age = Math.min(E.R, E.age + (now - prev) / 120); prev = now; drawE(); if (E.playing && E.age < E.R) E.raf = requestAnimationFrame(tick); else { E.playing = false; ePlayBtn(); } };
+    E.raf = requestAnimationFrame(tick);
+  }
   function renderE0() {
     const x = E.amt, r = E.r / 100, R = E.R;
-    $('e_amtOut').textContent = money(x, 0); $('e_rOut').textContent = pct(E.r);
-    document.querySelectorAll('.e_R').forEach(s => { s.textContent = R; });
-    const A = eA(x, r, R), B = eB(x, r, R), A30 = eA(x, r, 30), paidA = 10 * x, paidB = (R - 30) * x;
-    $('e_A').textContent = money(A); $('e_Asub').textContent = `${money(paidA, 0)} deposited · 10 deposits`;
-    $('e_B').textContent = money(B); $('e_Bsub').textContent = `${money(paidB, 0)} deposited · ${R - 30} deposits`;
-    const be = eBreakEven(R);
-    let v;
-    if (Math.abs(A - B) < 0.005 * Math.max(A, B)) v = `<b>About a tie.</b> At ${pct(E.r)} the two savers end up level at ${R}.`;
-    else if (A > B) v = `<b style="color:var(--s1)">Saver A wins</b> by ${money(A - B)}, with one third of the deposits. A's ${money(A30)} at age 30 compounds for ${R - 30} more years.`;
-    else v = `<b style="color:var(--s2)">Saver B wins</b> by ${money(B - A)}. At ${pct(E.r)} the extra ${R - 40} deposits beat A's head start.`;
-    $('e_verdict').innerHTML = v + ` Break-even return: <b>${pct(be)}</b>.`;
-    const mx = Math.max(A, B);
-    $('e_bars').innerHTML = [['A', A, paidA, 'var(--s1)'], ['B', B, paidB, 'var(--s2)']].map(([n, end, paid, c]) =>
-      `<div class="cbar"><div class="t"><span>Saver ${n}: deposited ${money(paid, 0)}</span><span>growth ${money(Math.max(0, end - paid), 0)}</span></div><div class="bar" role="img" aria-label="Saver ${n}: ${money(paid, 0)} deposited, ${money(end, 0)} at ${R}"><span class="paid" style="width:${Math.min(paid, end) / mx * 100}%"></span><span style="width:${Math.max(0, end - paid) / mx * 100}%;background:${c}"></span></div></div>`).join('') +
-      `<div class="ckey"><span><i style="background:var(--axis)"></i>Your own deposits</span><span><i style="background:linear-gradient(90deg,var(--s1) 50%,var(--s2) 50%)"></i>Interest on interest (growth)</span></div>`;
-    // chart
-    const ages = []; for (let a = 20; a <= R; a++) ages.push(a);
-    const pA = ages.map(a => [a, eA(x, r, a)]), pB = ages.map(a => [a, eB(x, r, a)]);
-    const nt = niceTicks(0, mx * 1.04, 5);
-    lineChart({ wrap: $('e_wrap'), x: [20, R], y: [0, nt.max], yTicks: nt.ticks, yFmt: compact, xTicks: ages.filter(a => a % 5 === 0), xFmt: a => a, xTitle: 'Age', yTitle: 'Balance',
-      labels: true, snap: Math.round,
-      series: [{ name: 'Saver A', color: 'var(--s1)', pts: pA, label: 'A ' + compact(A) }, { name: 'Saver B', color: 'var(--s2)', pts: pB, label: 'B ' + compact(B) }],
-      refs: [{ x: 30, label: 'A stops, B starts' }],
-      tipFmt: v => money(v, 0), xTip: a => `Age ${a}` });
-    table($('e_tbl'), ['Age', 'A deposited', 'A balance', 'B deposited', 'B balance'], ages.map(a => [a, money(Math.min(10, Math.max(0, a - 20)) * x, 0), money(eA(x, r, a)), money(Math.max(0, Math.min(R, a) - 30) * x, 0), money(eB(x, r, a))]), R - 20);
-    // keystrokes
+    $('e_amtOut').textContent = money(x, 0); $('e_rOut').textContent = pct(E.r, 1);
+    $('e_age').max = R; if (E.age > R) E.age = R;
+    const f = eFinal(), be = eBreakEven(R), A30 = eA(x, r, 30), who = eWho(f);
+    eY = niceTicks(0, Math.max(f.A, f.B) * 1.04, 4);
+    $('e_take').textContent = who === 'A' ? `Why? A's first deposit grows for ${R - 21} years, B's for only ${R - 31}. Time does the work.`
+      : who === 'B' ? `At ${pct(E.r, 1)} B's extra deposits win. Starting early wins when the return is above ${pct(be)}.`
+      : `About a tie: ${pct(E.r, 1)} is close to the break-even return of ${pct(be)}.`;
+    $('e_verdict').innerHTML = `At ${pct(E.r)}: A ${money(f.A)}, B ${money(f.B)}. Break-even return (where they tie): <b>${pct(be)}</b>.`;
     const I = plain(E.r), rr = plain(r);
     $('e_calc').innerHTML = `
       <div><h4><i style="background:var(--s1)"></i>Saver A, two steps</h4>
-      <div class="keys"><span class="step">Step 1, deposits to age 30:</span> 10 ${cap('N')} ${I} ${cap('I/Y')} 0 ${cap('PV')} ${num(-x, 0)} ${cap('PMT')} ${cap('CPT')} ${cap('FV')} <span class="ans">= ${num(A30)}</span></div>
-      <div class="keys"><span class="step">Step 2, let it grow to ${R}:</span> ${R - 30} ${cap('N')} ${num(-A30)} ${cap('PV')} 0 ${cap('PMT')} ${cap('CPT')} ${cap('FV')} <span class="ans">= ${num(A)}</span></div>
-      <div class="formula">=FV(${rr}, 10, ${-x}) → ${num(A30)}<br>=FV(${rr}, ${R - 30}, 0, ${-A30.toFixed(2)}) → ${num(A)}</div></div>
+      <div class="keys"><span class="step">Deposits to age 30:</span> 10 ${cap('N')} ${I} ${cap('I/Y')} 0 ${cap('PV')} ${num(-x, 0)} ${cap('PMT')} ${cap('CPT')} ${cap('FV')} <span class="ans">= ${num(A30)}</span></div>
+      <div class="keys"><span class="step">Grow to ${R}:</span> ${R - 30} ${cap('N')} ${num(-A30)} ${cap('PV')} 0 ${cap('PMT')} ${cap('CPT')} ${cap('FV')} <span class="ans">= ${num(f.A)}</span></div>
+      <div class="formula">=FV(${rr}, 10, ${-x}) → ${num(A30)}<br>=FV(${rr}, ${R - 30}, 0, ${-A30.toFixed(2)}) → ${num(f.A)}</div></div>
       <div><h4><i style="background:var(--s2)"></i>Saver B, one step</h4>
-      <div class="keys">${R - 30} ${cap('N')} ${I} ${cap('I/Y')} 0 ${cap('PV')} ${num(-x, 0)} ${cap('PMT')} ${cap('CPT')} ${cap('FV')} <span class="ans">= ${num(B)}</span></div>
-      <div class="formula">=FV(${rr}, ${R - 30}, ${-x}) → ${num(B)}</div></div>`;
-    $('e_take').innerHTML = `Saver A puts in ${money(paidA, 0)}; Saver B puts in ${money(paidB, 0)}. At ${pct(E.r)} A's deposits grow to ${num(A / paidA, 1)}× what was put in, B's to ${num(B / paidB, 1)}×. The difference is time: A's first dollar compounds for ${R - 21} years, B's for only ${R - 31}.`;
+      <div class="keys">${R - 30} ${cap('N')} ${I} ${cap('I/Y')} 0 ${cap('PV')} ${num(-x, 0)} ${cap('PMT')} ${cap('CPT')} ${cap('FV')} <span class="ans">= ${num(f.B)}</span></div>
+      <div class="formula">=FV(${rr}, ${R - 30}, ${-x}) → ${num(f.B)}</div></div>`;
+    const ages = []; for (let a = 20; a <= R; a++) ages.push(a);
+    table($('e_tbl'), ['Age', 'A put in', 'A balance', 'B put in', 'B balance'], ages.map(a => [a, money(ePaid('A', x, R, a), 0), money(eA(x, r, a)), money(ePaid('B', x, R, a), 0), money(eB(x, r, a))]), R - 20);
+    document.querySelectorAll('.e_R').forEach(s => { s.textContent = R; });
+    drawE(); ePlayBtn();
   }
   $('e_amt').addEventListener('input', e => { E.amt = +e.target.value; renderE(); });
   $('e_r').addEventListener('input', e => { E.r = +e.target.value; renderE(); });
-  $('e_60').addEventListener('click', () => { E.R = 60; setPressed([$('e_60'), $('e_65')], $('e_60')); renderE(); });
-  $('e_65').addEventListener('click', () => { E.R = 65; setPressed([$('e_60'), $('e_65')], $('e_65')); renderE(); });
+  $('e_age').addEventListener('input', e => { eStop(); E.age = +e.target.value; drawE(); });
+  $('e_play').addEventListener('click', () => { if (E.playing) eStop(); else ePlay(false); });
+  const setR = R => { eStop(); E.R = R; E.age = R; setPressed([$('e_60'), $('e_65')], R === 60 ? $('e_60') : $('e_65')); renderE(); };
+  $('e_60').addEventListener('click', () => setR(60));
+  $('e_65').addEventListener('click', () => setR(65));
   $('e_be').addEventListener('click', () => { E.r = Math.round(eBreakEven(E.R) * 10) / 10; $('e_r').value = E.r; renderE(); });
   $('e_sp').addEventListener('click', () => { E.r = 10; $('e_r').value = 10; renderE(); });
 
   // ===================== 2. WHAT $1 BECAME =====================
   const H2 = { start: 1928, real: false, log: true };
-  const NAMES = [['sp', 'S&P 500', 'var(--s1)'], ['bd', '10-yr T-bond', 'var(--s2)'], ['tb', 'T-bills', 'var(--s3)']];
+  const NAMES = [['sp', 'Stocks', 'var(--s1)'], ['bd', 'Bonds', 'var(--s2)'], ['tb', 'T-bills', 'var(--s3)']];
   function histPaths(start, real) {
-    const i0 = start - HIST.first, out = {};
-    const cpi0 = HIST.cpi[i0]; // December of the year before the start year
+    const i0 = start - HIST.first, out = {}, cpi0 = HIST.cpi[i0]; // December of the year before the start year
     NAMES.forEach(([k]) => {
       let v = 1; const pts = [[start - 1, 1]];
-      for (let i = i0; i < HIST.sp.length; i++) { v *= 1 + HIST[k][i]; const yr = HIST.first + i; pts.push([yr, real ? v / (HIST.cpi[i + 1] / cpi0) : v]); }
+      for (let i = i0; i < HIST.sp.length; i++) { v *= 1 + HIST[k][i]; pts.push([HIST.first + i, real ? v / (HIST.cpi[i + 1] / cpi0) : v]); }
       out[k] = pts;
     });
     return out;
@@ -590,8 +637,7 @@ footer.note p { margin: 0; }
   function renderH0() {
     const s = H2.start, last = HIST.last, N = last - s + 1;
     $('h_startOut').textContent = s;
-    const P = histPaths(s, H2.real);
-    const ends = {}; NAMES.forEach(([k]) => { ends[k] = P[k][P[k].length - 1][1]; });
+    const P = histPaths(s, H2.real), ends = {}; NAMES.forEach(([k]) => { ends[k] = P[k][P[k].length - 1][1]; });
     const all = NAMES.flatMap(([k]) => P[k].map(p => p[1]));
     let y0, y1, ticks;
     if (H2.log) {
@@ -600,29 +646,38 @@ footer.note p { margin: 0; }
       ticks = []; for (let e = Math.ceil(Math.log10(y0)); e <= Math.floor(Math.log10(y1) + 1e-9); e++) ticks.push(Math.pow(10, e));
     } else { const nt = niceTicks(0, Math.max(...all) * 1.03, 5); y0 = 0; y1 = nt.max; ticks = nt.ticks; }
     const xt = []; for (let yr = Math.ceil((s - 1) / 10) * 10; yr <= last; yr += (N > 50 ? 10 : N > 20 ? 5 : 2)) xt.push(yr);
-    const lab = k => ({ sp: 'Stocks ', bd: 'Bonds ', tb: 'Bills ' }[k]) + (ends[k] >= 100 ? money(ends[k], 0) : money(ends[k]));
-    lineChart({ wrap: $('h_wrap'), log: H2.log, x: [s - 1, last], y: [y0, y1], yTicks: ticks, yFmt: H2.log ? logTickFmt : compact, xTicks: xt, xFmt: v => v, xTitle: 'End of year', yTitle: H2.real ? `Value in ${s - 1} dollars` : 'Value of $1', ml: 64,
+    lineChart({ wrap: $('h_wrap'), log: H2.log, x: [s - 1, last], y: [y0, y1], yTicks: ticks, yFmt: H2.log ? logTickFmt : compact, xTicks: xt, xFmt: v => v, xTitle: 'End of year', yTitle: H2.real ? `In ${s - 1} dollars` : 'Value of $1', ml: 64,
       labels: true, snap: Math.round,
-      series: NAMES.map(([k, n, c]) => ({ name: n, color: c, pts: P[k], label: lab(k) })),
+      series: NAMES.map(([k, n, c]) => ({ name: n, color: c, pts: P[k], label: `${n} ${big$(ends[k])}` })),
       refs: H2.log ? [{ y: 1, label: 'Your $1', below: true }] : [],
       tipFmt: v => money(v), xTip: yr => yr === s - 1 ? `Start of ${s}` : `End of ${yr}${H2.real ? ' (after inflation)' : ''}` });
-    $('h_title').textContent = `Growth of $1 invested at the start of ${s}${H2.real ? ', after inflation' : ''}`;
-    $('h_scalenote').textContent = H2.log ? 'Log scale: each gridline is 10 times the one below it, so a steady growth rate plots as a straight line.' : 'Linear scale: equal distances are equal dollar amounts.';
+    $('h_title').textContent = `$1 invested at the start of ${s}${H2.real ? ', after inflation' : ''}`;
+    $('h_scalenote').textContent = H2.log ? 'Log scale: each gridline is 10 times the one below.' : 'Linear scale.';
     const cagr = k => (Math.pow(ends[k], 1 / N) - 1) * 100;
+    $('h_take').textContent = `${H2.real ? 'After inflation, stocks' : 'Stocks'} turned $1 into ${big$(ends.sp)} (${pct(cagr('sp'))} a year); T-bills into ${big$(ends.tb)} (${pct(cagr('tb'))} a year).`;
     $('h_stats').innerHTML = NAMES.map(([k, n, c]) => `<div class="stat"><span class="k"><i style="background:${c}"></i>${n}</span><span class="v">${money(ends[k])}</span><span class="s">${pct(cagr(k))} a year${H2.real ? ' after inflation' : ''}</span></div>`).join('');
-    const fv = ends.sp;
-    $('h_keys').innerHTML = `S&amp;P 500, ${s}–${last}: ${N} ${cap('N')} −1 ${cap('PV')} 0 ${cap('PMT')} ${num(fv)} ${cap('FV')} ${cap('CPT')} ${cap('I/Y')} <span class="ans">= ${pct(cagr('sp'))}</span>`;
-    $('h_excel').textContent = `=RATE(${N}, 0, -1, ${fv.toFixed(2)}) → ${pct(cagr('sp'))}`;
+    $('h_keys').innerHTML = `Stocks, ${s}–${last}: ${N} ${cap('N')} −1 ${cap('PV')} 0 ${cap('PMT')} ${num(ends.sp)} ${cap('FV')} ${cap('CPT')} ${cap('I/Y')} <span class="ans">= ${pct(cagr('sp'))}</span>`;
+    $('h_excel').textContent = `=RATE(${N}, 0, -1, ${ends.sp.toFixed(2)}) → ${pct(cagr('sp'))}`;
     const rows = P.sp.map((p, k) => [p[0] === s - 1 ? `Start ${s}` : p[0], money(p[1]), money(P.bd[k][1]), money(P.tb[k][1])]);
     table($('h_tbl'), ['Year end', 'S&P 500', '10-yr T-bond', '3-month T-bill'], rows, rows.length - 1);
-    $('h_take').innerHTML = `Over ${N} years the S&amp;P 500 compounded at ${pct(cagr('sp'))} a year and T-bills at ${pct(cagr('tb'))}${H2.real ? ' after inflation' : ''}. A gap of ${num(cagr('sp') - cagr('tb'), 1)} percentage points a year turned into a ${num(ends.sp / ends.tb, 0)}-fold difference in ending wealth, in exchange for big losses along the way${(() => { const c = [1931, 1974, 2002, 2008, 2022].filter(y => y >= s); return c.length ? ` (find ${c.length > 1 ? c.slice(0, -1).join(', ') + ' and ' + c[c.length - 1] : c[0]})` : ''; })()}.`;
+    renderD();
   }
-  $('h_src').innerHTML = `Data: annual total returns of the S&amp;P 500 (dividends reinvested), the 10-year U.S. Treasury bond and the 3-month T-bill, ${HIST.first}–${HIST.last}, from Aswath Damodaran, <i>Historical Returns on Stocks, Bonds and Bills</i> (histretSP, NYU Stern, updated January 2026). Inflation: CPI-U for all urban consumers, not seasonally adjusted, December to December (U.S. BLS via FRED, series CPIAUCNS). Last year covered: ${HIST.last}.`;
+  $('h_src').innerHTML = `Story 2 data: annual total returns of the S&amp;P 500 (dividends reinvested), the 10-year U.S. Treasury bond and the 3-month T-bill, ${HIST.first}–${HIST.last}, from Aswath Damodaran, <i>Historical Returns on Stocks, Bonds and Bills</i> (histretSP, NYU Stern, updated January 2026). Inflation: CPI-U, not seasonally adjusted, December to December (U.S. BLS via FRED, series CPIAUCNS). Last year covered: ${HIST.last}.`;
   $('h_start').addEventListener('input', e => { H2.start = +e.target.value; renderH(); });
   $('h_nom').addEventListener('click', () => { H2.real = false; setPressed([$('h_nom'), $('h_real')], $('h_nom')); renderH(); });
   $('h_real').addEventListener('click', () => { H2.real = true; setPressed([$('h_nom'), $('h_real')], $('h_real')); renderH(); });
   $('h_log').addEventListener('click', () => { H2.log = true; setPressed([$('h_log'), $('h_lin')], $('h_log')); renderH(); });
   $('h_lin').addEventListener('click', () => { H2.log = false; setPressed([$('h_log'), $('h_lin')], $('h_lin')); renderH(); });
+  // Rule of 72 (inside the details of story 2)
+  let DR = 10;
+  const exactN = r => Math.log(2) / Math.log(1 + r / 100);
+  function renderD() {
+    const ex = exactN(DR), r72 = 72 / DR, err = r72 - ex;
+    $('d_rOut').textContent = pct(DR, 1);
+    $('d_text').textContent = `72 ÷ ${num(DR, 1)} = ${num(r72)} years to double. Exact: ${num(ex)} years, so the rule is ${Math.abs(err) < 0.01 ? 'within 0.01 years' : `${num(Math.abs(err))} years too ${err > 0 ? 'long' : 'short'}`}. It is almost exact near 7.85%.`;
+    $('d_keys').innerHTML = `${plain(DR)} ${cap('I/Y')} −1 ${cap('PV')} 0 ${cap('PMT')} 2 ${cap('FV')} ${cap('CPT')} ${cap('N')} <span class="ans">= ${num(ex)}</span> · Excel: =NPER(${plain(DR / 100)}, 0, -1, 2)`;
+  }
+  $('d_r').addEventListener('input', e => { DR = +e.target.value; renderD(); });
 
   // ===================== 3. TIMELINE =====================
   const TL = { n: 3, r: 4, bgn: false, cf: [0, 100, 100, 100, 0, 0, 0, 0, 0, 0, 0] };
@@ -636,8 +691,8 @@ footer.note p { margin: 0; }
     { t: 'Project, find IRR (slide 33)', n: 4, r: 10, bgn: false, cf: [-437, 75, 225, 0, 300] },
   ];
   const presetBtns = PRESETS.map(p => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = p.t; b.setAttribute('aria-pressed', 'false'); b.addEventListener('click', () => { TL.n = p.n; TL.r = p.r; TL.bgn = p.bgn; TL.cf = p.cf.concat(Array(11).fill(0)).slice(0, 11); syncT(); setPressed(presetBtns, b); }); $('t_presets').appendChild(b); return b; });
-  // effective flows by time: in BGN, the payment for period t arrives at t − 1
-  function effFlows() { const f = Array(TL.n + 1).fill(0); f[0] += TL.cf[0]; for (let t = 1; t <= TL.n; t++) f[TL.bgn ? t - 1 : t] += TL.cf[t]; return f; }
+  function flowsFor(bgn) { const f = Array(TL.n + 1).fill(0); f[0] += TL.cf[0]; for (let t = 1; t <= TL.n; t++) f[bgn ? t - 1 : t] += TL.cf[t]; return f; }
+  const effFlows = () => flowsFor(TL.bgn);
   const npv = (f, r) => f.reduce((s, c, t) => s + c / Math.pow(1 + r, t), 0);
   function irr(f) {
     if (!(f.some(c => c > 0) && f.some(c => c < 0))) return null;
@@ -647,6 +702,7 @@ footer.note p { margin: 0; }
     for (let k = 0; k < 100; k++) { const mid = (a + b) / 2; if (npv(f, a) * npv(f, mid) <= 0) b = mid; else a = mid; }
     return (a + b) / 2 * 100;
   }
+  function tCompare() { const r = TL.r / 100, pe = npv(flowsFor(false), r), pb = npv(flowsFor(true), r); return { pe, pb, c: Math.abs(pe - pb) < 0.005 ? 'same' : pb > pe ? 'bgn' : 'end' }; }
   function buildInputs() {
     const g = $('t_cfs'); g.innerHTML = '';
     for (let t = 0; t <= TL.n; t++) {
@@ -661,94 +717,76 @@ footer.note p { margin: 0; }
   const sup = n => String(n).split('').map(d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]).join('');
   function renderT0() {
     const n = TL.n, r = TL.r / 100, f = effFlows();
-    $('t_nOut').textContent = n; $('t_rOut').textContent = pct(TL.r);
+    $('t_nOut').textContent = n; $('t_rOut').textContent = pct(TL.r, 1);
     const pv = f.map((c, t) => c / Math.pow(1 + r, t)), total = pv.reduce((a, b) => a + b, 0);
-    // the other mode, for comparison
-    const fOther = (() => { const g = Array(n + 1).fill(0); g[0] += TL.cf[0]; for (let t = 1; t <= n; t++) g[!TL.bgn ? t - 1 : t] += TL.cf[t]; return g; })();
-    const totalOther = npv(fOther, r);
-    const ir = irr(f);
-    const hasPeriodFlows = TL.cf.slice(1, n + 1).filter(c => c !== 0).length >= 2;
-    $('t_stats').innerHTML = `<div class="stat"><span class="k"><i style="background:var(--s1)"></i>${f[0] < 0 && f.some(c => c > 0) ? 'NPV' : 'Present value'} at t = 0 (${TL.bgn ? 'BGN' : 'END'})</span><span class="v">${money(total)}</span><span class="s">sum of the blue bars</span></div>` +
-      (hasPeriodFlows ? `<div class="stat"><span class="k">Same inputs in ${TL.bgn ? 'END' : 'BGN'} mode</span><span class="v">${money(totalOther)}</span><span class="s">${Math.abs(totalOther) > 1e-9 && Math.abs(total) > 1e-9 && TL.cf[0] === 0 ? `ratio ${num(TL.bgn ? total / totalOther : totalOther / total, 4)} = 1 + I` : ''}</span></div>` : '') +
+    const ir = irr(f), cmp = tCompare();
+    $('t_take').textContent = cmp.c === 'same' ? `Timing makes no difference here: ${money(cmp.pe)} either way.`
+      : cmp.c === 'bgn' ? `Value today: ${money(cmp.pe)} with END, ${money(cmp.pb)} with BGN. Each payment comes a year sooner, so it shrinks less.`
+      : `Value today: ${money(cmp.pe)} with END, ${money(cmp.pb)} with BGN. Paying out sooner costs more in today's money.`;
+    $('t_stats').innerHTML = `<div class="stat"><span class="k">Value today, END</span><span class="v">${money(cmp.pe)}</span></div><div class="stat"><span class="k">Value today, BGN</span><span class="v">${money(cmp.pb)}</span><span class="s">${TL.cf[0] === 0 && Math.abs(cmp.pe) > 1e-9 ? `BGN ÷ END = ${num(cmp.pb / cmp.pe, 4)} = 1 + I` : ''}</span></div>` +
       (ir != null ? `<div class="stat"><span class="k">IRR (CPT IRR)</span><span class="v">${pct(ir)}</span><span class="s">rate where NPV = 0</span></div>` : '');
-    $('t_mode').innerHTML = TL.bgn
-      ? `<b>BGN mode:</b> each period's payment arrives at the <i>start</i> of the period, one tick earlier (dashed outlines show where END would put it). Every flow is discounted one period less, so the PV is (1 + I) times bigger. On the calculator: ${cap('2ND')} ${cap('BGN')} ${cap('2ND')} ${cap('SET')}, then reset to END afterward.`
-      : `<b>END mode</b> (the default): the payment for period t arrives at the end of the period, at tick t. Time 0 is today.`;
+    $('t_mode').innerHTML = TL.bgn ? `BGN: each period's payment arrives at the start of the period, one tick earlier (dashed outlines show where END puts it). On the calculator: ${cap('2ND')} ${cap('BGN')} ${cap('2ND')} ${cap('SET')}, then reset to END.`
+      : 'END (the default): the payment for period t arrives at the end of the period, at tick t. Time 0 is today.';
     $('t_ghostkey').hidden = !TL.bgn;
     drawTimeline(f, pv, total);
-    table($('t_tbl'), ['Time t', 'Cash flow', 'Discount factor 1/(1+I)ᵗ', 'PV at t = 0'], f.map((c, t) => [t, money(c), (1 / Math.pow(1 + r, t)).toFixed(6), money(pv[t])]).concat([['Total', '', '', money(total)]]));
-    // keystrokes
+    table($('t_tbl'), ['Time t', 'Cash flow', 'Discount factor 1/(1+I)ᵗ', 'Value at t = 0'], f.map((c, t) => [t, money(c), (1 / Math.pow(1 + r, t)).toFixed(6), money(pv[t])]).concat([['Total', '', '', money(total)]]));
     const I = plain(TL.r), rr = plain(r);
-    const cfWork = (() => {
-      const groups = []; for (let t = 1; t < f.length; t++) { const g = groups[groups.length - 1]; if (g && g.c === f[t]) g.k++; else groups.push({ c: f[t], k: 1 }); }
-      while (groups.length && groups[groups.length - 1].c === 0) groups.pop();
-      let s = `${cap('CF')} ${cap('2ND')} ${cap('CLR WORK')} ${num(f[0], f[0] % 1 ? 2 : 0)} ${cap('ENTER')} ${cap('↓')} `;
-      groups.forEach((g, k) => { const j = String(k + 1).padStart(2, '0'); s += `<span class="step">C${j}</span> ${num(g.c, g.c % 1 ? 2 : 0)} ${cap('ENTER')} ${cap('↓')} <span class="step">F${j}</span> ${g.k} ${cap('ENTER')} ${cap('↓')} `; });
-      s += `${cap('NPV')} ${I} ${cap('ENTER')} ${cap('↓')} ${cap('CPT')} <span class="ans">NPV = ${num(total)}</span>`;
-      if (ir != null) s += ` · ${cap('IRR')} ${cap('CPT')} <span class="ans">IRR = ${pct(ir)}</span>`;
-      return s;
-    })();
+    const groups = []; for (let t = 1; t < f.length; t++) { const g = groups[groups.length - 1]; if (g && g.c === f[t]) g.k++; else groups.push({ c: f[t], k: 1 }); }
+    while (groups.length && groups[groups.length - 1].c === 0) groups.pop();
+    let cfWork = `${cap('CF')} ${cap('2ND')} ${cap('CLR WORK')} ${num(f[0], f[0] % 1 ? 2 : 0)} ${cap('ENTER')} ${cap('↓')} `;
+    groups.forEach((g, k) => { const j = String(k + 1).padStart(2, '0'); cfWork += `<span class="step">C${j}</span> ${num(g.c, g.c % 1 ? 2 : 0)} ${cap('ENTER')} ${cap('↓')} <span class="step">F${j}</span> ${g.k} ${cap('ENTER')} ${cap('↓')} `; });
+    cfWork += `${cap('NPV')} ${I} ${cap('ENTER')} ${cap('↓')} ${cap('CPT')} <span class="ans">NPV = ${num(total)}</span>`;
+    if (ir != null) cfWork += ` · ${cap('IRR')} ${cap('CPT')} <span class="ans">IRR = ${pct(ir)}</span>`;
     const rest = f.slice(1); while (rest.length && rest[rest.length - 1] === 0) rest.pop();
-    let html = `<div><h4>Cash-flow worksheet (any stream)</h4><div class="keys">${cfWork}</div><div class="formula">=${f[0] !== 0 ? plain(f[0]) + '+' : ''}NPV(${rr}, ${rest.map(plain).join(', ') || 0}) → ${num(total)}</div></div>`;
-    // TVM keys when the stream is a lump sum or a level annuity with CF0 = 0
+    let html = `<div><h4>Cash-flow worksheet (${TL.bgn ? 'BGN' : 'END'})</h4><div class="keys">${cfWork}</div><div class="formula">=${f[0] !== 0 ? plain(f[0]) + '+' : ''}NPV(${rr}, ${rest.map(plain).join(', ') || 0}) → ${num(total)}</div></div>`;
     const P = TL.cf.slice(1, n + 1), level = TL.cf[0] === 0 && P.every(c => c === P[0]) && P[0] !== 0;
     const lump = TL.cf[0] === 0 && !TL.bgn && P.slice(0, -1).every(c => c === 0) && P[n - 1] !== 0;
-    if (level) html += `<div><h4>Five keys (level annuity, ${TL.bgn ? 'BGN' : 'END'} mode)</h4><div class="keys">${TL.bgn ? `${cap('2ND')} ${cap('BGN')} ${cap('2ND')} ${cap('SET')} → BGN · ` : ''}${n} ${cap('N')} ${I} ${cap('I/Y')} ${num(P[0], P[0] % 1 ? 2 : 0)} ${cap('PMT')} 0 ${cap('FV')} ${cap('CPT')} ${cap('PV')} <span class="ans">= ${num(-total)}</span></div><div class="formula">=PV(${rr}, ${n}, ${plain(P[0])}, 0, ${TL.bgn ? 1 : 0}) → ${num(-total)}</div><p class="note">PV comes out with the opposite sign: receiving the payments is worth paying ${money(Math.abs(total))} today.</p></div>`;
+    if (level) html += `<div><h4>Five keys (${TL.bgn ? 'BGN' : 'END'} mode)</h4><div class="keys">${TL.bgn ? `${cap('2ND')} ${cap('BGN')} ${cap('2ND')} ${cap('SET')} · ` : ''}${n} ${cap('N')} ${I} ${cap('I/Y')} ${num(P[0], P[0] % 1 ? 2 : 0)} ${cap('PMT')} 0 ${cap('FV')} ${cap('CPT')} ${cap('PV')} <span class="ans">= ${num(-total)}</span></div><div class="formula">=PV(${rr}, ${n}, ${plain(P[0])}, 0, ${TL.bgn ? 1 : 0}) → ${num(-total)}</div><p class="note">PV comes out negative: it is what you would pay today for these payments.</p></div>`;
     else if (lump) html += `<div><h4>Five keys (lump sum)</h4><div class="keys">${n} ${cap('N')} ${I} ${cap('I/Y')} 0 ${cap('PMT')} ${num(P[n - 1], P[n - 1] % 1 ? 2 : 0)} ${cap('FV')} ${cap('CPT')} ${cap('PV')} <span class="ans">= ${num(-total)}</span></div><div class="formula">=PV(${rr}, ${n}, 0, ${plain(P[n - 1])}) → ${num(-total)}</div></div>`;
-    else html += `<div><h4>Why not the five keys?</h4><p class="note" style="margin:0">PMT must be the same amount every period, starting at t = 1 (END) or t = 0 (BGN). This stream is uneven, deferred or has a CF0, so use the cash-flow worksheet, or split it into pieces (as in error clinic 08: value the annuity, then discount one more period).</p></div>`;
+    else html += `<div><h4>Why not the five keys?</h4><p class="note">PMT must be the same every period, starting at t = 1 (END) or t = 0 (BGN). For uneven, deferred or CF0 streams, use the cash-flow worksheet, or split the problem (error clinic 08).</p></div>`;
     $('t_calc').innerHTML = html;
   }
   function drawTimeline(f, pv, total) {
     const wrap = $('t_wrap'), svg = $('t_svg'), tip = wrap.querySelector('.tip');
-    const W = Math.max(280, Math.round(svg.parentNode.clientWidth)), narrow = W < 520, H = narrow ? 280 : 330;
+    const W = Math.max(280, Math.round(svg.parentNode.clientWidth)), narrow = W < 520, H = narrow ? 280 : 320;
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.textContent = '';
-    const n = TL.n, r = TL.r / 100;
-    const m = { l: narrow ? 50 : 60, r: 10, t: 22, b: 40 };
-    const slots = n + 2, sw = (W - m.l - m.r) / slots; // slot 0 = total column, slots 1..n+1 = t = 0..n
-    const SX = k => m.l + (k + 0.5) * sw;
+    const n = TL.n, r = TL.r / 100, m = { l: narrow ? 50 : 60, r: 10, t: 22, b: 40 };
+    const slots = n + 2, sw = (W - m.l - m.r) / slots, SX = k => m.l + (k + 0.5) * sw;
     const posSum = pv.filter(v => v > 0).reduce((a, b) => a + b, 0), negSum = pv.filter(v => v < 0).reduce((a, b) => a + b, 0);
     const ghost = TL.bgn ? TL.cf : [];
     let hi = Math.max(0, posSum, ...f, ...ghost.slice(1, n + 1)), lo = Math.min(0, negSum, ...f, ...ghost.slice(0, n + 1));
     if (hi === 0 && lo === 0) hi = 100;
-    const nt = niceTicks(lo * 1.08, hi * 1.08, 4); const y0 = Math.min(nt.min, 0), y1 = Math.max(nt.max, 0);
+    const nt = niceTicks(lo * 1.08, hi * 1.08, 4), y0 = Math.min(nt.min, 0), y1 = Math.max(nt.max, 0);
     const Y = v => m.t + (y1 - v) / (y1 - y0 || 1) * (H - m.t - m.b);
     niceTicks(y0, y1, 4).ticks.forEach(v => { el('line', { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: 'gridl' }, svg); el('text', { x: m.l - 6, y: Y(v) + 4, 'text-anchor': 'end', class: 'tick' }, svg, compact(v)); });
-    // timeline axis
     el('line', { x1: SX(1) - sw * 0.45, x2: SX(n + 1) + sw * 0.45, y1: Y(0), y2: Y(0), class: 'tl' }, svg);
     for (let t = 0; t <= n; t++) { el('line', { x1: SX(t + 1), x2: SX(t + 1), y1: Y(0) - 5, y2: Y(0) + 5, class: 'tl' }, svg); el('text', { x: SX(t + 1), y: H - m.b + 16, 'text-anchor': 'middle', class: 'tick' }, svg, t); }
-    el('text', { x: SX(0), y: H - m.b + 16, 'text-anchor': 'middle', class: 'tick', style: 'font-weight:600' }, svg, 'Σ PV');
-    el('text', { x: (SX(1) + SX(n + 1)) / 2, y: H - 4, 'text-anchor': 'middle', class: 'axtitle' }, svg, `Time (periods) · I/Y = ${pct(TL.r)}`);
+    el('text', { x: SX(0), y: H - m.b + 16, 'text-anchor': 'middle', class: 'tick', style: 'font-weight:600' }, svg, 'Today');
+    el('text', { x: (SX(1) + SX(n + 1)) / 2, y: H - 4, 'text-anchor': 'middle', class: 'axtitle' }, svg, `Year · I/Y = ${pct(TL.r, 1)}`);
     el('line', { x1: SX(0) - sw * 0.4, x2: SX(0) + sw * 0.4, y1: Y(0), y2: Y(0), class: 'axisl' }, svg);
     const bw = Math.min(26, sw * 0.32);
-    const bar = (x, a, b, style, cls) => el('rect', { x: x, y: Math.min(Y(a), Y(b)), width: bw, height: Math.max(0.5, Math.abs(Y(a) - Y(b))), rx: 2, style, class: cls || '' }, svg);
-    // ghosts (END positions) in BGN mode
+    const bar = (x, a, b, style) => el('rect', { x, y: Math.min(Y(a), Y(b)), width: bw, height: Math.max(0.5, Math.abs(Y(a) - Y(b))), rx: 2, style }, svg);
     if (TL.bgn) for (let t = 1; t <= n; t++) if (TL.cf[t]) el('rect', { x: SX(t + 1) - bw - 1, y: Math.min(Y(0), Y(TL.cf[t])), width: bw, height: Math.abs(Y(0) - Y(TL.cf[t])), rx: 2, class: 'ghost' }, svg);
-    // stacked total column
     let up = 0, dn = 0; const segTop = [];
     pv.forEach((v, t) => { if (!v) { segTop.push(null); return; } const a = v > 0 ? up : dn, b = a + v; if (v > 0) up = b; else dn = b; bar(SX(0) - bw / 2, a, b, `fill:var(--s1);opacity:${t % 2 ? 0.75 : 1};stroke:var(--panel);stroke-width:1`); segTop.push(b); });
-    el('text', { x: SX(0), y: total >= 0 ? Y(Math.max(up, 0)) - 6 : Y(Math.min(dn, 0)) + 14, 'text-anchor': 'middle', class: 'barlab' }, svg, compact(total));
-    // per-period bars + arcs back to t = 0
+    el('text', { x: SX(0), y: total >= 0 ? Y(Math.max(up, 0)) - 7 : Y(Math.min(dn, 0)) + 16, 'text-anchor': 'middle', class: 'big' }, svg, money(total, Math.abs(total) >= 1000 ? 0 : 2));
     const showLab = n <= 6 || !narrow;
     f.forEach((c, t) => {
       const x = SX(t + 1);
       if (c) {
-        bar(x - bw - 1, 0, c, 'fill:var(--s2)');
-        bar(x + 1, 0, pv[t], 'fill:var(--s1)');
+        bar(x - bw - 1, 0, c, 'fill:var(--s2)'); bar(x + 1, 0, pv[t], 'fill:var(--s1)');
         if (showLab) el('text', { x: x - bw / 2 - 1, y: c >= 0 ? Y(c) - 5 : Y(c) + 13, 'text-anchor': 'middle', class: 'barlab' }, svg, compact(c));
         if (t > 0 && segTop[t] != null) { const xs = x + 1 + bw / 2, ys = Y(pv[t]) - (pv[t] >= 0 ? 3 : -3), xe = SX(0) + bw / 2 + 2, ye = Y(segTop[t]); const lift = Math.min(ys, ye) - 12 - t * 2; el('path', { d: `M${xs} ${ys} C ${xs} ${lift}, ${xe + 20} ${lift}, ${xe} ${ye}`, class: 'arc' }, svg); }
       }
     });
-    // hover columns
     for (let k = 0; k <= n + 1; k++) {
       const t = k - 1;
-      const hit = el('rect', { x: SX(k) - sw / 2, y: m.t, width: sw, height: H - m.t - m.b, fill: 'transparent', class: 'colhit', tabindex: 0, role: 'img', 'aria-label': k === 0 ? `Total present value ${money(total)}` : `Time ${t}: cash flow ${money(f[t])}, present value ${money(pv[t])}` }, svg);
+      const hit = el('rect', { x: SX(k) - sw / 2, y: m.t, width: sw, height: H - m.t - m.b, fill: 'transparent', class: 'colhit', tabindex: 0, role: 'img', 'aria-label': k === 0 ? `Total value today ${money(total)}` : `Time ${t}: payment ${money(f[t])}, value today ${money(pv[t])}` }, svg);
       const show = () => {
-        tip.innerHTML = k === 0 ? `<div style="color:var(--muted)">Value at t = 0</div><div><i style="background:var(--s1)"></i>Sum of PVs: <b>${money(total)}</b></div>`
-          : `<div style="color:var(--muted)">Time ${t}</div><div><i style="background:var(--s2)"></i>Cash flow: <b>${money(f[t])}</b></div><div style="color:var(--muted)">÷ ${(1 + r).toFixed(4).replace(/0+$/, '').replace(/\.$/, '')}${sup(t)} = ÷ ${Math.pow(1 + r, t).toFixed(4)}</div><div><i style="background:var(--s1)"></i>PV: <b>${money(pv[t])}</b></div>`;
-        tip.hidden = false;
+        tip.innerHTML = k === 0 ? `<div style="color:var(--muted)">Value today</div><div><i style="background:var(--s1)"></i>Sum: <b>${money(total)}</b></div>`
+          : `<div style="color:var(--muted)">Year ${t}</div><div><i style="background:var(--s2)"></i>Payment: <b>${money(f[t])}</b></div><div style="color:var(--muted)">÷ ${(1 + r).toFixed(4).replace(/0+$/, '').replace(/\.$/, '')}${sup(t)} = ÷ ${Math.pow(1 + r, t).toFixed(4)}</div><div><i style="background:var(--s1)"></i>Value today: <b>${money(pv[t])}</b></div>`;
         const wr = wrap.getBoundingClientRect(), sr = svg.getBoundingClientRect();
-        const px = sr.left - wr.left + SX(k) / W * sr.width; const tw = tip.offsetWidth;
-        tip.style.left = Math.max(0, Math.min(wr.width - tw, px + (px > wr.width / 2 ? -tw - 14 : 14))) + 'px'; tip.style.top = (sr.top - wr.top + 8) + 'px';
+        placeTip(tip, wrap, sr.left - wr.left + SX(k) / W * sr.width, sr.top - wr.top + 8);
       };
       hit.addEventListener('pointerenter', show); hit.addEventListener('pointerdown', show); hit.addEventListener('focus', show);
       hit.addEventListener('pointerleave', () => { tip.hidden = true; }); hit.addEventListener('blur', () => { tip.hidden = true; });
@@ -764,32 +802,32 @@ footer.note p { margin: 0; }
   const P1 = JACK / fvAnn(NP, G); // first payment; 30 payments growing 5% sum to the advertised amount
   const lotPV = r => { let s = 0; for (let k = 0; k < NP; k++) s += P1 * Math.pow(1 + G, k) / Math.pow(1 + r, k); return s; };
   const lotBE = (() => { let lo = 0, hi = 0.2; for (let k = 0; k < 200; k++) { const mid = (lo + hi) / 2; if (lotPV(mid) > CASH) lo = mid; else hi = mid; } return (lo + hi) / 2 * 100; })();
+  const lotWho = v => Math.abs(v - CASH) < 0.002 * CASH ? 'same' : v > CASH ? 'ann' : 'cash';
   let LR = 6;
   function renderL0() {
     const r = LR / 100, v = lotPV(r);
-    $('l_rOut').textContent = pct(LR); $('l_pv').textContent = compact(v).replace('B', ' billion').replace('M', ' million');
-    $('l_p1').textContent = compact(P1).replace('M', ' million'); $('l_p30').textContent = compact(P1 * Math.pow(1 + G, NP - 1)).replace('M', ' million');
-    $('l_verdict').innerHTML = (Math.abs(v - CASH) < 0.002 * CASH ? `<b>Break-even.</b> At ${pct(LR)} the two options are worth the same today.`
-      : v > CASH ? `<b style="color:var(--s1)">The annuity is worth more</b> at ${pct(LR)}: ${compact(v - CASH)} more than the cash, in today's dollars.`
-      : `<b>The cash is worth more</b> at ${pct(LR)}: the payments are worth only ${compact(v)} today, ${compact(CASH - v)} less than the cash.`) + ` Break-even rate: <b>${pct(lotBE)}</b>.`;
+    $('l_rOut').textContent = pct(LR);
+    const who = lotWho(v);
+    $('l_take').textContent = who === 'same' ? `At ${pct(LR)} the payments and the cash are worth about the same today.`
+      : `At ${pct(LR)} the payments are worth ${compact(v)} today, ${who === 'cash' ? 'less' : 'more'} than the $997.6M cash. They beat the cash only below ${pct(lotBE)}.`;
     const pts = []; for (let k = 0; k <= 200; k++) { const rr = k * 0.05; pts.push([rr, lotPV(rr / 100)]); }
     lineChart({ wrap: $('l_wrap'), x: [0, 10], y: [0, 2.2e9], yTicks: [0, 0.5e9, 1e9, 1.5e9, 2e9], yFmt: v => v === 0 ? '$0' : '$' + v / 1e9 + 'B', xTicks: [0, 2, 4, 6, 8, 10], xFmt: v => v + '%', xTitle: 'Discount rate, I/Y', yTitle: 'Value today',
       snap: v => Math.round(v * 20) / 20, tol: 0.01,
-      series: [{ name: 'PV of annuity', color: 'var(--s1)', pts }],
-      refs: [{ y: CASH, label: 'Cash option $997.6M', below: false }, { x: lotBE, label: 'Break-even ' + pct(lotBE), left: lotBE > 5 }],
-      marks: [{ x: LR, y: v, color: 'var(--s1)' }],
+      series: [{ name: 'Value of the payments', color: 'var(--s1)', pts }],
+      refs: [{ y: CASH, label: 'Cash $997.6M', below: true }, { x: lotBE, label: 'Break-even ' + pct(lotBE), left: true }],
+      marks: [{ x: LR, y: v, color: 'var(--s1)', label: compact(v), left: LR > 8.5 }],
       tipFmt: v => compact(v), xTip: x => `Discount rate ${pct(x)}`, tipExtra: () => `<div style="color:var(--muted)">Cash option: <b>$997.6M</b></div>`,
       onClick: x => { LR = Math.round(x * 20) / 20; $('l_r').value = LR; renderL(); } });
     const rows = []; for (let k = 0; k <= 10; k++) rows.push([pct(k), compact(lotPV(k / 100)), compact(lotPV(k / 100) - CASH)]);
-    table($('l_tbl'), ['Discount rate', 'PV of 30 payments', 'Minus cash option'], rows);
+    table($('l_tbl'), ['Discount rate', 'Value of 30 payments', 'Minus cash option'], rows);
     const istar = ((1 + r) / (1 + G) - 1) * 100;
-    $('l_calc').innerHTML = `<div><h4>Present value of 30 growing payments</h4><div class="formula">PV = Σ P₁(1.05)ᵏ / (1 + I)ᵏ, k = 0…29<br>= P₁ × [1 − (1.05 / (1 + I))³⁰] / (I − 0.05) × (1 + I)</div><p class="note" style="margin:0">P₁ = $2.04 billion ÷ [(1.05³⁰ − 1) / 0.05] = ${money(P1, 0)}. The first payment comes today, so this is an annuity due (BGN).</p></div>
-      <div><h4>Calculator shortcut: growth-adjusted rate</h4><div class="keys">${cap('2ND')} ${cap('BGN')} ${cap('2ND')} ${cap('SET')} · 30 ${cap('N')} ${num(istar, 4)} ${cap('I/Y')} ${num(-P1, 0)} ${cap('PMT')} 0 ${cap('FV')} ${cap('CPT')} ${cap('PV')} <span class="ans">= ${num(v, 0)}</span></div><div class="formula">=PV((1+${plain(r)})/1.05-1, 30, ${-Math.round(P1)}, 0, 1) → ${num(v, 0)}</div><p class="note" style="margin:0">I/Y here is (1 + I) ÷ 1.05 − 1 = ${num(istar, 4)}%: growing payments discounted at I are equivalent to level payments discounted at this smaller rate. Reset to END afterward.</p></div>`;
+    $('l_calc').innerHTML = `<div><h4>Value of 30 growing payments</h4><div class="formula">PV = Σ P₁(1.05)ᵏ / (1 + I)ᵏ, k = 0…29<br>= P₁ × [1 − (1.05 / (1 + I))³⁰] / (I − 0.05) × (1 + I)</div><p class="note">P₁ = $2.04 billion ÷ [(1.05³⁰ − 1) / 0.05] = ${money(P1, 0)}. The first payment is today (BGN). At ${pct(LR)}: ${money(v, 0)}.</p></div>
+      <div><h4>Calculator shortcut: growth-adjusted rate</h4><div class="keys">${cap('2ND')} ${cap('BGN')} ${cap('2ND')} ${cap('SET')} · 30 ${cap('N')} ${num(istar, 4)} ${cap('I/Y')} ${num(-P1, 0)} ${cap('PMT')} 0 ${cap('FV')} ${cap('CPT')} ${cap('PV')} <span class="ans">= ${num(v, 0)}</span></div><div class="formula">=PV((1+${plain(r)})/1.05-1, 30, ${-Math.round(P1)}, 0, 1) → ${num(v, 0)}</div><p class="note">I/Y here is (1 + I) ÷ 1.05 − 1 = ${num(istar, 4)}%. Reset to END afterward.</p></div>`;
   }
   $('l_r').addEventListener('input', e => { LR = +e.target.value; renderL(); });
   $('l_be').addEventListener('click', () => { LR = Math.round(lotBE * 100) / 100; $('l_r').value = LR; renderL(); });
 
-  // ===================== 5. CREDIT CARD =====================
+  // ===================== 5a. CREDIT CARD (inside the details of story 5) =====================
   const CC = { bal: 5000, apr: 22.36, pmt: 200 };
   const r2 = v => Math.round(v * 100) / 100;
   function payoff(bal, apr, fixed) {
@@ -802,20 +840,18 @@ footer.note p { margin: 0; }
     return { never: bal > 0.004, pts, interest, months: m, pays };
   }
   const yrsMo = m => { const y = Math.floor(m / 12), mo = m % 12; return (y ? `${y} yr` : '') + (y && mo ? ' ' : '') + (mo ? `${mo} mo` : '') || '0 mo'; };
-  function renderC0() {
+  function renderC() {
     const { bal, apr, pmt } = CC;
     $('c_balOut').textContent = money(bal, 0); $('c_aprOut').textContent = pct(apr); $('c_pmtOut').textContent = money(pmt, 0);
-    const mn = payoff(bal, apr, null), fx = payoff(bal, apr, pmt);
+    const mn = payoff(bal, apr, null), fx = payoff(bal, apr, pmt), covers = pmt > r2(bal * apr / 1200);
     $('c_minT').textContent = mn.never ? '50+ years' : yrsMo(mn.months); $('c_minI').textContent = `${mn.months === Infinity ? '' : mn.months + ' payments · '}interest ${money(mn.interest)}`;
-    const covers = pmt > r2(bal * apr / 1200);
-    if (fx.never) { $('c_fixT').innerHTML = `<span class="warn">${covers ? '50+ years' : 'Never'}</span>`; $('c_fixI').textContent = covers ? `${money(pmt, 0)} barely covers the ${money(r2(bal * apr / 1200))} monthly interest` : `${money(pmt, 0)} does not cover the ${money(r2(bal * apr / 1200))} monthly interest`; }
+    if (fx.never) { $('c_fixT').innerHTML = `<span class="warn">${covers ? '50+ years' : 'Never'}</span>`; $('c_fixI').textContent = `${money(pmt, 0)} ${covers ? 'barely covers' : 'does not cover'} the ${money(r2(bal * apr / 1200))} monthly interest`; }
     else { $('c_fixT').textContent = yrsMo(fx.months); $('c_fixI').textContent = `${fx.months} payments · interest ${money(fx.interest)}`; }
-    $('c_verdict').innerHTML = fx.never ? `<span class="warn">At ${money(pmt, 0)} a month the balance ${covers ? 'barely shrinks' : 'never shrinks'}.</span> The payment must exceed the interest, ${money(bal, 0)} × ${pct(apr)} ÷ 12 = ${money(bal * apr / 1200)}.`
-      : `Paying the minimum, the first payment is ${money(mn.pays[0])} and it shrinks every month. A fixed ${money(pmt, 0)} saves ${money(mn.interest - fx.interest)} of interest and ${yrsMo(Math.max(0, mn.months - fx.months))}.`;
+    $('c_verdict').innerHTML = fx.never ? `<span class="warn">At ${money(pmt, 0)} a month the balance ${covers ? 'barely shrinks' : 'never shrinks'}.</span>`
+      : `The first minimum payment is ${money(mn.pays[0])} and it keeps shrinking. A fixed ${money(pmt, 0)} saves ${money(mn.interest - fx.interest)} of interest.`;
     const xMax = Math.min(600, Math.max(mn.months, fx.never ? 120 : fx.months, 12));
     const step = xMax > 240 ? 60 : xMax > 120 ? 24 : 12; const xt = []; for (let v = 0; v <= xMax; v += step) xt.push(v);
-    const yMax = Math.max(bal, ...fx.pts.slice(0, xMax + 1).map(p => p[1]));
-    const nt = niceTicks(0, yMax * 1.05, 4);
+    const yMax = Math.max(bal, ...fx.pts.slice(0, xMax + 1).map(p => p[1])), nt = niceTicks(0, yMax * 1.05, 4);
     lineChart({ wrap: $('c_wrap'), x: [0, xMax], y: [0, nt.max], yTicks: nt.ticks, yFmt: compact, xTicks: xt, xFmt: v => v / 12 + (v ? ' yr' : ''), xTitle: 'Time since you stop charging', yTitle: 'Balance owed',
       snap: Math.round, labels: true,
       series: [{ name: 'Minimum payment', color: 'var(--s2)', pts: mn.pts.slice(0, xMax + 1), label: 'Minimum', missing: '$0.00 (paid off)' }, { name: `Fixed ${money(pmt, 0)}`, color: 'var(--s1)', pts: fx.pts.slice(0, xMax + 1), label: `${money(pmt, 0)}/mo`, missing: fx.never ? '' : '$0.00 (paid off)' }],
@@ -824,33 +860,35 @@ footer.note p { margin: 0; }
     const rows = []; for (let mo = 0; mo <= Math.max(mn.months, fx.never ? 0 : fx.months); mo += (mo < 12 ? 1 : 12)) rows.push([mo, mn.pays[mo] != null && mo < mn.months ? money(mn.pays[mo]) : '–', money(mn.pts[mo] ? mn.pts[mo][1] : 0), fx.pts[mo] ? money(fx.pts[mo][1]) : '$0.00']);
     table($('c_tbl'), ['Month', 'Next minimum payment', 'Balance (minimum)', `Balance (fixed ${money(pmt, 0)})`], rows);
     const i = apr / 12, Nex = covers ? -Math.log(1 - bal * i / 100 / pmt) / Math.log(1 + i / 100) : NaN, ok = isFinite(Nex);
-    $('c_keys').innerHTML = `${num(i, 4)} ${cap('I/Y')} <span class="step">(${pct(apr)} ÷ 12)</span> ${num(bal, 0)} ${cap('PV')} ${num(-pmt, 0)} ${cap('PMT')} 0 ${cap('FV')} ${cap('CPT')} ${cap('N')} <span class="ans">= ${ok ? num(Nex) + ' months' : 'Error: no solution'}</span>` + (ok ? ` <span class="step">→ ${Math.ceil(Nex - 1e-9)} payments, the last one smaller</span>` : '');
+    $('c_keys').innerHTML = `Fixed payment, solve for N: ${num(i, 4)} ${cap('I/Y')} <span class="step">(${pct(apr)} ÷ 12)</span> ${num(bal, 0)} ${cap('PV')} ${num(-pmt, 0)} ${cap('PMT')} 0 ${cap('FV')} ${cap('CPT')} ${cap('N')} <span class="ans">= ${ok ? num(Nex) + ' months' : 'Error: no solution'}</span>`;
     $('c_excel').textContent = `=NPER(${plain(apr / 100)}/12, ${-pmt}, ${bal}) → ${ok ? num(Nex) : '#NUM!'}`;
   }
   $('c_bal').addEventListener('input', e => { CC.bal = +e.target.value; renderC(); });
   $('c_apr').addEventListener('input', e => { CC.apr = +e.target.value; renderC(); });
   $('c_pmt').addEventListener('input', e => { CC.pmt = +e.target.value; renderC(); });
 
-  // ===================== 6. EASY MONEY =====================
+  // ===================== 5. EASY MONEY =====================
   const MP = [
     { k: 'pd', name: 'Payday loan', f: [['fee', 'Fee per $100 ($)', 1, 50, 0.5, 15], ['days', 'Term (days)', 1, 60, 1, 14]],
-      desc: 'Borrow $100 until your next paycheck and repay $100 plus the fee. Default from the CFPB: $15 per $100 for two weeks.' },
+      desc: 'Borrow $100 until payday, repay $100 plus the fee. Default from the CFPB: $15 per $100 for two weeks.' },
     { k: 'bnpl', name: 'BNPL late fee', f: [['fee', 'Late fee ($)', 1, 50, 0.5, 7], ['inst', 'Installment ($)', 5, 1000, 5, 50], ['days', 'Days late', 1, 60, 1, 14]],
-      desc: 'Illustrative example: a buy-now-pay-later installment paid late. The late fee is the price of keeping the money for those extra days.' },
+      desc: 'Example: a buy-now-pay-later installment paid late. The fee is the price of keeping the money a few more days.' },
     { k: 'rto', name: 'Rent-to-own', f: [['cash', 'Cash price ($)', 50, 5000, 10, 500], ['pmt', 'Weekly payment ($)', 1, 500, 1, 20], ['weeks', 'Number of weeks', 2, 260, 1, 52]],
-      desc: 'Illustrative example: a TV with a $500 cash price, or $20 a week for 52 weeks until you own it. Payments at the end of each week (END); paying the first one up front would make the rate even higher.' },
-    { k: 'cc', name: 'Credit card', f: [['apr', 'APR (%)', 1, 40, 0.01, 22.36], ['bal', 'Balance ($)', 100, 20000, 100, 5000]],
-      desc: 'Interest is charged monthly at APR ÷ 12. The balance only matters for the minimum-payment payoff (same rule as story 5).' },
+      desc: 'Example: a TV costing $500 cash, or $20 a week for 52 weeks. Payments at the end of each week (END).' },
+    { k: 'cc', name: 'Credit card', f: [['apr', 'APR (%)', 1, 40, 0.01, 22.36]],
+      desc: 'Interest is charged monthly at APR ÷ 12. Default: the U.S. average for accounts charged interest.' },
   ];
   const MV = {}; MP.forEach(p => { MV[p.k] = {}; p.f.forEach(f => { MV[p.k][f[0]] = f[5]; }); });
   let MSEL = 'pd';
+  const m$ = v => money(v, v % 1 ? 2 : 0);
+  const mDesc = k => { const v = MV[k]; return k === 'pd' ? `${m$(v.fee)} per $100 for ${v.days} days` : k === 'bnpl' ? `${m$(v.fee)} late fee on ${m$(v.inst)}, ${v.days} days (example)` : k === 'rto' ? `${m$(v.pmt)} a week × ${v.weeks} for a ${money(v.cash, 0)} item (example)` : `${pct(v.apr)} APR, charged monthly`; };
   function rtoRate(cash, pmt, n) { if (pmt * n <= cash) return 0; let lo = 1e-9, hi = 10; for (let k = 0; k < 200; k++) { const mid = (lo + hi) / 2; const pv = pmt * (1 - Math.pow(1 + mid, -n)) / mid; if (pv > cash) lo = mid; else hi = mid; } return (lo + hi) / 2; }
   function mCalc(k) {
     const v = MV[k]; let p, m, extra = {};
     if (k === 'pd') { p = v.fee / 100; m = 365 / v.days; }
     else if (k === 'bnpl') { p = v.fee / v.inst; m = 365 / v.days; }
     else if (k === 'rto') { p = rtoRate(v.cash, v.pmt, v.weeks); m = 52; extra.total = v.pmt * v.weeks; }
-    else { p = v.apr / 1200; m = 12; extra.pay = payoff(v.bal, v.apr, null); }
+    else { p = v.apr / 1200; m = 12; }
     return { p, m, apr: p * m * 100, ear: (Math.pow(1 + p, m) - 1) * 100, extra };
   }
   const MPICK = MP.map(p => { const b = document.createElement('button'); b.type = 'button'; b.textContent = p.name; b.setAttribute('aria-pressed', p.k === MSEL); b.addEventListener('click', () => { MSEL = p.k; setPressed(MPICK, b); buildM(); renderM(); }); $('m_pick').appendChild(b); return b; });
@@ -865,25 +903,16 @@ footer.note p { margin: 0; }
     $('m_desc').textContent = P.desc;
   }
   const fmtPctBig = v => v >= 1000 ? num(v, 0) + '%' : pct(v);
-  const fP = v => { const t = (+v.toFixed(4)).toString(); const d = (t.split('.')[1] || '').length; return num(v, Math.max(2, d)) + '%'; }; // periodic rate, trailing zeros trimmed
+  const fP = v => { const t = (+v.toFixed(4)).toString(); const d = (t.split('.')[1] || '').length; return num(v, Math.max(2, d)) + '%'; };
   const fM = v => Number.isInteger(v) ? String(v) : num(v, 4);
   const fD = v => num(v, v % 1 ? 2 : 0);
   function renderM0() {
     const R = {}; MP.forEach(p => { R[p.k] = mCalc(p.k); });
     const c = R[MSEL], v = MV[MSEL], P = MP.find(p => p.k === MSEL);
-    let cost;
-    if (MSEL === 'pd') cost = [`Fee for ${v.days} days`, money(v.fee), `to borrow $100 · ${pct(c.p * 100)} per period`];
-    else if (MSEL === 'bnpl') cost = [`Late fee for ${v.days} days`, money(v.fee), `on ${money(v.inst)} · ${pct(c.p * 100)} per period`];
-    else if (MSEL === 'rto') cost = ['Total of payments', money(c.extra.total), `vs. ${money(v.cash)} cash · ${money(c.extra.total - v.cash)} extra`];
-    else cost = ['Minimum payments only', c.extra.pay.never ? '50+ years' : yrsMo(c.extra.pay.months), `on ${money(v.bal, 0)} · interest ${money(c.extra.pay.interest)}`];
-    $('m_stats').innerHTML = `<div class="stat"><span class="k"><i style="background:var(--s1)"></i>APR</span><span class="v">${pct(c.apr)}</span><span class="s">${fP(c.p * 100)} × ${fM(c.m)}</span></div>` +
-      `<div class="stat"><span class="k"><i style="background:var(--s2)"></i>EAR</span><span class="v">${pct(c.ear)}</span><span class="s">(1 + ${fP(c.p * 100)})<sup>${fM(c.m)}</sup> − 1</span></div>` +
-      `<div class="stat"><span class="k">${cost[0]}</span><span class="v">${cost[1]}</span><span class="s">${cost[2]}</span></div>`;
+    $('m_stats').innerHTML = `<div class="stat"><span class="k">${P.name}: APR</span><span class="v">${pct(c.apr)}</span><span class="s">${fP(c.p * 100)} × ${fM(c.m)}</span></div>` +
+      `<div class="stat"><span class="k">${P.name}: EAR</span><span class="v">${pct(c.ear)}</span><span class="s">(1 + ${fP(c.p * 100)})<sup>${fM(c.m)}</sup> − 1</span></div>`;
     drawMoney(R);
-    table($('m_tbl'), ['Product', 'Rate per period', 'Periods a year, m', 'APR', 'EAR', 'What it costs'], MP.map(p => { const r = R[p.k], w = MV[p.k];
-      const what = p.k === 'pd' ? `${money(w.fee)} per $100, ${w.days} days` : p.k === 'bnpl' ? `${money(w.fee)} on ${money(w.inst)}, ${w.days} days` : p.k === 'rto' ? `${money(r.extra.total)} for a ${money(w.cash)} item` : `${money(r.extra.pay.interest)} interest on ${money(w.bal, 0)} (minimum payments)`;
-      return [p.name, fP(r.p * 100), fM(r.m), pct(r.apr), pct(r.ear), what]; }), MP.findIndex(p => p.k === MSEL));
-    // calculation card
+    table($('m_tbl'), ['Product', 'Rate per period', 'Periods a year, m', 'APR', 'EAR', 'Terms'], MP.map(p => { const r = R[p.k]; return [p.name, fP(r.p * 100), fM(r.m), pct(r.apr), pct(r.ear), mDesc(p.k)]; }), MP.findIndex(p => p.k === MSEL));
     const NOM = +c.apr.toFixed(4), CY = +c.m.toFixed(4), EFF = (Math.pow(1 + NOM / 100 / CY, CY) - 1) * 100;
     let steps, excel;
     if (MSEL === 'pd' || MSEL === 'bnpl') {
@@ -891,139 +920,96 @@ footer.note p { margin: 0; }
       steps = `<div class="keys">Rate per period = ${fD(v.fee)} ÷ ${fD(base)} = <b>${fP(c.p * 100)}</b> per ${v.days} days</div><div class="keys">Periods a year m = 365 ÷ ${v.days} = <b>${fM(c.m)}</b></div>`;
       excel = `=(1+${plain(v.fee)}/${plain(base)})^(365/${v.days})-1 → ${pct(c.ear)}`;
     } else if (MSEL === 'rto') {
-      steps = `<div class="keys"><span class="step">Weekly rate first (END):</span> ${v.weeks} ${cap('N')} ${num(v.cash, 0)} ${cap('PV')} ${num(-v.pmt, 0)} ${cap('PMT')} 0 ${cap('FV')} ${cap('CPT')} ${cap('I/Y')} <span class="ans">= ${num(c.p * 100, 4)}</span></div><div class="keys">Periods a year m = <b>52</b> weeks</div>`;
+      steps = `<div class="keys"><span class="step">Weekly rate first (END):</span> ${v.weeks} ${cap('N')} ${num(v.cash, 0)} ${cap('PV')} ${num(-v.pmt, 0)} ${cap('PMT')} 0 ${cap('FV')} ${cap('CPT')} ${cap('I/Y')} <span class="ans">= ${num(c.p * 100, 4)}</span></div><div class="keys">Periods a year m = <b>52</b> weeks · total paid ${money(c.extra.total)} vs. ${money(v.cash)} cash</div>`;
       excel = `=(1+RATE(${v.weeks}, -${plain(v.pmt)}, ${plain(v.cash)}))^52-1 → ${pct(c.ear)}`;
     } else {
       steps = `<div class="keys">Rate per month = ${pct(v.apr)} ÷ 12 = <b>${fP(c.p * 100)}</b></div><div class="keys">Periods a year m = <b>12</b></div>`;
       excel = `=EFFECT(${plain(v.apr / 100)}, 12) → ${pct(c.ear)}`;
     }
-    steps += `<div class="keys">APR = ${fP(c.p * 100)} × ${fM(c.m)} = <b>${pct(c.apr)}</b></div><div class="keys">EAR = (1 + APR/m)<sup>m</sup> − 1 = (1 + ${fP(c.p * 100)})<sup>${fM(c.m)}</sup> − 1 = <b>${pct(c.ear)}</b></div>`;
-    $('m_calc').innerHTML = `<div><h4>${P.name}: the formula</h4>${steps}</div>
+    steps += `<div class="keys">APR = ${fP(c.p * 100)} × ${fM(c.m)} = <b>${pct(c.apr)}</b></div><div class="keys">EAR = (1 + ${fP(c.p * 100)})<sup>${fM(c.m)}</sup> − 1 = <b>${pct(c.ear)}</b></div>`;
+    $('m_calc').innerHTML = `<div><h4>${P.name} (pick another under More options)</h4>${steps}</div>
       <div><h4>BA II Plus: interest conversion (ICONV)</h4><div class="keys">${cap('2ND')} ${cap('ICONV')} <span class="step">NOM =</span> ${NOM} ${cap('ENTER')} ${cap('↓')} ${cap('↓')} <span class="step">C/Y =</span> ${CY} ${cap('ENTER')} ${cap('↑')} ${cap('CPT')} <span class="ans">EFF = ${num(EFF)}</span></div>
-      <p class="note" style="margin:0">ICONV is 2ND then 2. NOM is the APR, C/Y the number of compounding periods a year${Number.isInteger(c.m) ? '' : ` (365 ÷ ${v.days}, rounded to 4 decimals)`}.</p><div class="formula">${excel}</div></div>`;
+      <p class="note">ICONV is 2ND then 2. NOM is the APR, C/Y the compounding periods a year${Number.isInteger(c.m) ? '' : ` (365 ÷ ${v.days}, rounded to 4 decimals)`}.</p><div class="formula">${excel}</div></div>`;
     const pd = R.pd;
-    $('m_take').innerHTML = `A ${money(MV.pd.fee)} fee per $100 looks small, but it is ${pct(pd.p * 100)} for ${MV.pd.days} days. Quoted as an APR that is ${pct(pd.apr)}; repeated all year, $100 of debt would grow to ${money(100 * (1 + pd.ear / 100))}, an effective rate of ${pct(pd.ear)}. The shorter the period, the bigger the gap between APR and EAR. Compare the credit card: ${pct(R.cc.apr)} APR, ${pct(R.cc.ear)} EAR.`;
+    $('m_take').textContent = `${m$(MV.pd.fee)} per $100 for ${MV.pd.days} days sounds small. It is a ${pct(pd.apr)} APR, and ${fmtPctBig(pd.ear)} a year with compounding. A credit card: ${pct(R.cc.ear)}.`;
   }
   function drawMoney(R) {
     const wrap = $('m_wrap'), svg = $('m_svg'), tip = wrap.querySelector('.tip');
     const W = Math.max(280, Math.round(svg.parentNode.clientWidth)), narrow = W < 520;
-    const rowH = 60, m = { l: 8, r: narrow ? 66 : 78, t: 24, b: 40 }, H = m.t + MP.length * rowH + m.b;
+    const rowH = 74, m = { l: 8, r: narrow ? 66 : 78, t: 8, b: 40 }, H = m.t + MP.length * rowH + m.b;
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.textContent = '';
     const maxV = Math.max(...MP.map(p => R[p.k].ear), 100), hiE = Math.max(3, Math.ceil(Math.log10(maxV * 1.2)));
     const X = v => m.l + Math.max(0, Math.log10(Math.max(v, 1))) / hiE * (W - m.l - m.r);
     const tstep = X(10) - X(1) < 64 ? 2 : 1;
-    for (let e = 0; e <= hiE; e++) { const v = Math.pow(10, e); el('line', { x1: X(v), x2: X(v), y1: m.t - 4, y2: H - m.b, class: 'gridl' }, svg); if (e % tstep === 0) el('text', { x: X(v), y: H - m.b + 16, 'text-anchor': e === 0 ? 'start' : 'middle', class: 'tick' }, svg, v.toLocaleString('en-US') + '%'); }
+    for (let e = 0; e <= hiE; e++) { const v = Math.pow(10, e); el('line', { x1: X(v), x2: X(v), y1: m.t, y2: H - m.b, class: 'gridl' }, svg); if (e % tstep === 0) el('text', { x: X(v), y: H - m.b + 16, 'text-anchor': e === 0 ? 'start' : 'middle', class: 'tick' }, svg, v.toLocaleString('en-US') + '%'); }
     el('line', { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, class: 'axisl' }, svg);
-    el('text', { x: (m.l + W - m.r) / 2, y: H - 6, 'text-anchor': 'middle', class: 'axtitle' }, svg, 'Annual rate (log scale)');
-    el('line', { x1: X(10.02), x2: X(10.02), y1: m.t - 8, y2: H - m.b, class: 'ref' }, svg);
-    el('text', { x: X(10.02) + 4, y: m.t - 10, class: 'reflab' }, svg, 'Stocks 10.02%');
+    el('text', { x: (m.l + W - m.r) / 2, y: H - 6, 'text-anchor': 'middle', class: 'axtitle' }, svg, 'Yearly rate (log scale)');
     MP.forEach((p, k) => {
-      const r = R[p.k], y = m.t + k * rowH, sel = p.k === MSEL;
-      el('text', { x: m.l, y: y + 13, class: 'rowlab' + (sel ? ' sel' : '') }, svg, (sel ? '▸ ' : '') + p.name);
-      [[r.apr, 'var(--s1)', 19], [r.ear, 'var(--s2)', 36]].forEach(([v, col, dy]) => {
+      const r = R[p.k], y = m.t + k * rowH;
+      el('text', { x: m.l, y: y + 13, class: 'rowlab' }, svg, p.name);
+      el('text', { x: m.l, y: y + 28, class: 'rowsub' }, svg, mDesc(p.k));
+      if (!PM.m.hidden) [[r.apr, 'var(--s1)', 34], [r.ear, 'var(--s2)', 51]].forEach(([v, col, dy]) => { // hidden: no bars, they would give the answer away
         el('rect', { x: m.l, y: y + dy, width: Math.max(1, X(v) - m.l), height: 14, rx: 2, style: `fill:${col}` }, svg);
         el('text', { x: X(v) + 5, y: y + dy + 11, class: 'barlab' }, svg, fmtPctBig(v));
       });
-      const hit = el('rect', { x: 0, y, width: W, height: rowH - 4, fill: 'transparent', class: 'colhit', tabindex: 0, role: 'button', 'aria-label': `${p.name}: APR ${pct(r.apr)}, EAR ${pct(r.ear)}. Press Enter to edit.`, style: 'cursor:pointer' }, svg);
+      const hit = el('rect', { x: 0, y, width: W, height: rowH - 4, fill: 'transparent', class: 'colhit', tabindex: 0, role: 'img', 'aria-label': `${p.name}: APR ${pct(r.apr)}, effective rate ${pct(r.ear)}` }, svg);
       const show = () => {
-        tip.innerHTML = `<div style="color:var(--muted)">${p.name}</div><div style="color:var(--muted)">${fP(r.p * 100)} per period × ${fM(r.m)} periods a year</div><div><i style="background:var(--s1)"></i>APR: <b>${pct(r.apr)}</b></div><div><i style="background:var(--s2)"></i>EAR: <b>${pct(r.ear)}</b></div>`;
-        tip.hidden = false;
-        const wr = wrap.getBoundingClientRect(), sr = svg.getBoundingClientRect(), tw = tip.offsetWidth;
-        tip.style.left = Math.max(0, Math.min(wr.width - tw, (sr.left - wr.left) + sr.width * 0.45)) + 'px'; tip.style.top = (sr.top - wr.top + (y + rowH) / H * sr.height) + 'px';
+        tip.innerHTML = `<div style="color:var(--muted)">${p.name}: ${fP(r.p * 100)} per period × ${fM(r.m)} a year</div><div><i style="background:var(--s1)"></i>APR: <b>${pct(r.apr)}</b></div><div><i style="background:var(--s2)"></i>Effective rate: <b>${pct(r.ear)}</b></div>`;
+        const wr = wrap.getBoundingClientRect(), sr = svg.getBoundingClientRect();
+        placeTip(tip, wrap, sr.left - wr.left + sr.width * 0.45, sr.top - wr.top + (y + rowH) / H * sr.height);
       };
-      const pick = () => { MSEL = p.k; setPressed(MPICK, MPICK[k]); buildM(); renderM(); const hs = $('m_svg').querySelectorAll('.colhit'); if (hs[k]) hs[k].focus(); };
       hit.addEventListener('pointerenter', show); hit.addEventListener('pointerleave', () => { tip.hidden = true; });
       hit.addEventListener('focus', show); hit.addEventListener('blur', () => { tip.hidden = true; });
-      hit.addEventListener('click', pick); hit.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
     });
   }
   buildM();
 
-  // ===================== 7. RULE OF 72 =====================
-  let DR = 10;
-  const exactN = r => Math.log(2) / Math.log(1 + r / 100);
-  function renderD0() {
-    const ex = exactN(DR), r72 = 72 / DR, err = r72 - ex;
-    $('d_rOut').textContent = pct(DR, 1);
-    $('d_72').textContent = num(r72) + ' years'; $('d_72s').textContent = `72 ÷ ${num(DR, 1)}`;
-    $('d_ex').textContent = num(ex) + ' years'; $('d_err').textContent = `rule is off by ${num(Math.abs(err))} years (${err >= 0 ? 'too long' : 'too short'})`;
-    $('d_keys').innerHTML = `${plain(DR)} ${cap('I/Y')} −1 ${cap('PV')} 0 ${cap('PMT')} 2 ${cap('FV')} ${cap('CPT')} ${cap('N')} <span class="ans">= ${num(ex)}</span>`;
-    $('d_excel').textContent = `=NPER(${plain(DR / 100)}, 0, -1, 2) → ${num(ex)}`;
-    const pe = []; for (let k = 10; k <= 300; k++) { const r = k / 10; pe.push([r, 72 / r - exactN(r)]); }
-    lineChart({ wrap: $('d_wrap'), x: [1, 30], y: [-0.5, 2.5], yTicks: [-0.5, 0, 0.5, 1, 1.5, 2, 2.5], yFmt: v => (v > 0 ? '+' : v < 0 ? MINUS : '') + Math.abs(v), xTicks: [1, 5, 10, 15, 20, 25, 30], xFmt: v => v + '%', xTitle: 'Growth rate, I/Y', yTitle: 'Error (years)', ml: 48,
-      snap: v => Math.round(v * 10) / 10, tol: 0.05,
-      series: [{ name: 'Rule of 72 − exact', color: 'var(--s2)', pts: pe }],
-      refs: [{ y: 0.5, label: '+½ year off', labelLeft: true, below: true }, { y: -0.5, label: '' }, { y: 0, label: 'Exact answer', labelLeft: true, below: true }],
-      marks: [{ x: DR, y: r72 - ex, color: 'var(--s2)' }],
-      tipFmt: v => (v >= 0 ? '+' : MINUS) + num(Math.abs(v)) + ' yr', xTip: x => `Growth rate ${pct(x, 1)}`,
-      tipExtra: x => `<div style="color:var(--muted)">72 ÷ I = ${num(72 / x)} · exact ${num(exactN(x))}</div>`,
-      onClick: x => { DR = Math.max(1, Math.round(x * 10) / 10); $('d_r').value = DR; renderD(); } });
-    const rows = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 18, 20, 25, 30].map(r => [pct(r, 0), num(72 / r), num(exactN(r)), num(72 / r - exactN(r))]);
-    table($('d_tbl'), ['Rate', 'Rule of 72', 'Exact', 'Difference'], rows, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 18, 20, 25, 30].indexOf(DR));
-    $('d_take').innerHTML = `The rule works best around 8%, where 72 ÷ 8 = 9 and the exact answer is ${num(exactN(8))} years. Far from 8% it drifts: at ${pct(DR, 1)} it says ${num(r72)} years, the exact answer is ${num(ex)}. For an exact answer, use ${cap('CPT')} ${cap('N')}.`;
-  }
-  $('d_r').addEventListener('input', e => { DR = +e.target.value; renderD(); });
-
   // ===================== PREDICT-FIRST MODE =====================
-  // Each section: one question from the current inputs, answer hidden until a guess or Reveal.
+  // One question per story, written from the current inputs. The answer stays hidden until a guess or Reveal.
   const PMC = {
-    e: { sec: 's1', render: renderE, chart: ['e_wrap'], q: ['#e_A', '#e_B'], hide: ['e_verdict', 'e_take'], blur: ['e_bars', 'e_calc'], disable: ['e_be'],
+    e: { sec: 's1', render: renderE, chart: 'e_wrap', how: 'e_how', hide: ['e_take'], disable: ['e_play', 'e_age', 'e_be'],
       choices: [['A', 'Saver A (started early)'], ['B', 'Saver B (saved longer)'], ['tie', 'About the same']],
-      question: () => `Saver A deposits ${money(E.amt, 0)} a year for 10 years (ages 20–30), then stops. Saver B deposits ${money(E.amt, 0)} a year from 30 to ${E.R} (${E.R - 30} deposits). Both earn ${pct(E.r)} a year. Who has more at ${E.R}?`,
-      answer: () => { const r = E.r / 100, A = eA(E.amt, r, E.R), B = eB(E.amt, r, E.R), be = eBreakEven(E.R);
-        const c = Math.abs(A - B) < 0.005 * Math.max(A, B) ? 'tie' : A > B ? 'A' : 'B';
-        return { c, why: `Saver A ends with <b>${money(A)}</b> from ${money(10 * E.amt, 0)} of deposits; Saver B ends with <b>${money(B)}</b> from ${money((E.R - 30) * E.amt, 0)}. The break-even return is ${pct(be)}: above it A's ten-year head start wins, below it B's extra ${E.R - 40} deposits win.` }; } },
-    h: { sec: 's2', render: renderH, chart: ['h_wrap'], q: ['#h_stats .v', '#h_stats .s'], hide: ['h_take'], blur: ['h_keys', 'h_excel'],
+      question: () => `Both save ${money(E.amt, 0)} a year and earn ${pct(E.r, 1)}. Who has more at ${E.R}?`,
+      answer: () => { const f = eFinal(), c = eWho(f);
+        return { c, why: c === 'A' ? `A ends with ${compact(f.A)}, B with ${compact(f.B)}, though A put in only ${fracWord(f.pA / f.pB)} as much.`
+          : c === 'B' ? `B ends with ${compact(f.B)}, A with ${compact(f.A)}: at ${pct(E.r, 1)} the extra deposits win (break-even ${pct(eBreakEven(E.R))}).`
+          : `Both end near ${compact(f.A)}: ${pct(E.r, 1)} is about the break-even return.` }; } },
+    h: { sec: 's2', render: renderH, chart: 'h_wrap', how: 'h_how', hide: ['h_take'],
       choices: [['lt10', 'Less than $10'], ['10', '$10 to $100'], ['100', '$100 to $1,000'], ['1000', 'More than $1,000']],
-      question: () => `$1 goes into the S&amp;P 500 at the start of ${H2.start}, with every dividend reinvested. Roughly what was it worth at the end of ${HIST.last}${H2.real ? `, after inflation (in ${H2.start - 1} dollars)` : ''}?`,
-      answer: () => { const P = histPaths(H2.start, H2.real), v = P.sp[P.sp.length - 1][1], tb = P.tb[P.tb.length - 1][1], N = HIST.last - H2.start + 1, g = (Math.pow(v, 1 / N) - 1) * 100;
-        const c = v < 10 ? 'lt10' : v < 100 ? '10' : v < 1000 ? '100' : '1000';
-        return { c, why: `It became <b>${money(v)}</b>${H2.real ? ' after inflation' : ''}: ${N} years of compounding at ${pct(g)} a year (${N} N, −1 PV, 0 PMT, ${num(v)} FV, CPT I/Y). The same $1 in T-bills became only ${money(tb)}.` }; } },
-    t: { sec: 's3', render: renderT, chart: ['t_wrap'], q: ['#t_stats .v', '#t_stats .s'], hide: ['t_mode'], blur: ['t_calc'],
-      choices: [['end', 'END is larger'], ['bgn', 'BGN is larger'], ['same', 'They are the same']],
-      question: () => `Keep these cash flows and I/Y = ${pct(TL.r)}. Is the present value larger in END mode (each period's payment at the end of the period) or in BGN mode (at the start)?`,
-      answer: () => { const r = TL.r / 100, n = TL.n, fe = Array(n + 1).fill(0), fb = Array(n + 1).fill(0);
-        fe[0] = fb[0] = TL.cf[0]; for (let t = 1; t <= n; t++) { fe[t] += TL.cf[t]; fb[t - 1] += TL.cf[t]; }
-        const pe = npv(fe, r), pb = npv(fb, r), c = Math.abs(pe - pb) < 0.005 ? 'same' : pb > pe ? 'bgn' : 'end';
-        const lvl = TL.cf[0] === 0 && c === 'bgn' ? ` Here BGN = END × (1 + I) = ${money(pe)} × ${num(1 + r, 4)}.` : '';
-        const why = c === 'same' ? 'Timing makes no difference here (a 0% rate, or no payments during the periods).' : c === 'bgn' ? `In BGN every payment arrives one period earlier, so it is discounted one period less.${lvl}` : 'In BGN every payment arrives one period earlier. Here the period payments are mostly outflows, and paying out earlier costs more in today’s dollars.';
-        return { c, why: `END: <b>${money(pe)}</b>; BGN: <b>${money(pb)}</b>. ${why}` }; } },
-    l: { sec: 's4', render: renderL, chart: ['l_wrap'], q: ['#l_pv'], hide: ['l_verdict'], blur: ['l_calc'], disable: ['l_be'], svgInput: true,
+      question: () => `$1 went into stocks at the start of ${H2.start}. Roughly what was it worth at the end of ${HIST.last}${H2.real ? ', after inflation' : ''}?`,
+      answer: () => { const P = histPaths(H2.start, H2.real), v = P.sp[P.sp.length - 1][1], N = HIST.last - H2.start + 1, g = (Math.pow(v, 1 / N) - 1) * 100;
+        return { c: v < 10 ? 'lt10' : v < 100 ? '10' : v < 1000 ? '100' : '1000', why: `It became ${money(v)}${H2.real ? ' after inflation' : ''}, growing ${pct(g)} a year for ${N} years.` }; } },
+    t: { sec: 's3', render: renderT, chart: 't_wrap', how: 't_how', hide: ['t_take'],
+      choices: [['end', 'END is bigger'], ['bgn', 'BGN is bigger'], ['same', 'The same']],
+      question: () => { const P = TL.cf.slice(1, TL.n + 1), level = TL.cf[0] === 0 && P.every(c => c === P[0]) && P[0] !== 0;
+        return `${level ? `${TL.n} payments of ${money(P[0], P[0] % 1 ? 2 : 0)}` : 'These payments'} at ${pct(TL.r, 1)}. Is today's value bigger if each comes at the end of its year (END) or the start (BGN)?`; },
+      answer: () => { const x = tCompare();
+        return { c: x.c, why: x.c === 'same' ? `Both give ${money(x.pe)}: timing does not matter here.` : `END gives ${money(x.pe)} and BGN ${money(x.pb)}${x.c === 'bgn' ? ': money that comes sooner shrinks less.' : ': paying out sooner costs more.'}` }; } },
+    l: { sec: 's4', render: renderL, chart: 'l_wrap', how: 'l_how', hide: ['l_take'], disable: ['l_be'], svgInput: true,
       choices: [['cash', 'The $997.6M cash'], ['ann', 'The 30 payments'], ['same', 'About the same']],
-      question: () => `At a ${pct(LR)} discount rate, which is worth more today: $997.6 million in cash now, or the 30 payments (first one today, each 5% larger) that add up to $2.04 billion?`,
-      answer: () => { const v = lotPV(LR / 100), c = Math.abs(v - CASH) < 0.002 * CASH ? 'same' : v > CASH ? 'ann' : 'cash';
-        return { c, why: `At ${pct(LR)} the 30 payments are worth <b>${compact(v)}</b> today, against <b>$997.6M</b> cash. The break-even rate is ${pct(lotBE)}: at lower rates the payments are worth more, at higher rates the cash wins. The further away a payment is, the more a higher rate shrinks it.` }; } },
-    c: { sec: 's5', render: renderC, chart: ['c_wrap'], q: ['#c_minT', '#c_minI', '#c_fixT', '#c_fixI'], hide: ['c_verdict'], blur: ['c_keys', 'c_excel'],
-      choices: [['lt5', 'Under 5 years'], ['5', '5 to 10 years'], ['10', '10 to 20 years'], ['20', 'More than 20 years']],
-      question: () => `You owe ${money(CC.bal, 0)} on a card with a ${pct(CC.apr)} APR, stop using it, and pay only the minimum each month (that month's interest + 1% of the balance, at least $25). About how long until it is paid off?`,
-      answer: () => { const mn = payoff(CC.bal, CC.apr, null), mo = mn.never ? Infinity : mn.months;
-        const c = mo < 60 ? 'lt5' : mo < 120 ? '5' : mo < 240 ? '10' : '20';
-        return { c, why: mn.never ? 'More than 50 years.' : `It takes <b>${mn.months} months (${yrsMo(mn.months)})</b> and <b>${money(mn.interest)}</b> of interest, ${num(mn.interest / CC.bal * 100, 0)}% of what you owed. The minimum shrinks as the balance shrinks, so you pay down very little principal each month.` }; } },
-    m: { sec: 's6', render: renderM, chart: ['m_wrap'], q: ['#m_stats .stat:nth-child(-n+2) .v', '#m_stats .stat:nth-child(-n+2) .s'], hide: ['m_take'], blur: ['m_calc'],
-      choices: MP.map(p => [p.k, p.name]),
-      question: () => { const v = MV; return `Payday loan: ${money(v.pd.fee)} per $100 for ${v.pd.days} days. BNPL: a ${money(v.bnpl.fee)} late fee on a ${money(v.bnpl.inst)} installment, ${v.bnpl.days} days late. Rent-to-own: ${money(v.rto.pmt)} a week for ${v.rto.weeks} weeks for a ${money(v.rto.cash)} item. Credit card: ${pct(v.cc.apr)} APR, charged monthly. Which has the highest effective annual rate (EAR)?`; },
+      question: () => `At a ${pct(LR)} discount rate, which is worth more today: the cash or the 30 payments?`,
+      answer: () => { const v = lotPV(LR / 100), c = lotWho(v);
+        return { c, why: c === 'same' ? `At ${pct(LR)} the payments are worth ${compact(v)}, about the same as the cash.` : `At ${pct(LR)} the payments are worth ${compact(v)} today, ${c === 'cash' ? 'less' : 'more'} than the $997.6M cash.` }; } },
+    m: { sec: 's5', render: renderM, chart: 'm_wrap', how: 'm_how', hide: ['m_take'],
+      choices: MP.map(p => [p.k, p.name]), label: g => `${MP.find(p => p.k === g).name}: ${mDesc(g).replace(' (example)', '')}`,
+      question: () => 'Which way to borrow has the highest yearly cost, once you count compounding?',
       answer: () => { const R = MP.map(p => ({ p, r: mCalc(p.k) })).sort((a, b) => b.r.ear - a.r.ear);
-        return { c: R[0].p.k, why: `<b>${R[0].p.name}</b>, with an EAR of <b>${pct(R[0].r.ear)}</b> (APR ${pct(R[0].r.apr)}). Then ${R.slice(1).map(x => `${x.p.name} ${pct(x.r.ear)}`).join(', ')}. A cost for a short period, repeated ${Number.isInteger(R[0].r.m) ? R[0].r.m : num(R[0].r.m, 1)} times a year, compounds into an enormous annual rate.` }; } },
-    d: { sec: 's7', render: renderD, chart: ['d_wrap'], q: ['#d_ex', '#d_err'], hide: ['d_take'], blur: ['d_keys', 'd_excel'], svgInput: true,
-      choices: [['over', 'More: the rule overestimates'], ['under', 'Less: the rule underestimates'], ['same', 'About right (within 0.01 years)']],
-      question: () => `At ${pct(DR, 1)} growth, the Rule of 72 says money doubles in 72 ÷ ${num(DR, 1)} = ${num(72 / DR)} years. Is that more or less than the exact answer from CPT N?`,
-      answer: () => { const ex = exactN(DR), err = 72 / DR - ex, c = Math.abs(err) < 0.01 ? 'same' : err > 0 ? 'over' : 'under';
-        return { c, why: `The exact answer is <b>${num(ex)} years</b>, so the rule is ${c === 'same' ? 'within 0.01 years' : `${num(Math.abs(err))} years too ${err > 0 ? 'long' : 'short'}`}. The rule is almost exact near 7.85%; below that it overestimates, above it underestimates.` }; } },
+        return { c: R[0].p.k, why: `The ${R[0].p.name.toLowerCase()}: ${pct(R[0].r.ear)} a year with compounding (APR ${pct(R[0].r.apr)}).` }; } },
   };
   const NOTE_H = 'Predict mode: the answer is hidden. Answer the question, or click Reveal answer.';
   const NOTE_R = 'Answer shown: everything updates live. Click Back to predict mode to quiz again.';
   function pmApply(k) {
     const c = PMC[k], st = PM[k], hide = st.hidden;
-    if (!$('pb_' + k)) return; // not built yet (first render)
+    if (!$('pb_' + k)) return; // not built yet
     $('pb_' + k).hidden = !(hide || st.fb);
     $('pB_' + k).hidden = !hide;
     $('pq_' + k).innerHTML = c.question();
-    c.chart.forEach(id => { const w = $(id); w.classList.toggle('masked', hide); w.querySelector('.maskmsg').hidden = !hide;
-      if (hide) { w.querySelector('.tip').hidden = true; w.querySelectorAll('details').forEach(d => { d.open = false; }); }
-      w.querySelectorAll('.colhit').forEach(r => r.setAttribute('tabindex', hide ? -1 : 0)); });
-    if (hide) c.q.forEach(sel => document.querySelectorAll(sel).forEach(e => { e.textContent = '?'; }));
+    if (c.label) $('pB_' + k).querySelectorAll('button[data-guess]').forEach(b => { b.textContent = c.label(b.dataset.guess); });
+    const w = $(c.chart); w.classList.toggle('masked', hide); w.querySelector('.maskmsg').hidden = !hide;
+    if (hide) w.querySelector('.tip').hidden = true;
+    w.querySelectorAll('.colhit').forEach(r => r.setAttribute('tabindex', hide ? -1 : 0));
     c.hide.forEach(id => { $(id).hidden = hide; });
-    c.blur.forEach(id => { $(id).classList.toggle('blurred', hide); if (hide) $(id).setAttribute('aria-hidden', 'true'); else $(id).removeAttribute('aria-hidden'); });
+    const d = $(c.how); d.classList.toggle('locked', hide); d.inert = hide; if (hide) d.open = false;
     (c.disable || []).forEach(id => { $(id).disabled = hide; });
   }
   function pmSet(k, h, keep) {
@@ -1031,8 +1017,11 @@ footer.note p { margin: 0; }
     if (!keep) { st.fb = false; $('pf_' + k).innerHTML = ''; }
     $('mb_' + k).textContent = h ? '👁 Reveal answer' : '↩ Back to predict mode';
     $('mn_' + k).textContent = h ? NOTE_H : NOTE_R;
+    if (k === 'e' && h) { eStop(); E.age = 20; } // hidden: show the empty start, so the shapes give nothing away
     PMC[k].render();
   }
+  // story 1: revealing (by a guess or the button) plays the animation once
+  const afterReveal = k => { if (k === 'e') ePlay(true); };
   const pmStale = k => { if (PM[k].fb) { PM[k].fb = false; $('pf_' + k).innerHTML = ''; } };
   Object.keys(PMC).forEach(k => {
     const c = PMC[k], sec = $(c.sec), lead = sec.querySelector('p.lead');
@@ -1041,29 +1030,29 @@ footer.note p { margin: 0; }
     const box = document.createElement('div'); box.className = 'predict'; box.id = 'pb_' + k;
     box.innerHTML = `<p><b>Predict first.</b> <span id="pq_${k}"></span></p><div class="row" id="pB_${k}" role="group" aria-label="Your prediction">${c.choices.map(([g, t]) => `<button class="btn" type="button" data-guess="${g}">${t}</button>`).join('')}</div><p id="pf_${k}" aria-live="polite"></p>`;
     lead.after(tb, box);
-    c.chart.forEach(id => { const m = document.createElement('div'); m.className = 'maskmsg'; m.hidden = true; m.textContent = 'Make your prediction to see the chart'; $(id).appendChild(m); });
-    $('mb_' + k).addEventListener('click', () => pmSet(k, !PM[k].hidden));
+    const m = document.createElement('div'); m.className = 'maskmsg'; m.hidden = true; m.textContent = 'Make your prediction to see the chart'; $(c.chart).appendChild(m);
+    $('mb_' + k).addEventListener('click', () => { const h = !PM[k].hidden; pmSet(k, h); if (!h) afterReveal(k); });
     $('pB_' + k).addEventListener('click', e => {
       const g = e.target.closest('button[data-guess]'); if (!g) return;
       const a = c.answer();
       $('pf_' + k).innerHTML = `${g.dataset.guess === a.c ? '<span class="fb-ok">✓ Correct.</span>' : '<span class="fb-no">✗ Not quite.</span>'} ${a.why}`;
-      PM[k].fb = true; pmSet(k, false, true);
+      PM[k].fb = true; pmSet(k, false, true); afterReveal(k);
     });
-    // any change to the inputs makes old feedback stale (capture phase: clear before the section re-renders)
-    sec.addEventListener('input', e => { if (!e.target.closest('.predict')) pmStale(k); }, true);
-    sec.addEventListener('click', e => { const t = e.target; if (t.closest('.predict, .toolbar, details')) return; if (t.closest('svg') ? c.svgInput : t.closest('button')) pmStale(k); }, true);
+    // a change to the inputs makes old feedback stale (capture phase: clear before the story re-renders)
+    const skip = '.predict, .toolbar, summary, .how, #e_play, #e_age';
+    sec.addEventListener('input', e => { if (!e.target.closest(skip)) pmStale(k); }, true);
+    sec.addEventListener('click', e => { const t = e.target; if (t.closest(skip)) return; if (t.closest('svg') ? c.svgInput : t.closest('button')) pmStale(k); }, true);
   });
+  $('m_how').addEventListener('toggle', () => { if ($('m_how').open) renderC(); });
   function renderE() { renderE0(); pmApply('e'); }
   function renderH() { renderH0(); pmApply('h'); }
   function renderT() { renderT0(); pmApply('t'); }
   function renderL() { renderL0(); pmApply('l'); }
-  function renderC() { renderC0(); pmApply('c'); }
   function renderM() { renderM0(); pmApply('m'); }
-  function renderD() { renderD0(); pmApply('d'); }
 
   // ---------- render all, re-render on resize ----------
-  const renderAll = () => { renderE(); renderH(); renderT(); renderL(); renderC(); renderM(); renderD(); };
-  buildInputs(); Object.keys(PMC).forEach(k => pmSet(k, START_HIDDEN));
+  const renderAll = () => { renderE(); renderH(); renderT(); renderL(); renderM(); renderC(); };
+  buildInputs(); Object.keys(PMC).forEach(k => pmSet(k, START_HIDDEN)); renderC();
   let rt = null, lastW = document.documentElement.clientWidth;
   window.addEventListener('resize', () => { const w = document.documentElement.clientWidth; if (w === lastW) return; lastW = w; clearTimeout(rt); rt = setTimeout(renderAll, 120); });
 })();
