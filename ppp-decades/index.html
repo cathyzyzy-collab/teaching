@@ -690,11 +690,13 @@ footer.note p { margin: 0; }
     const byInf = pool.slice().sort((a, b) => a.If - b.If);
     const hiI0 = byInf[byInf.length - 1], lowI = byInf[0];
     const loser = pool.slice().sort((a, b) => a.y - b.y)[0];
-    const ch = [hiI0];
-    [loser, lowI, byInf[Math.floor(byInf.length / 2)], byInf[1], byInf[byInf.length - 2]].forEach(r => { if (ch.length < 3 && ch.indexOf(r) < 0) ch.push(r); });
+    // keep every pair of choices at least 0.5 points a year apart so there is no near-tie
+    const ch = [hiI0], apart = r => ch.every(q => Math.abs(q.y - r.y) >= 0.005);
+    [loser, lowI, byInf[Math.floor(byInf.length / 2)]].concat(byInf).forEach(r => { if (ch.length < 3 && ch.indexOf(r) < 0 && apart(r)) ch.push(r); });
     ch.sort((a, b) => a.c.c < b.c.c ? -1 : 1);
-    P[3].ans = loser.c.c;
-    const trBig = tr && rows.every(r => r === tr || r.y > tr.y);
+    const ansR = ch.slice().sort((a, b) => a.y - b.y)[0];
+    P[3].ans = ansR.c.c;
+    const trBig = tr && rows.every(r => r === tr || r.y - tr.y > 0.05); // 'by far' = at least 5 points a year below every other currency
     $('predictBox3').hidden = !(hid3 || P[3].fb); $('pBtns3').hidden = !hid3;
     $('pTerms3').innerHTML = `From ${Y} to ${lab(END)}, U.S. consumer prices rose ${(loser.Ih * 100).toFixed(1)}% a year.` +
       (tr ? ` Leaving aside the Turkish lira (${trBig ? 'by far the biggest loser, ' : ''}${pp(tr.y)}% a year, with ${(tr.If * 100).toFixed(1)}% inflation), here is average inflation per year:` : ' Average inflation per year:') +
@@ -702,8 +704,8 @@ footer.note p { margin: 0; }
     $('pBtns3').innerHTML = ch.map(r => `<button class="btn" type="button" data-guess="${r.c.c}">${r.c.n}</button>`).join('');
     P[3].why = () => {
       const hiI = ch.slice().sort((a, b) => b.If - a.If)[0];
-      return `The ${loser.c.n} lost the most: <b>${pp(loser.y)}%</b> a year (relative PPP predicted ${pp(loser.x)}%). The others: ` + ch.filter(r => r !== loser).map(r => `${r.c.n} ${pp(r.y)}% (PPP ${pp(r.x)}%)`).join(', ') + '. ' +
-        (hiI === loser ? 'The currency with the highest inflation lost the most value, just as relative PPP predicts.' : `Here the highest-inflation choice (${hiI.c.n}) was not the biggest loser: PPP is only a long-run tendency, and other forces moved these currencies too.`);
+      return `The ${ansR.c.n} lost the most: <b>${pp(ansR.y)}%</b> a year (relative PPP predicted ${pp(ansR.x)}%). The others: ` + ch.filter(r => r !== ansR).map(r => `${r.c.n} ${pp(r.y)}% (PPP ${pp(r.x)}%)`).join(', ') + '. ' +
+        (hiI === ansR ? 'The currency with the highest inflation lost the most value, just as relative PPP predicts.' : `Here the highest-inflation choice (${hiI.c.n}) was not the biggest ansR: PPP is only a long-run tendency, and other forces moved these currencies too.`);
     };
     $('c3Wrap').classList.toggle('masked', hid3); $('mask3').hidden = !hid3;
     $('t3').classList.toggle('blurred', hid3); if (hid3) $('d3').open = false;
