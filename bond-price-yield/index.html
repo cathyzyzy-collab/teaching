@@ -1,0 +1,543 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Bond Price and Yield</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: three short lessons stacked top to bottom. Each pairs controls with a seesaw and/or chart. */
+:root {
+  color-scheme: light;
+  --bg: #eef1f1; --fg: #1a2328; --muted: #5b6a70; --panel: #ffffff; --line: #d5dcde;
+  --accent: #0f7c71; --cap: #f3f6f6; --neg: #a1402f; --pos: #1d6b3a;
+  --grid: #e3e8e9; --axis: #8a989d;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a;
+  --beam: #33444d; --fulcrum: #7c8b91; --box: #ffffff;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-cond: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #11171a; --fg: #e2e8ea; --muted: #9aaab0; --panel: #182024; --line: #29343a;
+    --accent: #5cc9bb; --cap: #1f292e; --neg: #e3826f; --pos: #6fcf8f;
+    --grid: #253035; --axis: #6f7f85;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+    --beam: #c9d4d8; --fulcrum: #6f7f85; --box: #1f292e;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #11171a; --fg: #e2e8ea; --muted: #9aaab0; --panel: #182024; --line: #29343a;
+  --accent: #5cc9bb; --cap: #1f292e; --neg: #e3826f; --pos: #6fcf8f;
+  --grid: #253035; --axis: #6f7f85;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  --beam: #c9d4d8; --fulcrum: #6f7f85; --box: #1f292e;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+[hidden] { display: none !important; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 28px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); }
+header.top { display: grid; gap: 6px; margin-bottom: 22px; }
+header.top h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+header.top p { margin: 0; color: var(--muted); max-width: 72ch; }
+nav.steps { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+nav.steps a { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 999px; padding: 3px 12px; }
+nav.steps a:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+section.lesson { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px 22px; margin-bottom: 22px; display: grid; gap: 16px; min-width: 0; }
+.lesson > h2 { margin: 0; font-size: 19px; font-weight: 600; display: flex; gap: 10px; align-items: baseline; }
+.lesson > h2 .num { font-family: var(--font-cond); font-size: 13px; color: var(--panel); background: var(--accent); border-radius: 999px; padding: 1px 9px; }
+.lesson > p.lead { margin: -8px 0 0; color: var(--muted); max-width: 80ch; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+
+/* controls */
+.controls { display: grid; gap: 12px; }
+.ctl { display: grid; gap: 4px; }
+.ctl label, .ctl .lab { font-size: 13px; font-weight: 600; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.ctl .lab label { display: inline; }
+.ctl .lab b { color: var(--fg); font-size: 15px; font-variant-numeric: tabular-nums; }
+.ctl.big .lab b { font-size: 22px; color: var(--accent); }
+input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; margin: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.seg button { font: 600 13px var(--font-body); border: 0; background: transparent; color: var(--muted); padding: 4px 12px; cursor: pointer; }
+.seg button[aria-pressed=true] { background: var(--accent); color: var(--panel); }
+.btn { font: 600 13px var(--font-body); color: var(--accent); background: transparent; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+.btn:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.btn.primary { background: var(--accent); color: var(--panel); border-color: var(--accent); }
+.btn:focus-visible, .seg button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+select { font: 500 14px var(--font-body); color: var(--fg); background: var(--cap); border: 1px solid var(--line); border-radius: 8px; padding: 3px 6px; }
+.presets { display: grid; gap: 6px; }
+.presets .lab { font-size: 13px; font-weight: 600; color: var(--muted); }
+
+/* seesaw */
+.seesaw { width: 100%; height: auto; display: block; }
+.seesaw .beam { stroke: var(--beam); stroke-width: 8; stroke-linecap: round; }
+.seesaw .fulcrum { fill: var(--fulcrum); }
+.seesaw .ground { stroke: var(--line); stroke-width: 2; }
+.seesaw .level { stroke: var(--axis); stroke-width: 1.5; stroke-dasharray: 5 5; }
+.seesaw .box { fill: var(--box); stroke: var(--line); stroke-width: 1.5; }
+.seesaw .boxlab { font: 600 14px var(--font-cond); fill: var(--muted); letter-spacing: .02em; }
+.seesaw .boxval { font: 600 21px var(--font-body); fill: var(--fg); font-variant-numeric: tabular-nums; }
+.seesaw .arrow { font: 600 22px var(--font-body); }
+.seesaw .up { fill: var(--pos); } .seesaw .down { fill: var(--neg); }
+.seesaw .pivotlab { font: 500 12px var(--font-body); fill: var(--muted); }
+.seesaw .tag { font: 600 13px var(--font-body); fill: var(--muted); }
+.verdict { margin: 0; font-size: 15px; }
+.verdict b.prem { color: var(--pos); } .verdict b.disc { color: var(--neg); } .verdict b.par { color: var(--accent); }
+
+/* calculation card */
+.calc { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; background: color-mix(in srgb, var(--cap) 60%, var(--panel)); }
+.calc h3 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+table.factors { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 14px; }
+table.factors th, table.factors td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--line); }
+table.factors th { font-weight: 600; color: var(--muted); font-size: 12.5px; }
+table.factors td:nth-child(2) { text-align: right; font-weight: 500; }
+table.factors tr.solve td { color: var(--accent); font-weight: 600; }
+.split { display: grid; gap: 4px; }
+.splitbar { display: flex; height: 14px; border-radius: 4px; overflow: hidden; gap: 2px; background: var(--panel); }
+.splitbar span { display: block; height: 100%; }
+.splitbar .cpn { background: var(--s1); } .splitbar .parv { background: var(--s2); }
+.splitkey { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.splitkey i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.formula { font-family: ui-monospace, Consolas, monospace; font-size: 13px; background: var(--cap); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; overflow-wrap: anywhere; }
+.keys { font-size: 13px; color: var(--muted); }
+.keys .cap { font-family: var(--font-cond); font-size: 12px; font-weight: 600; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--cap); color: var(--fg); white-space: nowrap; }
+
+/* charts */
+.chart { position: relative; min-width: 0; }
+.chart svg { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.chart .gridl { stroke: var(--grid); stroke-width: 1; }
+.chart .axisl { stroke: var(--axis); stroke-width: 1; }
+.chart .tick { font: 500 11.5px var(--font-body); fill: var(--muted); font-variant-numeric: tabular-nums; }
+.chart .axtitle { font: 600 12px var(--font-body); fill: var(--muted); }
+.chart .ref { stroke: var(--axis); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.chart .reflab { font: 500 11.5px var(--font-body); fill: var(--muted); }
+.chart .region { font: 600 12px var(--font-body); fill: var(--muted); opacity: .8; }
+.chart .series { fill: none; stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
+.chart .dlab { font: 600 12.5px var(--font-body); fill: var(--fg); }
+.chart .cross { stroke: var(--axis); stroke-width: 1; }
+.chart .dot { stroke: var(--panel); stroke-width: 2; }
+.tip { position: absolute; pointer-events: none; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; font-size: 12.5px; line-height: 1.45; box-shadow: 0 4px 14px rgba(0,0,0,.12); white-space: nowrap; font-variant-numeric: tabular-nums; z-index: 2; }
+.tip i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--muted); }
+.legend span i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: 3px; }
+.charthead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.charthead h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.note { margin: 0; font-size: 13px; color: var(--muted); }
+
+/* tables */
+.tblwrap { overflow-x: auto; }
+table.data { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+table.data th, table.data td { padding: 5px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.data th { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+table.data th:first-child, table.data td:first-child { text-align: left; }
+table.data tr.cur td { background: color-mix(in srgb, var(--accent) 10%, transparent); font-weight: 600; }
+td.neg { color: var(--neg); } td.pos { color: var(--pos); }
+details.tbl summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--accent); }
+details.tbl[open] summary { margin-bottom: 8px; }
+
+.twosaw { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+@media (max-width: 560px) { .twosaw { grid-template-columns: minmax(0, 1fr); } }
+.sawcap { text-align: center; font-size: 14px; font-weight: 600; margin: 0; }
+.sawcap .sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+.takeaway { margin: 0; padding: 10px 14px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); border-radius: 0 8px 8px 0; font-size: 14.5px; }
+footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 80ch; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head><body>
+<div class="wrap">
+  <header class="top">
+    <h1>Bond Price and Yield</h1>
+    <p>A bond's price is the present value of its coupons and its par value, discounted at the required return r<sub>d</sub>. Raise r<sub>d</sub> and the same promised cash flows are worth less today. Price and yield sit on opposite ends of a seesaw.</p>
+    <nav class="steps" aria-label="Sections"><a href="#s1">1 · Price a bond</a><a href="#s2">2 · Price risk</a><a href="#s3">3 · Over time</a></nav>
+  </header>
+
+  <!-- ===================== 1. PRICE A BOND ===================== -->
+  <section class="lesson" id="s1" aria-labelledby="h1">
+    <h2 id="h1"><span class="num">1</span>Price a bond, then move the yield</h2>
+    <p class="lead">Set the bond's terms, then drag r<sub>d</sub>. When r<sub>d</sub> equals the coupon rate the seesaw is level and the bond sells at par. A $1,000 par value is assumed.</p>
+    <div class="grid2">
+      <div class="controls">
+        <div class="ctl big">
+          <div class="lab"><label for="rd">Required return r<sub>d</sub> (YTM)</label><b id="rdOut">10.00%</b></div>
+          <input type="range" id="rd" min="1" max="20" step="0.05" value="10" aria-describedby="verdict">
+        </div>
+        <div class="row">
+          <button class="btn primary" type="button" id="play">▶ Sweep r<sub>d</sub> 5% → 15%</button>
+          <button class="btn" type="button" id="toCoupon">Set r<sub>d</sub> = coupon</button>
+        </div>
+        <div class="ctl">
+          <div class="lab"><label for="cpn">Coupon rate</label><b id="cpnOut">10.00%</b></div>
+          <input type="range" id="cpn" min="0" max="20" step="0.25" value="10">
+        </div>
+        <div class="ctl">
+          <div class="lab"><label for="mat">Years to maturity</label><b id="matOut">10</b></div>
+          <input type="range" id="mat" min="1" max="30" step="1" value="10">
+        </div>
+        <div class="ctl">
+          <div class="lab"><span>Coupon payments</span></div>
+          <div class="seg" role="group" aria-label="Coupon payments">
+            <button type="button" id="fAnn" aria-pressed="true">Annual</button>
+            <button type="button" id="fSemi" aria-pressed="false">Semiannual</button>
+          </div>
+        </div>
+        <div class="presets">
+          <span class="lab">Examples from class</span>
+          <div class="row" id="presets"></div>
+        </div>
+      </div>
+
+      <div style="display:grid;gap:12px;min-width:0">
+        <svg class="seesaw" id="saw1" viewBox="0 0 600 270" role="img" aria-label="Seesaw showing yield on the left and price on the right"></svg>
+        <p class="verdict" id="verdict" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="calc" aria-labelledby="hcalc">
+        <h3 id="hcalc">The price calculation</h3>
+        <table class="factors"><thead><tr><th>Factor</th><th>Value</th></tr></thead><tbody id="factors"></tbody></table>
+        <div class="split">
+          <div class="splitbar" id="splitbar" aria-hidden="true"><span class="cpn"></span><span class="parv"></span></div>
+          <div class="splitkey" id="splitkey"></div>
+        </div>
+        <div><div class="note" style="margin-bottom:4px">Excel</div><div class="formula" id="excel"></div></div>
+        <div class="keys" id="keys"></div>
+      </div>
+
+      <div class="chart" id="c1wrap">
+        <div class="charthead"><h3>Price at every yield</h3><span class="note">Hover to read · click to set r<sub>d</sub></span></div>
+        <svg id="chart1" viewBox="0 0 560 320" aria-label="Price-yield curve for the bond"></svg>
+        <div class="tip" id="tip1" hidden></div>
+        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="tbl1"></table></div></details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 2. PRICE RISK ===================== -->
+  <section class="lesson" id="s2" aria-labelledby="h2">
+    <h2 id="h2"><span class="num">2</span>Price risk: a 1-year or a 10-year bond?</h2>
+    <p class="lead">Price risk is the concern that r<sub>d</sub> will rise and push a bond's value down. Both bonds pay a 10% annual coupon and have the same risk. Move r<sub>d</sub> and compare how far each seesaw tips.</p>
+    <div class="grid2">
+      <div class="controls">
+        <div class="ctl big">
+          <div class="lab"><label for="rd2">Required return r<sub>d</sub></label><b id="rd2Out">10.00%</b></div>
+          <input type="range" id="rd2" min="1" max="20" step="0.05" value="10">
+        </div>
+        <div class="row">
+          <button class="btn primary" type="button" id="play2">▶ Sweep r<sub>d</sub> 5% → 15%</button>
+          <span class="note">Short bond</span>
+          <select id="mA" aria-label="Short bond maturity"><option value="1" selected>1 year</option><option value="2">2 years</option><option value="5">5 years</option></select>
+          <span class="note">Long bond</span>
+          <select id="mB" aria-label="Long bond maturity"><option value="10" selected>10 years</option><option value="20">20 years</option><option value="30">30 years</option></select>
+        </div>
+        <p class="takeaway" id="risktake" aria-live="polite"></p>
+        <div class="tblwrap"><table class="data" id="tbl2"></table></div>
+        <p class="note">Change = percent change from the price at r<sub>d</sub> = 10%, where both bonds sell at par.</p>
+      </div>
+      <div class="chart" id="c2wrap">
+        <div class="charthead"><h3>Value at each YTM</h3><div class="legend" id="leg2"></div></div>
+        <svg id="chart2" viewBox="0 0 560 320" aria-label="Price-yield curves for the short and long bond"></svg>
+        <div class="tip" id="tip2" hidden></div>
+      </div>
+    </div>
+    <div class="twosaw">
+      <div><p class="sawcap"><span class="sw" style="background:var(--s1)"></span><span id="capA">1-year bond</span></p><svg class="seesaw" id="sawA" viewBox="0 0 600 270" role="img" aria-label="Seesaw for the short bond"></svg></div>
+      <div><p class="sawcap"><span class="sw" style="background:var(--s2)"></span><span id="capB">10-year bond</span></p><svg class="seesaw" id="sawB" viewBox="0 0 600 270" role="img" aria-label="Seesaw for the long bond"></svg></div>
+    </div>
+  </section>
+
+  <!-- ===================== 3. OVER TIME ===================== -->
+  <section class="lesson" id="s3" aria-labelledby="h3">
+    <h2 id="h3"><span class="num">3</span>Bond values over time: the pull to par</h2>
+    <p class="lead">Three 10-year bonds with the same risk, paying 13%, 10% and 7% annual coupons. If r<sub>d</sub> stays where it is, each price moves toward $1,000 as maturity approaches. At maturity every bond is worth its par value.</p>
+    <div class="grid2">
+      <div class="controls">
+        <div class="ctl big">
+          <div class="lab"><label for="rd3">Required return r<sub>d</sub> (held constant)</label><b id="rd3Out">10.00%</b></div>
+          <input type="range" id="rd3" min="4" max="16" step="0.25" value="10">
+        </div>
+        <p class="takeaway" id="timetake"></p>
+        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="tbl3"></table></div></details>
+      </div>
+      <div class="chart" id="c3wrap">
+        <div class="charthead"><h3>Price by year</h3><div class="legend" id="leg3"></div></div>
+        <svg id="chart3" viewBox="0 0 560 320" aria-label="Price of three bonds over time"></svg>
+        <div class="tip" id="tip3" hidden></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="note">Prices are the present value of the coupons plus the present value of par, valued just after a coupon is paid. For semiannual bonds: N = years × 2, I/YR = r<sub>d</sub> ÷ 2, PMT = annual coupon ÷ 2; PV and FV are unchanged.</footer>
+</div>
+
+<script>
+(function () {
+  const PAR = 1000;
+  const $ = id => document.getElementById(id);
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs, parent, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; if (parent) parent.appendChild(e); return e; };
+  const money = (v, d = 2) => '$' + v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const pct = (v, d = 2) => v.toFixed(d) + '%';
+  const num = (v, d = 2) => v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const trimPct = v => (Math.round(v * 1000) / 1000).toString() + '%';
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- bond math ----------
+  function bond(cpnPct, rdPct, years, m) {
+    const n = Math.round(years * m), i = rdPct / 100 / m, pmt = cpnPct / 100 * PAR / m;
+    const disc = Math.pow(1 + i, -n);
+    const pvCpn = i === 0 ? pmt * n : pmt * (1 - disc) / i;
+    const pvPar = PAR * disc;
+    return { n, i, pmt, pvCpn, pvPar, price: pvCpn + pvPar };
+  }
+  const price = (c, r, y, m = 1) => bond(c, r, y, m).price;
+
+  // ---------- seesaw ----------
+  // Tilt is proportional to the price's % distance from par (same scale everywhere so seesaws can be compared).
+  const DEG_PER_PCT = 0.42, MAX_DEG = 20;
+  function drawSaw(svg, rdPct, pr, opts = {}) {
+    svg.textContent = '';
+    const cx = 300, cy = 150, L = 440;
+    const dev = (pr - PAR) / PAR * 100;
+    let deg = dev * DEG_PER_PCT; const clipped = Math.abs(deg) > MAX_DEG; deg = Math.max(-MAX_DEG, Math.min(MAX_DEG, deg));
+    const t = deg * Math.PI / 180, dx = L / 2 * Math.cos(t), dy = L / 2 * Math.sin(t);
+    const lx = cx - dx, ly = cy + dy, rx = cx + dx, ry = cy - dy; // right end (price) rises when price > par
+    el('line', { x1: 20, y1: 236, x2: 580, y2: 236, class: 'ground' }, svg);
+    el('line', { x1: 60, y1: cy, x2: 540, y2: cy, class: 'level' }, svg);
+    el('text', { x: cx, y: 258, 'text-anchor': 'middle', class: 'pivotlab' }, svg, opts.pivot || 'Level at par: rₐ = coupon'.replace('ₐ', 'd'));
+    el('path', { d: `M${cx} ${cy + 4} L${cx - 34} 236 L${cx + 34} 236 Z`, class: 'fulcrum' }, svg);
+    el('line', { x1: lx, y1: ly, x2: rx, y2: ry, class: 'beam' }, svg);
+    el('circle', { cx, cy, r: 6, fill: 'var(--panel)', stroke: 'var(--beam)', 'stroke-width': 3 }, svg);
+    const box = (x, y, lab, val, color, sub) => {
+      const w = 150, h = 58, bx = Math.max(4, Math.min(600 - w - 4, x - w / 2)), by = y - h - 8;
+      el('rect', { x: bx, y: by, width: w, height: h, rx: 10, class: 'box' }, svg);
+      if (color) el('rect', { x: bx, y: by, width: 5, height: h, rx: 2, fill: color }, svg);
+      const t = el('text', { x: bx + w / 2, y: by + 20, 'text-anchor': 'middle', class: 'boxlab' }, svg, lab);
+      if (sub) el('tspan', { 'baseline-shift': 'sub', 'font-size': '10px' }, t, sub);
+      el('text', { x: bx + w / 2, y: by + 45, 'text-anchor': 'middle', class: 'boxval' }, svg, val);
+    };
+    box(lx, ly, 'Yield r', pct(rdPct), null, 'd');
+    box(rx, ry, 'Price', money(pr), opts.color);
+    if (Math.abs(dev) > 0.05) {
+      const yUp = dev < 0; // yield end up when price below par
+      el('text', { x: lx < 90 ? lx + 92 : lx - 88, y: ly + 8, 'text-anchor': 'middle', class: 'arrow ' + (yUp ? 'up' : 'down') }, svg, yUp ? '▲' : '▼');
+      el('text', { x: rx > 510 ? rx - 92 : rx + 88, y: ry + 8, 'text-anchor': 'middle', class: 'arrow ' + (yUp ? 'down' : 'up') }, svg, yUp ? '▼' : '▲');
+    }
+    if (clipped) el('text', { x: 300, y: 22, 'text-anchor': 'middle', class: 'tag' }, svg, 'Tilt capped, the price is far from par');
+    svg.setAttribute('aria-label', `Seesaw: yield ${pct(rdPct)}, price ${money(pr)}, ${dev > 0.05 ? 'above' : dev < -0.05 ? 'below' : 'at'} par`);
+  }
+
+  // ---------- line chart with hover ----------
+  function lineChart(cfg) {
+    const svg = cfg.svg, W = 560, H = 320, m = { l: 62, r: cfg.rightPad || 18, t: 16, b: 44 };
+    svg.textContent = '';
+    const [x0, x1] = cfg.x, [y0, y1] = cfg.y;
+    const X = v => m.l + (v - x0) / (x1 - x0) * (W - m.l - m.r);
+    const Y = v => H - m.b - (v - y0) / (y1 - y0) * (H - m.t - m.b);
+    cfg.yTicks.forEach(v => { el('line', { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: 'gridl' }, svg); el('text', { x: m.l - 8, y: Y(v) + 4, 'text-anchor': 'end', class: 'tick' }, svg, cfg.yFmt(v)); });
+    cfg.xTicks.forEach(v => el('text', { x: X(v), y: H - m.b + 18, 'text-anchor': 'middle', class: 'tick' }, svg, cfg.xFmt(v)));
+    el('line', { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, class: 'axisl' }, svg);
+    el('text', { x: (m.l + W - m.r) / 2, y: H - 6, 'text-anchor': 'middle', class: 'axtitle' }, svg, cfg.xTitle);
+    el('text', { x: 14, y: (m.t + H - m.b) / 2, 'text-anchor': 'middle', class: 'axtitle', transform: `rotate(-90 14 ${(m.t + H - m.b) / 2})` }, svg, cfg.yTitle);
+    (cfg.refs || []).forEach(r => {
+      if (r.y != null) { el('line', { x1: m.l, x2: W - m.r, y1: Y(r.y), y2: Y(r.y), class: 'ref' }, svg); el('text', { x: W - m.r - 4, y: Y(r.y) - 6, 'text-anchor': 'end', class: 'reflab' }, svg, r.label); }
+      if (r.x != null) { el('line', { x1: X(r.x), x2: X(r.x), y1: m.t, y2: H - m.b, class: 'ref' }, svg); el('text', { x: X(r.x) + 5, y: m.t + 12, class: 'reflab' }, svg, r.label); }
+    });
+    (cfg.regions || []).forEach(r => el('text', { x: X(r.x), y: Y(r.y), 'text-anchor': r.anchor || 'middle', class: 'region' }, svg, r.label));
+    cfg.series.forEach(s => {
+      const d = s.pts.map((p, k) => (k ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(Math.max(y0, Math.min(y1, p[1]))).toFixed(1)).join(' ');
+      el('path', { d, class: 'series', stroke: s.color }, svg);
+      if (s.markers) s.pts.forEach(p => el('circle', { cx: X(p[0]), cy: Y(p[1]), r: 4, fill: s.color, class: 'dot' }, svg));
+      if (s.label) { const p = s.labelAt || s.pts[s.pts.length - 1]; el('text', { x: X(p[0]) + (s.labelDx ?? 6), y: Y(p[1]) + (s.labelDy ?? 4), 'text-anchor': s.labelAnchor || 'start', class: 'dlab' }, svg, s.label); }
+    });
+    (cfg.marks || []).forEach(p => el('circle', { cx: X(p.x), cy: Y(p.y), r: 6, fill: p.color, class: 'dot' }, svg));
+    // hover layer
+    const cross = el('line', { y1: m.t, y2: H - m.b, class: 'cross', visibility: 'hidden' }, svg);
+    const hdots = cfg.series.map(s => el('circle', { r: 5, fill: s.color, class: 'dot', visibility: 'hidden' }, svg));
+    const hit = el('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: 'transparent', style: 'cursor:crosshair' }, svg);
+    const tip = cfg.tip, wrap = svg.parentNode;
+    const toX = e => { const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const p = pt.matrixTransform(svg.getScreenCTM().inverse()); return x0 + (p.x - m.l) / (W - m.l - m.r) * (x1 - x0); };
+    const show = e => {
+      let xv = Math.max(x0, Math.min(x1, toX(e))); if (cfg.snap) xv = cfg.snap(xv);
+      cross.setAttribute('x1', X(xv)); cross.setAttribute('x2', X(xv)); cross.setAttribute('visibility', 'visible');
+      const rows = cfg.series.map((s, k) => { const yv = s.at(xv); hdots[k].setAttribute('cx', X(xv)); hdots[k].setAttribute('cy', Y(Math.max(y0, Math.min(y1, yv)))); hdots[k].setAttribute('visibility', 'visible'); return `<div><i style="background:${s.color}"></i>${s.name}: <b>${cfg.yFmtTip(yv)}</b></div>`; });
+      tip.innerHTML = `<div style="color:var(--muted)">${cfg.xFmtTip(xv)}</div>` + rows.join('');
+      tip.hidden = false;
+      const wr = wrap.getBoundingClientRect(), sr = svg.getBoundingClientRect();
+      const px = sr.left - wr.left + X(xv) / W * sr.width, py = sr.top - wr.top + m.t / H * sr.height + 4;
+      const tw = tip.offsetWidth; tip.style.left = Math.max(0, Math.min(wr.width - tw, px + (px > wr.width / 2 ? -tw - 12 : 12))) + 'px'; tip.style.top = py + 'px';
+    };
+    const hide = () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); hdots.forEach(d => d.setAttribute('visibility', 'hidden')); };
+    hit.addEventListener('pointermove', show); hit.addEventListener('pointerdown', show); hit.addEventListener('pointerleave', hide);
+    if (cfg.onClick) hit.addEventListener('click', e => { let xv = Math.max(x0, Math.min(x1, toX(e))); cfg.onClick(xv); });
+  }
+  const niceMax = v => { const step = v > 2500 ? 1000 : 500; return Math.ceil(v / step) * step; };
+  const ticks = (a, b, s) => { const t = []; for (let v = a; v <= b + 1e-9; v += s) t.push(+v.toFixed(6)); return t; };
+
+  // ===================== 1. PRICE A BOND =====================
+  const st = { rd: 10, cpn: 10, mat: 10, m: 1 };
+  const PRESETS = [
+    { t: 'Par: 10% coupon, rₓ = 10%', s: { cpn: 10, rd: 10, mat: 10, m: 1 } },
+    { t: 'Premium: 13% coupon', s: { cpn: 13, rd: 10, mat: 10, m: 1 } },
+    { t: 'Discount: 7% coupon', s: { cpn: 7, rd: 10, mat: 10, m: 1 } },
+    { t: 'Semiannual, rₓ = 13%', s: { cpn: 10, rd: 13, mat: 10, m: 2 } },
+  ];
+  const presetsEl = $('presets');
+  PRESETS.forEach(p => { const b = document.createElement('button'); b.className = 'btn'; b.type = 'button'; b.innerHTML = p.t.replace(/rₓ/g, 'r<sub>d</sub>'); b.addEventListener('click', () => { stopPlay(); Object.assign(st, p.s); sync1(); }); presetsEl.appendChild(b); });
+
+  function sync1() {
+    $('rd').value = st.rd; $('cpn').value = st.cpn; $('mat').value = st.mat;
+    $('fAnn').setAttribute('aria-pressed', st.m === 1); $('fSemi').setAttribute('aria-pressed', st.m === 2);
+    render1();
+  }
+  function render1() {
+    const b = bond(st.cpn, st.rd, st.mat, st.m);
+    $('rdOut').textContent = pct(st.rd); $('cpnOut').textContent = pct(st.cpn); $('matOut').textContent = st.mat;
+    drawSaw($('saw1'), st.rd, b.price, { color: 'var(--s1)' });
+    const diff = st.rd - st.cpn;
+    const v = $('verdict');
+    if (Math.abs(b.price - PAR) < 0.005) v.innerHTML = `<b class="par">Par bond.</b> r<sub>d</sub> equals the ${pct(st.cpn)} coupon, so the price equals par, $1,000.`;
+    else if (diff > 0) v.innerHTML = `<b class="disc">Discount bond.</b> r<sub>d</sub> (${pct(st.rd)}) is above the coupon rate (${pct(st.cpn)}), so the price, ${money(b.price)}, is below par.`;
+    else v.innerHTML = `<b class="prem">Premium bond.</b> r<sub>d</sub> (${pct(st.rd)}) is below the coupon rate (${pct(st.cpn)}), so the price, ${money(b.price)}, is above par.`;
+
+    // calculation card, in the same factor order as the slides
+    const per = st.m === 2;
+    const rows = [
+      ['N (periods)', per ? `${b.n}  (${st.mat} × 2)` : `${b.n}`],
+      ['I/YR (rate' + (per ? ' per period)' : ')'), per ? `${trimPct(st.rd / 2)}  (${trimPct(st.rd)} ÷ 2)` : trimPct(st.rd)],
+      ['PV (price)', money(b.price), true],
+      ['PMT (coupon)', per ? `${num(b.pmt)}  (${num(b.pmt * 2)} ÷ 2)` : num(b.pmt)],
+      ['FV (par)', '1,000'],
+    ];
+    $('factors').innerHTML = rows.map(r => `<tr class="${r[2] ? 'solve' : ''}"><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
+    const shareC = b.pvCpn / b.price * 100;
+    const bar = $('splitbar').children; bar[0].style.width = shareC + '%'; bar[1].style.width = (100 - shareC) + '%';
+    $('splitkey').innerHTML = `<span><i style="background:var(--s1)"></i>PV of coupons ${money(b.pvCpn)}</span><span><i style="background:var(--s2)"></i>PV of par ${money(b.pvPar)}</span><span>= Price ${money(b.price)}</span>`;
+    const rate = (st.rd / 100 / st.m); const rateS = +rate.toFixed(6);
+    $('excel').textContent = `=PV(${rateS}, ${b.n}, ${+b.pmt.toFixed(4)}, 1000)  →  −${num(b.price)}`;
+    const capKey = s => `<span class="cap">${s}</span>`;
+    $('keys').innerHTML = `Calculator (P/Y = 1): ${b.n} ${capKey('N')} ${+(st.rd / st.m).toFixed(4)} ${capKey('I/Y')} ${+b.pmt.toFixed(4)} ${capKey('PMT')} 1000 ${capKey('FV')} ${capKey('CPT')} ${capKey('PV')} = −${num(b.price)}. The sign is negative because you pay the price.`;
+
+    // chart
+    const pts = []; for (let r = 1; r <= 20.0001; r += 0.1) pts.push([r, price(st.cpn, r, st.mat, st.m)]);
+    const ymax = niceMax(Math.max(PAR * 1.2, pts[0][1]));
+    const ystep = ymax > 3000 ? 1000 : 500;
+    lineChart({
+      svg: $('chart1'), tip: $('tip1'), x: [1, 20], y: [0, ymax], xTicks: ticks(2, 20, 2), yTicks: ticks(0, ymax, ystep),
+      xFmt: v => v + '%', yFmt: v => '$' + v.toLocaleString(), xTitle: 'Required return r_d (YTM)'.replace('r_d', 'rd'), yTitle: 'Price',
+      xFmtTip: v => 'rd ' + pct(v), yFmtTip: v => money(v),
+      refs: [{ y: PAR, label: 'Par $1,000' }].concat(st.cpn >= 1 ? [{ x: st.cpn, label: 'coupon ' + trimPct(st.cpn) }] : []),
+      regions: [{ x: 3.2, y: ymax * 0.06, label: '', anchor: 'start' }],
+      series: [{ name: 'Price', color: 'var(--s1)', pts, at: r => price(st.cpn, r, st.mat, st.m) }],
+      marks: [{ x: st.rd, y: b.price, color: 'var(--s1)' }],
+      snap: v => Math.round(v * 20) / 20,
+      onClick: v => { stopPlay(); st.rd = Math.round(v * 20) / 20; sync1(); }
+    });
+    // table
+    const rs = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20];
+    if (!rs.includes(st.rd)) { rs.push(st.rd); rs.sort((a, b) => a - b); }
+    $('tbl1').innerHTML = '<thead><tr><th>r<sub>d</sub></th><th>Price</th><th>vs. par</th></tr></thead><tbody>' +
+      rs.map(r => { const p = price(st.cpn, r, st.mat, st.m); const d = p - PAR; return `<tr class="${r === st.rd ? 'cur' : ''}"><td>${pct(r)}</td><td>${money(p)}</td><td class="${d > 0.005 ? 'pos' : d < -0.005 ? 'neg' : ''}">${Math.abs(d) < 0.005 ? 'at par' : d > 0 ? 'premium' : 'discount'}</td></tr>`; }).join('') + '</tbody>';
+  }
+  $('rd').addEventListener('input', e => { stopPlay(); st.rd = +e.target.value; render1(); });
+  $('cpn').addEventListener('input', e => { st.cpn = +e.target.value; render1(); });
+  $('mat').addEventListener('input', e => { st.mat = +e.target.value; render1(); });
+  $('fAnn').addEventListener('click', () => { st.m = 1; sync1(); });
+  $('fSemi').addEventListener('click', () => { st.m = 2; sync1(); });
+  $('toCoupon').addEventListener('click', () => { stopPlay(); st.rd = Math.max(1, Math.min(20, st.cpn)); sync1(); });
+
+  // sweep animation, shared by sections 1 and 2
+  let anim = null;
+  function stopPlay() { if (anim) { cancelAnimationFrame(anim.id); anim.btn.textContent = anim.label; anim = null; } }
+  function sweep(btn, setRd) {
+    if (anim) { const same = anim.btn === btn; stopPlay(); if (same) return; }
+    const label = btn.textContent; btn.textContent = '■ Stop';
+    const path = [[0, 10], [1, 5], [3, 15], [4, 10]]; const dur = reduce ? 1200 : 7000; const t0 = performance.now();
+    anim = { btn, label, id: 0 };
+    const step = now => {
+      const u = Math.min(4, (now - t0) / dur * 4); let k = 0; while (k < path.length - 2 && u > path[k + 1][0]) k++;
+      const [ua, ra] = path[k], [ub, rb] = path[k + 1]; const r = ra + (rb - ra) * (u - ua) / (ub - ua);
+      setRd(Math.round(r * 20) / 20);
+      if (u < 4) anim.id = requestAnimationFrame(step); else stopPlay();
+    };
+    anim.id = requestAnimationFrame(step);
+  }
+  $('play').addEventListener('click', () => sweep($('play'), r => { st.rd = r; $('rd').value = r; render1(); }));
+
+  // ===================== 2. PRICE RISK =====================
+  const s2 = { rd: 10, a: 1, b: 10 };
+  function render2() {
+    $('rd2Out').textContent = pct(s2.rd);
+    const pa = price(10, s2.rd, s2.a), pb = price(10, s2.rd, s2.b);
+    const la = s2.a + '-year', lb = s2.b + '-year';
+    $('capA').textContent = la + ' bond'; $('capB').textContent = lb + ' bond';
+    drawSaw($('sawA'), s2.rd, pa, { color: 'var(--s1)', pivot: 'Level at par: rd = 10%' });
+    drawSaw($('sawB'), s2.rd, pb, { color: 'var(--s2)', pivot: 'Level at par: rd = 10%' });
+    const ca = (pa / PAR - 1) * 100, cb = (pb / PAR - 1) * 100;
+    const t = $('risktake');
+    if (Math.abs(s2.rd - 10) < 0.001) t.innerHTML = `At r<sub>d</sub> = 10% both bonds sell at par. Move r<sub>d</sub> and watch which seesaw tips further.`;
+    else t.innerHTML = `Moving r<sub>d</sub> from 10% to ${pct(s2.rd)} changes the ${la} bond's price by <b>${ca > 0 ? '+' : ''}${ca.toFixed(1)}%</b> and the ${lb} bond's by <b>${cb > 0 ? '+' : ''}${cb.toFixed(1)}%</b>. The longer bond has more price risk.`;
+    $('leg2').innerHTML = `<span><i style="background:var(--s1)"></i>${la}</span><span><i style="background:var(--s2)"></i>${lb}</span>`;
+    const ptsA = [], ptsB = []; for (let r = 1; r <= 20.0001; r += 0.1) { ptsA.push([r, price(10, r, s2.a)]); ptsB.push([r, price(10, r, s2.b)]); }
+    const ymax = niceMax(Math.max(ptsA[0][1], ptsB[0][1]));
+    lineChart({
+      svg: $('chart2'), tip: $('tip2'), x: [1, 20], y: [0, ymax], xTicks: ticks(2, 20, 2), yTicks: ticks(0, ymax, ymax > 3000 ? 1000 : 500), rightPad: 64,
+      xFmt: v => v + '%', yFmt: v => '$' + v.toLocaleString(), xTitle: 'Required return rd (YTM)', yTitle: 'Value',
+      xFmtTip: v => 'rd ' + pct(v), yFmtTip: v => money(v),
+      refs: [{ y: PAR, label: '' }, { x: 10, label: 'coupon 10%' }],
+      series: [
+        { name: la, color: 'var(--s1)', pts: ptsA, at: r => price(10, r, s2.a), label: la },
+        { name: lb, color: 'var(--s2)', pts: ptsB, at: r => price(10, r, s2.b), label: lb },
+      ],
+      marks: [{ x: s2.rd, y: pa, color: 'var(--s1)' }, { x: s2.rd, y: pb, color: 'var(--s2)' }],
+      snap: v => Math.round(v * 20) / 20,
+      onClick: v => { stopPlay(); s2.rd = Math.round(v * 20) / 20; $('rd2').value = s2.rd; render2(); }
+    });
+    // slide-style table: 5%, 10%, 15% plus the current rd
+    const rs = [5, 10, 15]; if (!rs.includes(s2.rd)) { rs.push(s2.rd); rs.sort((a, b) => a - b); }
+    const cell = c => Math.abs(c) < 0.05 ? '<td>–</td>' : `<td class="${c > 0 ? 'pos' : 'neg'}">${c > 0 ? '+' : ''}${c.toFixed(1)}%</td>`;
+    $('tbl2').innerHTML = `<thead><tr><th>r<sub>d</sub></th><th>${la}</th><th>Change</th><th>${lb}</th><th>Change</th></tr></thead><tbody>` +
+      rs.map(r => { const a = price(10, r, s2.a), b = price(10, r, s2.b); return `<tr class="${r === s2.rd && ![5, 10, 15].includes(r) ? 'cur' : ''}"><td>${pct(r, r % 1 ? 2 : 0)}</td><td>${money(a, 0)}</td>${cell((a / PAR - 1) * 100)}<td>${money(b, 0)}</td>${cell((b / PAR - 1) * 100)}</tr>`; }).join('') + '</tbody>';
+  }
+  $('rd2').addEventListener('input', e => { stopPlay(); s2.rd = +e.target.value; render2(); });
+  $('mA').addEventListener('change', e => { s2.a = +e.target.value; render2(); });
+  $('mB').addEventListener('change', e => { s2.b = +e.target.value; render2(); });
+  $('play2').addEventListener('click', () => sweep($('play2'), r => { s2.rd = r; $('rd2').value = r; render2(); }));
+
+  // ===================== 3. OVER TIME =====================
+  const s3 = { rd: 10 };
+  const B3 = [{ c: 13, color: 'var(--s1)' }, { c: 10, color: 'var(--s2)' }, { c: 7, color: 'var(--s3)' }];
+  function render3() {
+    $('rd3Out').textContent = pct(s3.rd);
+    const val = (c, yr) => price(c, s3.rd, 10 - yr); // value at year yr, just after that year's coupon
+    const series = B3.map(b => ({ name: b.c + '% coupon', color: b.color, markers: true, pts: ticks(0, 10, 1).map(y => [y, val(b.c, y)]), at: y => val(b.c, y),
+      label: `${b.c}%`, labelAt: [0, val(b.c, 0)], labelAnchor: 'end', labelDx: -10, labelDy: 4 }));
+    const all = series.flatMap(s => s.pts.map(p => p[1]));
+    const lo = Math.floor(Math.min(...all) / 100) * 100 - 50, hi = Math.ceil(Math.max(...all) / 100) * 100 + 50;
+    const span = hi - lo, step = span > 900 ? 200 : 100;
+    const y0 = Math.floor(lo / step) * step, y1 = Math.ceil(hi / step) * step;
+    // keep the start-of-life labels clear of the y-axis by drawing years 0..10 with a left pad
+    lineChart({
+      svg: $('chart3'), tip: $('tip3'), x: [-1.2, 10], y: [y0, y1], xTicks: ticks(0, 10, 1), yTicks: ticks(y0, y1, step),
+      xFmt: v => v, yFmt: v => '$' + v.toLocaleString(), xTitle: 'Years since issue (maturity at year 10)', yTitle: 'Price',
+      xFmtTip: v => 'Year ' + v + (v === 10 ? ' (maturity)' : ''), yFmtTip: v => money(v),
+      refs: [{ y: PAR, label: '' }],
+      series, snap: v => Math.max(0, Math.min(10, Math.round(v)))
+    });
+    $('leg3').innerHTML = B3.map(b => `<span><i style="background:${b.color}"></i>${b.c}% coupon</span>`).join('');
+    const kind = c => Math.abs(c - s3.rd) < 1e-9 ? 'par' : c > s3.rd ? 'premium' : 'discount';
+    $('timetake').innerHTML = `With r<sub>d</sub> = ${pct(s3.rd)}: the 13% bond is a <b>${kind(13)}</b> bond, the 10% bond a <b>${kind(10)}</b> bond and the 7% bond a <b>${kind(7)}</b> bond. Premium prices fall toward $1,000, discount prices rise toward $1,000, and a par bond stays at $1,000.`;
+    $('tbl3').innerHTML = `<thead><tr><th>Year</th>${B3.map(b => `<th>${b.c}% coupon</th>`).join('')}</tr></thead><tbody>` +
+      ticks(0, 10, 1).map(y => `<tr><td>${y}${y === 10 ? ' (maturity)' : ''}</td>${B3.map(b => `<td>${money(val(b.c, y))}</td>`).join('')}</tr>`).join('') + '</tbody>';
+  }
+  $('rd3').addEventListener('input', e => { s3.rd = +e.target.value; render3(); });
+
+  sync1(); render2(); render3();
+  let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { render1(); render2(); render3(); }, 150); });
+})();
+</script>
+</body></html>
