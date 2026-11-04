@@ -168,6 +168,19 @@ ol.notice p { margin: 0; font-size: 14.5px; }
 ol.notice .row { margin-top: 4px; }
 footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 90ch; display: grid; gap: 6px; }
 footer.note p { margin: 0; }
+/* predict mode (same look as bond-price-yield) */
+.btn.primary { background: var(--accent); color: var(--panel); border-color: var(--accent); }
+.btn.primary:hover { background: color-mix(in srgb, var(--accent) 85%, var(--fg)); }
+.btn:disabled { opacity: .45; cursor: default; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 10px 12px; border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 12px; }
+.toolbar .note { flex: 1 1 200px; }
+.predict { border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); background: color-mix(in srgb, var(--accent) 7%, var(--panel)); border-radius: 12px; padding: 12px 14px; display: grid; gap: 10px; }
+.predict p { margin: 0; }
+.fb-ok { color: var(--pos); font-weight: 600; } .fb-no { color: var(--neg); font-weight: 600; }
+.chart.masked svg { filter: blur(8px); pointer-events: none; user-select: none; }
+.chart .maskmsg { position: absolute; inset: 40% 10% auto; text-align: center; font-weight: 600; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.blurred { filter: blur(7px); pointer-events: none; user-select: none; }
+.legend .hid { font-style: italic; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
 </head><body>
@@ -182,6 +195,15 @@ footer.note p { margin: 0; }
   <section class="lesson" id="s1" aria-labelledby="h1">
     <h2 id="h1"><span class="num">1</span>Relative PPP test: actual exchange rate vs. the PPP path</h2>
     <p class="lead">Pick a currency and a base year. Both lines start at 100 in the base year. The blue line is what the dollar value of the currency actually did. The orange line is where relative PPP says it should be if it had moved exactly with the inflation differential since the base year. The shaded gap is the miss.</p>
+    <div class="toolbar">
+      <button class="btn primary" type="button" id="modeBtn1">👁 Reveal answer</button>
+      <span class="note" id="modeNote1"></span>
+    </div>
+    <div class="predict" id="predictBox1">
+      <p><b>Predict first.</b> <span id="pTerms1"></span></p>
+      <div class="row" id="pBtns1" role="group" aria-label="Your prediction"></div>
+      <p id="pFeedback1" aria-live="polite"></p>
+    </div>
 
     <div class="formula" aria-label="Notation">
       <div class="eq">
@@ -229,13 +251,22 @@ footer.note p { margin: 0; }
     </div>
     <p class="ctxnote" id="c1Ctx"></p>
     <p class="takeaway" id="c1Story"></p>
-    <details class="tbl"><summary>Show as a table</summary><div class="tblscroll"><table class="data" id="t1"></table></div></details>
+    <details class="tbl" id="d1"><summary>Show as a table</summary><div class="tblscroll"><table class="data" id="t1"></table></div></details>
   </section>
 
   <!-- ===================== 2. REAL EXCHANGE RATE ===================== -->
   <section class="lesson" id="s2" aria-labelledby="h2">
     <h2 id="h2"><span class="num">2</span>The real exchange rate: long swings, slow pull back</h2>
     <p class="lead">The real exchange rate compares price levels in a common currency: <b>q = S × P<sub>f</sub> / P<sub>h</sub></b>. If relative PPP held exactly, q would never move. Here it is indexed so that its average over the whole sample is 100. Above 100, the foreign currency is <b>strong in real terms</b>: that country's goods are expensive for Americans. Below 100, it is weak in real terms. (The gap in section 1 is exactly the change in q since the base year.)</p>
+    <div class="toolbar">
+      <button class="btn primary" type="button" id="modeBtn2">👁 Reveal answer</button>
+      <span class="note" id="modeNote2"></span>
+    </div>
+    <div class="predict" id="predictBox2">
+      <p><b>Predict first.</b> <span id="pTerms2"></span></p>
+      <div class="row" id="pBtns2" role="group" aria-label="Your prediction"></div>
+      <p id="pFeedback2" aria-live="polite"></p>
+    </div>
     <div class="ctl">
       <span class="lab" id="cur2Lab">Currency (linked to section 1)</span>
       <div class="pills" id="cur2" role="group" aria-labelledby="cur2Lab"></div>
@@ -243,12 +274,14 @@ footer.note p { margin: 0; }
     <div class="chart" id="c2Wrap">
       <div class="charthead"><h3 id="c2Title"></h3><div class="legend" id="c2Leg"></div></div>
       <svg id="c2" role="img"></svg>
+      <div class="maskmsg" id="mask2" hidden>Make your prediction to see the chart</div>
       <div class="tip" id="c2Tip" hidden></div>
     </div>
     <div class="hl">
       <div>
         <h3>Long swings</h3>
         <p id="r2Swing"></p>
+        <p class="note" id="r2SwingHid" hidden>Hidden until you make your prediction.</p>
       </div>
       <div>
         <h3>The half-life idea</h3>
@@ -256,17 +289,27 @@ footer.note p { margin: 0; }
         <p class="note" id="r2Cav"></p>
       </div>
     </div>
-    <details class="tbl"><summary>Show as a table</summary><div class="tblscroll"><table class="data" id="t2"></table></div></details>
+    <details class="tbl" id="d2"><summary>Show as a table</summary><div class="tblscroll"><table class="data" id="t2"></table></div></details>
   </section>
 
   <!-- ===================== 3. SCATTER ===================== -->
   <section class="lesson" id="s3" aria-labelledby="h3">
     <h2 id="h3"><span class="num">3</span>Inflation vs. depreciation, currency by currency</h2>
     <p class="lead">Each dot is one currency over a long window. Across: the change in its dollar value that relative PPP predicts from average inflation in the two countries, e<sub>f</sub> = (1 + I<sub>h</sub>)/(1 + I<sub>f</sub>) − 1, per year. Up: the change that actually happened, per year. If relative PPP held over the window, every dot would sit on the dashed 45° line. Hover or tap a dot for details; click one to select it in sections 1 and 2.</p>
+    <div class="toolbar">
+      <button class="btn primary" type="button" id="modeBtn3">👁 Reveal answer</button>
+      <span class="note" id="modeNote3"></span>
+    </div>
+    <div class="predict" id="predictBox3">
+      <p><b>Predict first.</b> <span id="pTerms3"></span></p>
+      <div class="row" id="pBtns3" role="group" aria-label="Your prediction"></div>
+      <p id="pFeedback3" aria-live="polite"></p>
+    </div>
     <div class="sc">
       <div class="chart" id="c3Wrap">
         <div class="charthead"><h3 id="c3Title"></h3><div class="legend" id="c3Leg"></div></div>
         <svg id="c3" role="img"></svg>
+        <div class="maskmsg" id="mask3" hidden>Make your prediction to see the chart</div>
         <div class="tip" id="c3Tip" hidden></div>
       </div>
       <div class="side">
@@ -287,7 +330,7 @@ footer.note p { margin: 0; }
         <p class="note">Each window compares the average exchange rate and price levels in the start year with their averages over the latest 12 months, and converts the totals to average yearly rates. A currency appears only if its data cover the whole window (the euro starts in 1999, the Mexican peso in late 1993, the Brazilian real in 1995).</p>
       </div>
     </div>
-    <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="t3"></table></div></details>
+    <details class="tbl" id="d3"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="t3"></table></div></details>
   </section>
 
   <!-- ===================== 4. WHAT TO NOTICE ===================== -->
@@ -323,6 +366,7 @@ footer.note p { margin: 0; }
   const usP = i => (i < US0 || i > END) ? null : D.us.v[i - US0];
   const MINUS = '−';
   const sgnPct = (v, d = 1) => { const r = +(v * 100).toFixed(d); return (r > 0 ? '+' : r < 0 ? MINUS : '') + Math.abs(r).toFixed(d) + '%'; };
+  const chgPct = v => sgnPct(v, v <= -0.995 ? 2 : 0); // keep 'lost 99.97%' from rounding to −100%
   const absPct = (v, d = 0) => Math.abs(v * 100).toFixed(d) + '%';
   const pp = (v, d = 1) => { const r = +(v * 100).toFixed(d); return (r > 0 ? '+' : r < 0 ? MINUS : '') + Math.abs(r).toFixed(d); };
   const trim = s => s.indexOf('e') < 0 && s.indexOf('.') >= 0 ? s.replace(/0+$/, '').replace(/\.$/, '') : s;
@@ -388,6 +432,11 @@ footer.note p { margin: 0; }
 
   // ---------- state ----------
   const st = { cur: 'GBP', base: 1973, win: 1999, zoom: false };
+  // predict mode: each section starts with its answer hidden (default) until a guess or Reveal
+  const P = { 1: { hidden: true, fb: false }, 2: { hidden: true, fb: false }, 3: { hidden: true, fb: false } };
+  const clearFb = (...ns) => ns.forEach(n => { P[n].fb = false; $('pFeedback' + n).innerHTML = ''; });
+  const CLOSE = 0.05; // within +/-5% counts as "close"
+  const fbHead = ok => ok ? '<span class="fb-ok">✓ Correct.</span>' : '<span class="fb-no">✗ Not quite.</span>';
 
   // ---------- log-scale ticks ----------
   function niceStep(x) { const p = Math.pow(10, Math.floor(Math.log10(x))), f = x / p; return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p; }
@@ -490,15 +539,15 @@ footer.note p { margin: 0; }
     CUR.forEach(c => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = c.c; b.title = c.n; b.setAttribute('aria-label', c.n); b.dataset.c = c.c; b.addEventListener('click', () => setCur(c.c)); g.appendChild(b); });
     return g;
   });
-  function setCur(code) { st.cur = code; clampBase(); renderAll(); }
+  function setCur(code) { if (code !== st.cur) clearFb(1, 2); st.cur = code; clampBase(); renderAll(); }
   function clampBase() { const ys = baseYears(BY[st.cur]); if (st.base < ys[0]) st.base = ys[0]; if (st.base > ys[ys.length - 1]) st.base = ys[ys.length - 1]; }
 
   // ---------- section 1 ----------
   const PRESETS = [1973, 1985, 1999, 2010];
-  PRESETS.forEach(y => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = y; b.dataset.y = y; b.addEventListener('click', () => { st.base = y; clampBase(); render1(); }); $('basePresets').appendChild(b); });
-  $('base').addEventListener('input', e => { st.base = +e.target.value; render1(); });
-  $('basePrev').addEventListener('click', () => { st.base--; clampBase(); render1(); });
-  $('baseNext').addEventListener('click', () => { st.base++; clampBase(); render1(); });
+  PRESETS.forEach(y => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = y; b.dataset.y = y; b.addEventListener('click', () => { st.base = y; clampBase(); clearFb(1); render1(); }); $('basePresets').appendChild(b); });
+  $('base').addEventListener('input', e => { st.base = +e.target.value; clearFb(1); render1(); });
+  $('basePrev').addEventListener('click', () => { st.base--; clampBase(); clearFb(1); render1(); });
+  $('baseNext').addEventListener('click', () => { st.base++; clampBase(); clearFb(1); render1(); });
 
   function ppp(c, B) {
     const w = yearAvg(c, B), a = [], p = [];
@@ -510,7 +559,7 @@ footer.note p { margin: 0; }
     return { w, a, p };
   }
   function render1() {
-    const c = BY[st.cur], B = st.base, ys = baseYears(c);
+    const c = BY[st.cur], B = st.base, ys = baseYears(c), hide = P[1].hidden;
     const r = ppp(c, B), n = r.a.length, kE = END - c.s0;
     const sl = $('base'); sl.min = ys[0]; sl.max = ys[ys.length - 1]; sl.value = B;
     $('baseOut').textContent = B; $('baseL').textContent = ys[0]; $('baseR').textContent = ys[ys.length - 1];
@@ -518,34 +567,46 @@ footer.note p { margin: 0; }
     [...$('basePresets').children].forEach(b => { const y = +b.dataset.y; b.hidden = y < ys[0] || y > ys[ys.length - 1]; b.setAttribute('aria-pressed', String(y === B)); });
     const aE = r.a[kE] / 100, pE = r.p[kE] / 100, gap = aE / pE - 1, T = (END - r.w.t) / 12;
     const aY = Math.pow(aE, 1 / T) - 1, pY = Math.pow(pE, 1 / T) - 1;
-    sl.setAttribute('aria-valuetext', `Base year ${B}. Gap in ${labL(END)}: the ${c.u} is ${absPct(gap)} ${gap < 0 ? 'below' : 'above'} its PPP path.`);
+    sl.setAttribute('aria-valuetext', hide ? `Base year ${B}` : `Base year ${B}. Gap in ${labL(END)}: the ${c.u} is ${absPct(gap)} ${gap < 0 ? 'below' : 'above'} its PPP path.`);
+    // predict question (from the current currency and base year)
+    $('predictBox1').hidden = !(hide || P[1].fb); $('pBtns1').hidden = !hide;
+    $('pTerms1').innerHTML = `Take the ${c.n} from its ${B} average to ${labL(END)}. Inflation in the U.S. and ${c.ctry} says relative PPP predicts a <b>${chgPct(pE - 1)}</b> change in its dollar value (the orange PPP path, still shown on the chart). Where did the actual exchange rate end up?`;
+    P[1].ans = Math.abs(gap) < CLOSE ? 'close' : gap > 0 ? 'above' : 'below';
+    P[1].why = () => {
+      const pos = P[1].ans === 'close' ? `within 5% of its PPP path (${sgnPct(gap, 0)})` : `<b>${absPct(gap)} ${gap > 0 ? 'above' : 'below'}</b> its PPP path`;
+      return `The ${c.u} ended ${pos}: its dollar value changed by <b>${chgPct(aE - 1)}</b> while relative PPP predicted <b>${chgPct(pE - 1)}</b> over ${T.toFixed(0)} years. ` +
+        (P[1].ans === 'close' ? 'Over this span, relative PPP did a good job.' : `That gap is the change in the ${c.u}\u2019s real exchange rate since ${B}; try another base year and the answer can flip.`);
+    };
     $('r1Title').textContent = `${c.n}, base year ${B}`;
-    $('r1Act').textContent = sgnPct(aE - 1, 0); $('r1ActY').textContent = `${pp(aY)}% per year`;
-    $('r1Ppp').textContent = sgnPct(pE - 1, 0); $('r1PppY').innerHTML = `e<sub>f</sub> ${pp(pY)}% per year`;
-    const g = $('r1Gap'); g.textContent = sgnPct(gap, 0); g.style.color = '';
-    $('r1GapT').textContent = gap < 0 ? 'below the PPP path' : 'above the PPP path';
+    $('r1Act').textContent = hide ? '?' : chgPct(aE - 1); $('r1ActY').textContent = hide ? '? per year' : `${pp(aY)}% per year`;
+    $('r1Ppp').textContent = chgPct(pE - 1); $('r1PppY').innerHTML = `e<sub>f</sub> ${pp(pY)}% per year`;
+    const g = $('r1Gap'); g.textContent = hide ? '?' : sgnPct(gap, 0); g.style.color = '';
+    $('r1GapT').textContent = hide ? 'make your prediction' : gap < 0 ? 'below the PPP path' : 'above the PPP path';
     // largest gaps
     let kMax = -1, kMin = -1;
     for (let k = 0; k < n; k++) { if (r.a[k] == null || r.p[k] == null) continue; const v = r.a[k] / r.p[k]; if (kMax < 0 || v > r.a[kMax] / r.p[kMax]) kMax = k; if (kMin < 0 || v < r.a[kMin] / r.p[kMin]) kMin = k; }
     const gk = k => r.a[k] / r.p[k] - 1;
-    $('r1Sub').innerHTML = `Changes from the ${B} average to ${labL(END)} (${T.toFixed(1)} years). S went from <b>${quote(c, r.w.R)}</b> (${B} average) to <b>${quote(c, raw(c, END))}</b>. Widest gaps: <b>${sgnPct(gk(kMax), 0)}</b> in ${lab(c.s0 + kMax)} and <b>${sgnPct(gk(kMin), 0)}</b> in ${lab(c.s0 + kMin)}.`;
+    $('r1Sub').innerHTML = hide ? `Changes from the ${B} average to ${labL(END)} (${T.toFixed(1)} years). S averaged <b>${quote(c, r.w.R)}</b> in ${B}. The actual change and the gap are hidden until you predict.` : `Changes from the ${B} average to ${labL(END)} (${T.toFixed(1)} years). S went from <b>${quote(c, r.w.R)}</b> (${B} average) to <b>${quote(c, raw(c, END))}</b>. Widest gaps: <b>${sgnPct(gk(kMax), 0)}</b> in ${lab(c.s0 + kMax)} and <b>${sgnPct(gk(kMin), 0)}</b> in ${lab(c.s0 + kMin)}.`;
     // story: base-year choice and the real exchange rate
     const R = rer(c), dev = R.yAvg[B] / 100 - 1;
     const where = Math.abs(dev) < 0.07 ? `close to its long-run average (${sgnPct(dev, 0)})` : dev > 0 ? `${absPct(dev)} <b>above</b> its long-run average` : `${absPct(dev)} <b>below</b> its long-run average`;
     const impl = Math.abs(dev) < 0.07 ? 'so this base year is a reasonable starting point: gaps on the chart are mostly real swings.' : dev > 0 ? `so a PPP path started in ${B} begins from a strong ${c.u} and builds that in; later the ${c.u} tends to look weak against this path.` : `so a PPP path started in ${B} begins from a weak ${c.u}; later the ${c.u} tends to look strong against this path.`;
     $('c1Story').innerHTML = `<b>The base year matters.</b> In ${B} the ${c.u}’s real exchange rate (section 2) was ${where}, ${impl} As the chapter puts it, the base period should reflect an equilibrium position, because every later period is judged against it. Drag the slider and watch the gap change.`;
+    $('c1Story').hidden = hide;
     $('c1Ctx').textContent = c.ctx;
+    $('t1').classList.toggle('blurred', hide); if (hide) $('d1').open = false;
     $('c1Title').textContent = `$ per ${c.inv ? c.u : c.sym}: actual vs. PPP path, ${B} = 100 (log scale)`;
-    $('c1Leg').innerHTML = `<span><i style="background:var(--s1)"></i>Actual S</span><span><i style="background:var(--s2)"></i>PPP path</span><span><i class="box"></i>Gap</span>`;
+    $('c1Leg').innerHTML = hide ? `<span><i style="background:var(--s2)"></i>PPP path</span><span class="hid">Actual S and the gap: hidden until you predict</span>` : `<span><i style="background:var(--s1)"></i>Actual S</span><span><i style="background:var(--s2)"></i>PPP path</span><span><i class="box"></i>Gap</span>`;
     const svg = $('c1');
-    svg.setAttribute('aria-label', `Dollar value of the ${c.n} indexed to ${B} = 100, actual versus the relative-PPP path, ${lab(c.s0)} to ${lab(END)}. In ${labL(END)} actual is ${idxFmt(r.a[kE])}, PPP path ${idxFmt(r.p[kE])}.`);
+    svg.setAttribute('aria-label', hide ? `Relative-PPP path for the ${c.n}, ${B} = 100, ${lab(c.s0)} to ${lab(END)}; the actual exchange rate is hidden until you predict. PPP path in ${labL(END)}: ${idxFmt(r.p[kE])}.` : `Dollar value of the ${c.n} indexed to ${B} = 100, actual versus the relative-PPP path, ${lab(c.s0)} to ${lab(END)}. In ${labL(END)} actual is ${idxFmt(r.a[kE])}, PPP path ${idxFmt(r.p[kE])}.`);
     drawLines({
-      svg, wrap: $('c1Wrap'), tip: $('c1Tip'), n, i0: c.s0, fill: true, strong100: true,
+      svg, wrap: $('c1Wrap'), tip: $('c1Tip'), n, i0: c.s0, fill: !hide, strong100: true,
       band: [B * 12, B * 12 + 11], bandLab: 'Base year',
       yTitle: `Index, ${B} = 100`,
-      series: [{ v: r.a, color: 'var(--s1)', short: 'Actual' }, { v: r.p, color: 'var(--s2)', short: 'PPP path' }],
+      series: hide ? [{ v: r.p, color: 'var(--s2)', short: 'PPP path' }] : [{ v: r.a, color: 'var(--s1)', short: 'Actual' }, { v: r.p, color: 'var(--s2)', short: 'PPP path' }],
       tipHtml: k => {
         const i = c.s0 + k, a = r.a[k], p = r.p[k];
+        if (hide) return `<div class="m">${labL(i)}</div>` + (p == null ? `<div class="m">PPP path: U.S. CPI not published this month</div>` : `<div><i style="background:var(--s2)"></i>PPP path: <b>${idxFmt(p)}</b></div>`) + `<div class="m">Actual S hidden until you predict</div>`;
         let h = `<div class="m">${labL(i)}</div><div><i style="background:var(--s1)"></i>Actual: <b>${idxFmt(a)}</b> <span class="m">(${quote(c, raw(c, i))})</span></div>`;
         h += p == null ? `<div class="m">PPP path: U.S. CPI not published this month</div>` : `<div><i style="background:var(--s2)"></i>PPP path: <b>${idxFmt(p)}</b></div><div>Gap: <b>${sgnPct(a / p - 1, 0)}</b> <span class="m">(${a < p ? 'below' : 'above'} PPP path)</span></div>`;
         return h;
@@ -565,8 +626,17 @@ footer.note p { margin: 0; }
 
   // ---------- section 2 ----------
   function render2() {
-    const c = BY[st.cur], R = rer(c), n = R.idx.length, kE = END - c.s0;
+    const c = BY[st.cur], R = rer(c), n = R.idx.length, kE = END - c.s0, hide = P[2].hidden;
     const now = R.idx[kE] / 100 - 1;
+    $('predictBox2').hidden = !(hide || P[2].fb); $('pBtns2').hidden = !hide;
+    $('pTerms2').innerHTML = `In ${labL(END)}, is the ${c.u}\u2019s real exchange rate (q = S × P<sub>f</sub> / P<sub>h</sub>) above or below its average for ${Math.floor(c.s0 / 12)}–${ENDY}? In other words, are goods from ${c.ctry} unusually expensive or unusually cheap for Americans right now?`;
+    P[2].ans = Math.abs(now) < CLOSE ? 'close' : now > 0 ? 'above' : 'below';
+    P[2].why = () => `In ${labL(END)} the ${c.u}\u2019s real exchange rate was ` + (P[2].ans === 'close' ? `within 5% of its long-run average (${sgnPct(now, 0)}), so goods from ${c.ctry} were priced about normally for Americans.` :
+      `<b>${absPct(now)} ${now > 0 ? 'above' : 'below'}</b> its long-run average, so goods from ${c.ctry} were unusually ${now > 0 ? 'expensive' : 'cheap'} for Americans, which ${now > 0 ? 'hurts' : 'helps'} ${c.ctry}\u2019s exporters.`) +
+      ` Over the sample it ranged from ${sgnPct(R.idx[R.mnI - c.s0] / 100 - 1, 0)} (${lab(R.mnI)}) to ${sgnPct(R.idx[R.mxI - c.s0] / 100 - 1, 0)} (${lab(R.mxI)}).`;
+    $('c2Wrap').classList.toggle('masked', hide); $('mask2').hidden = !hide;
+    $('r2Swing').hidden = hide; $('r2SwingHid').hidden = !hide;
+    $('t2').classList.toggle('blurred', hide); if (hide) $('d2').open = false;
     $('c2Title').textContent = `Real exchange rate of the ${c.u} vs. the dollar, average ${lab(c.s0)}–${lab(END)} = 100 (log scale)`;
     $('c2Leg').innerHTML = `<span><i style="background:var(--s1)"></i>Real exchange rate q</span><span><i class="dash"></i>Long-run average = 100</span>`;
     // put the reference label on the side of the line with more room at the left edge
@@ -607,13 +677,31 @@ footer.note p { margin: 0; }
     });
     return out;
   }
-  $('win').addEventListener('input', e => { st.win = +e.target.value; render3(); });
-  $('w1975').addEventListener('click', () => { st.win = 1975; render3(); });
-  $('w1999').addEventListener('click', () => { st.win = 1999; render3(); });
+  $('win').addEventListener('input', e => { st.win = +e.target.value; clearFb(3); render3(); });
+  $('w1975').addEventListener('click', () => { if (st.win !== 1975) clearFb(3); st.win = 1975; render3(); });
+  $('w1999').addEventListener('click', () => { if (st.win !== 1999) clearFb(3); st.win = 1999; render3(); });
   $('zoom').addEventListener('click', () => { st.zoom = !st.zoom; render3(); });
 
   function render3() {
-    const Y = st.win, rows = scatterRows(Y);
+    const Y = st.win, rows = scatterRows(Y), hid3 = P[3].hidden;
+    // predict question: three currencies with their inflation rates as the givens
+    const byInf = rows.slice().sort((a, b) => a.If - b.If);
+    const loser = rows.slice().sort((a, b) => a.y - b.y)[0];
+    const lowI = byInf.find(r => r !== loser);
+    const rest = byInf.filter(r => r !== loser && r !== lowI);
+    const midI = rest[Math.floor(rest.length / 2)];
+    const ch = [loser, lowI, midI].sort((a, b) => a.c.c < b.c.c ? -1 : 1);
+    P[3].ans = loser.c.c;
+    $('predictBox3').hidden = !(hid3 || P[3].fb); $('pBtns3').hidden = !hid3;
+    $('pTerms3').innerHTML = `From ${Y} to ${lab(END)}, U.S. consumer prices rose ${(loser.Ih * 100).toFixed(1)}% a year. Average inflation per year: ${ch.map(r => `${r.c.n} ${(r.If * 100).toFixed(1)}%`).join(', ')}. Which of these three currencies lost the most value against the dollar per year?`;
+    $('pBtns3').innerHTML = ch.map(r => `<button class="btn" type="button" data-guess="${r.c.c}">${r.c.n}</button>`).join('');
+    P[3].why = () => {
+      const hiI = ch.slice().sort((a, b) => b.If - a.If)[0];
+      return `The ${loser.c.n} lost the most: <b>${pp(loser.y)}%</b> a year (relative PPP predicted ${pp(loser.x)}%). The others: ` + ch.filter(r => r !== loser).map(r => `${r.c.n} ${pp(r.y)}% (PPP ${pp(r.x)}%)`).join(', ') + '. ' +
+        (hiI === loser ? 'The currency with the highest inflation lost the most value, just as relative PPP predicts.' : `Here the highest-inflation choice (${hiI.c.n}) was not the biggest loser: PPP is only a long-run tendency, and other forces moved these currencies too.`);
+    };
+    $('c3Wrap').classList.toggle('masked', hid3); $('mask3').hidden = !hid3;
+    $('t3').classList.toggle('blurred', hid3); if (hid3) $('d3').open = false;
     $('win').value = Y; $('winOut').textContent = Y; $('winR').textContent = ENDY - 10;
     $('w1975').setAttribute('aria-pressed', String(Y === 1975)); $('w1999').setAttribute('aria-pressed', String(Y === 1999));
     $('zoom').setAttribute('aria-pressed', String(st.zoom));
@@ -630,29 +718,29 @@ footer.note p { margin: 0; }
     const svg = $('c3'), wrap = $('c3Wrap'), tip = $('c3Tip');
     const W = Math.max(280, Math.round(wrap.clientWidth)), narrow = W < 480;
     const m = { l: 50, r: 12, t: 12, b: 44 };
-    const P = Math.min(W - m.l - m.r, 520), H = P + m.t + m.b;
+    const PS = Math.min(W - m.l - m.r, 520), H = PS + m.t + m.b;
     svg.textContent = ''; svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-    const X = v => m.l + (v - lo) / (hi - lo) * P, Yp = v => m.t + P - (v - lo) / (hi - lo) * P;
+    const X = v => m.l + (v - lo) / (hi - lo) * PS, Yp = v => m.t + PS - (v - lo) / (hi - lo) * PS;
     const dec = step < 0.01 ? 1 : 0;
     for (let v = lo; v <= hi + 1e-9; v += step) {
       const vv = +v.toFixed(6);
-      el('line', { x1: m.l, x2: m.l + P, y1: Yp(vv), y2: Yp(vv), class: Math.abs(vv) < 1e-9 ? 'zero' : 'gridl' }, svg);
-      el('line', { x1: X(vv), x2: X(vv), y1: m.t, y2: m.t + P, class: Math.abs(vv) < 1e-9 ? 'zero' : 'gridl' }, svg);
+      el('line', { x1: m.l, x2: m.l + PS, y1: Yp(vv), y2: Yp(vv), class: Math.abs(vv) < 1e-9 ? 'zero' : 'gridl' }, svg);
+      el('line', { x1: X(vv), x2: X(vv), y1: m.t, y2: m.t + PS, class: Math.abs(vv) < 1e-9 ? 'zero' : 'gridl' }, svg);
       const t = (vv > 0 ? '+' : vv < 0 ? MINUS : '') + Math.abs(vv * 100).toFixed(dec) + '%';
       el('text', { x: m.l - 6, y: Yp(vv) + 4, 'text-anchor': 'end', class: 'tick' }, svg, t);
-      el('text', { x: X(vv), y: m.t + P + 16, 'text-anchor': 'middle', class: 'tick' }, svg, t);
+      el('text', { x: X(vv), y: m.t + PS + 16, 'text-anchor': 'middle', class: 'tick' }, svg, t);
     }
-    const xt = el('text', { x: m.l + P / 2, y: H - 6, 'text-anchor': 'middle', class: 'axtitle' }, svg);
+    const xt = el('text', { x: m.l + PS / 2, y: H - 6, 'text-anchor': 'middle', class: 'axtitle' }, svg);
     const sub = (t, base) => { el('tspan', { dy: 3, 'font-size': '9.5' }, xt, t); el('tspan', { dy: -3 }, xt, base); };
     if (narrow) { el('tspan', {}, xt, 'PPP-predicted e'); sub('f', ', % per year'); }
     else { el('tspan', {}, xt, 'PPP-predicted change e'); sub('f', ' = (1 + I'); sub('h', ') / (1 + I'); sub('f', ') − 1, % per year'); }
-    const yc = m.t + P / 2;
+    const yc = m.t + PS / 2;
     el('text', { x: 11, y: yc, 'text-anchor': 'middle', class: 'axtitle', transform: `rotate(-90 11 ${yc})` }, svg, narrow ? 'Actual change in S, % per year' : 'Actual change in $ per unit of foreign currency, % per year');
     el('line', { x1: X(lo), y1: Yp(lo), x2: X(hi), y2: Yp(hi), class: 'diag' }, svg);
     // points, selected one drawn last; greedy label placement
     const ord = vis.slice().sort((a, b) => (a.c.c === st.cur) - (b.c.c === st.cur));
     const boxes = vis.map(r => ({ x: X(r.x) - 6, y: Yp(r.y) - 6, w: 12, h: 12 }));
-    const hitB = (b) => boxes.some(o => b.x < o.x + o.w && b.x + b.w > o.x && b.y < o.y + o.h && b.y + b.h > o.y) || b.x < m.l || b.x + b.w > m.l + P + m.r || b.y < m.t - 4 || b.y + b.h > m.t + P;
+    const hitB = (b) => boxes.some(o => b.x < o.x + o.w && b.x + b.w > o.x && b.y < o.y + o.h && b.y + b.h > o.y) || b.x < m.l || b.x + b.w > m.l + PS + m.r || b.y < m.t - 4 || b.y + b.h > m.t + PS;
     const labs = [], hidden = [];
     ord.slice().reverse().forEach(r => {
       const cx = X(r.x), cy = Yp(r.y), w = r.c.c.length * 7.4 + 2, h = 12;
@@ -668,13 +756,13 @@ footer.note p { margin: 0; }
     // hover / tap / click
     const gx = el('line', { class: 'guide', visibility: 'hidden' }, svg), gy = el('line', { class: 'guide', visibility: 'hidden' }, svg);
     const ring = el('circle', { r: 9, fill: 'none', stroke: 'var(--fg)', 'stroke-width': 1.5, visibility: 'hidden' }, svg);
-    const hit = el('rect', { x: m.l, y: m.t, width: P, height: P, fill: 'transparent', style: 'cursor:pointer' }, svg);
+    const hit = el('rect', { x: m.l, y: m.t, width: PS, height: PS, fill: 'transparent', style: 'cursor:pointer' }, svg);
     const nearest = e => { const r = svg.getBoundingClientRect(); const px = (e.clientX - r.left) / r.width * W, py = (e.clientY - r.top) / r.height * H; let best = null, bd = 30; vis.forEach(v => { const d = Math.hypot(X(v.x) - px, Yp(v.y) - py); if (d < bd) { bd = d; best = v; } }); return best; };
     const hide = () => { tip.hidden = true; [gx, gy, ring].forEach(z => z.setAttribute('visibility', 'hidden')); };
     const show = e => {
       const v = nearest(e); if (!v) { hide(); return; }
       const cx = X(v.x), cy = Yp(v.y);
-      gx.setAttribute('x1', cx); gx.setAttribute('x2', cx); gx.setAttribute('y1', cy); gx.setAttribute('y2', m.t + P);
+      gx.setAttribute('x1', cx); gx.setAttribute('x2', cx); gx.setAttribute('y1', cy); gx.setAttribute('y2', m.t + PS);
       gy.setAttribute('x1', m.l); gy.setAttribute('x2', cx); gy.setAttribute('y1', cy); gy.setAttribute('y2', cy);
       ring.setAttribute('cx', cx); ring.setAttribute('cy', cy);
       [gx, gy, ring].forEach(z => z.setAttribute('visibility', 'visible'));
@@ -688,8 +776,9 @@ footer.note p { margin: 0; }
     const worst = rows.slice().sort((a, b) => Math.abs(b.miss) - Math.abs(a.miss))[0];
     const within1 = rows.filter(r => Math.abs(r.miss) < 0.01).length;
     const sel = rows.find(r => r.c.c === st.cur);
-    $('r3').innerHTML = `<b>${rows.length} currencies</b> have data for the whole window (${Y} to ${lab(END)}, about ${Math.round(rows[0].T)} years). The average miss from the 45° line is <b>${(mad * 100).toFixed(1)} percentage points per year</b>; ${within1} of ${rows.length} are within 1 point. The biggest miss: ${worst.c.n} (${pp(worst.miss)} points per year).` +
+    $('r3').innerHTML = hid3 ? `<b>${rows.length} currencies</b> have data for the whole window (${Y} to ${lab(END)}, about ${Math.round(rows[0].T)} years). Average miss from the 45° line: <b>?</b> Make your prediction to see the results.` : `<b>${rows.length} currencies</b> have data for the whole window (${Y} to ${lab(END)}, about ${Math.round(rows[0].T)} years). The average miss from the 45° line is <b>${(mad * 100).toFixed(1)} percentage points per year</b>; ${within1} of ${rows.length} are within 1 point. The biggest miss: ${worst.c.n} (${pp(worst.miss)} points per year).` +
       (sel ? ` <b>${sel.c.n}</b>: PPP predicted ${pp(sel.x)}% per year, actual ${pp(sel.y)}%.` : ` The selected currency (${BY[st.cur].n}) has no data for all of this window.`);
+    $('r3Off').hidden = hid3;
     $('r3Off').innerHTML = (off.length ? `Off the zoomed chart: ${off.map(r => `<b>${r.c.n}</b> (PPP ${pp(r.x)}%, actual ${pp(r.y)}% per year)`).join('; ')}. ` : '') + (hidden.length ? `Labels hidden to avoid overlap: ${hidden.join(', ')}${st.zoom ? '' : ' (zoom in, hover, or see the table)'}.` : '');
     $('t3').innerHTML = `<caption class="note" style="text-align:left;caption-side:bottom;padding-top:6px">Average yearly rates from the ${Y} average to the ${endLab} average. e<sub>f</sub> is the change in $ per unit of foreign currency.</caption><thead><tr><th>Currency</th><th>U.S. inflation</th><th>Foreign inflation</th><th>PPP-predicted e<sub>f</sub></th><th>Actual e<sub>f</sub></th><th>Miss (pts)</th></tr></thead><tbody>` +
       rows.map(r => `<tr${r.c.c === st.cur ? ' class="cur"' : ''}><td>${r.c.n} (${r.c.c})</td><td>${(r.Ih * 100).toFixed(1)}%</td><td>${(r.If * 100).toFixed(1)}%</td><td>${pp(r.x)}%</td><td>${pp(r.y)}%</td><td>${pp(r.miss, 2)}</td></tr>`).join('') + '</tbody>';
@@ -730,10 +819,33 @@ footer.note p { margin: 0; }
         <p>A nominal fall that only offsets higher inflation leaves a country’s goods no cheaper abroad. The lira lost <b>${absPct(tr.tot, 0)}</b> of its dollar value from 1999 to ${lab(END)}, yet in real terms it fell only about <b>${absPct(tr.real, 0)}</b>. What changes competitiveness is the real exchange rate: in ${labL(END)} the yen’s real exchange rate was <b>${absPct(jNow, 0)} ${jNow < 0 ? 'below' : 'above'}</b> its ${Math.floor(jp.s0 / 12)}–${ENDY} average, so Japanese goods and travel were ${jNow < 0 ? 'unusually cheap' : 'unusually expensive'} for buyers paying dollars. A real ${jNow < 0 ? 'depreciation like this helps exporters and hurts importers' : 'appreciation like this hurts exporters and helps importers'}; a real appreciation does the opposite.</p>
         <div class="row"><button class="btn" type="button" data-go="JPY" data-sec="s2">Show the yen’s real exchange rate</button></div></li>`;
     $('notice').querySelectorAll('button[data-go]').forEach(b => b.addEventListener('click', () => {
-      st.cur = b.dataset.go; if (b.dataset.base) st.base = +b.dataset.base; if (b.dataset.win) st.win = +b.dataset.win; clampBase(); renderAll();
+      st.cur = b.dataset.go; if (b.dataset.base) st.base = +b.dataset.base; if (b.dataset.win) st.win = +b.dataset.win; clampBase(); clearFb(1, 2, 3); renderAll();
       $(b.dataset.sec || 's1').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
     }));
   }
+
+  const RENDER = { 1: () => render1(), 2: () => render2(), 3: () => render3() };
+  function setHiddenN(n, h, keepFeedback) {
+    P[n].hidden = h;
+    if (!keepFeedback) clearFb(n);
+    $('modeBtn' + n).textContent = h ? '👁 Reveal answer' : '↩ Back to predict mode';
+    $('modeNote' + n).textContent = h ? 'Predict mode: the answer is hidden. Answer the question, or click Reveal answer.'
+                                      : 'Answer shown: everything updates live. Click Back to predict mode to quiz again.';
+    RENDER[n]();
+  }
+  const CH3 = [['above', 'Above the PPP path (more than 5% stronger)'], ['close', 'Close to it (within ±5%)'], ['below', 'Below the PPP path (more than 5% weaker)']];
+  $('pBtns1').innerHTML = CH3.map(([k, t]) => `<button class="btn" type="button" data-guess="${k}">${t}</button>`).join('');
+  $('pBtns2').innerHTML = [['above', 'Above average (strong in real terms)'], ['close', 'Close to average (within ±5%)'], ['below', 'Below average (weak in real terms)']].map(([k, t]) => `<button class="btn" type="button" data-guess="${k}">${t}</button>`).join('');
+  [1, 2, 3].forEach(n => {
+    $('modeBtn' + n).addEventListener('click', () => setHiddenN(n, !P[n].hidden));
+    $('pBtns' + n).addEventListener('click', e => {
+      const g = e.target.closest('button[data-guess]'); if (!g) return;
+      $('pFeedback' + n).innerHTML = fbHead(g.dataset.guess === P[n].ans) + ' ' + P[n].why();
+      P[n].fb = true; setHiddenN(n, false, true);
+    });
+  });
+  const startPredict = !['reveal', 'explore'].includes(new URLSearchParams(location.search).get('mode'));
+  [1, 2, 3].forEach(n => { P[n].hidden = startPredict; });
 
   function renderPills() { pillGroups.forEach(g => [...g.children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.c === st.cur)))); }
   function renderAll() { renderPills(); render1(); render2(); render3(); }
@@ -745,6 +857,7 @@ footer.note p { margin: 0; }
 
   renderNotice();
   renderAll();
+  [1, 2, 3].forEach(n => setHiddenN(n, startPredict));
   let rz, lastW = 0; const onResize = () => { clearTimeout(rz); rz = setTimeout(() => { const w = document.querySelector('.wrap').clientWidth; if (w !== lastW) { lastW = w; render1(); render2(); render3(); } }, 120); };
   if (window.ResizeObserver) new ResizeObserver(onResize).observe(document.querySelector('.wrap')); else window.addEventListener('resize', onResize);
 })();
