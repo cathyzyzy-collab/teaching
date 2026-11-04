@@ -143,6 +143,17 @@ details.tbl .tblwrap { max-height: 360px; overflow: auto; }
 @media (max-width: 560px) { .stats { grid-template-columns: minmax(0, 1fr); } .stats b { font-size: 17px; } }
 footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 88ch; display: grid; gap: 6px; }
 footer.note p { margin: 0; }
+.btn.primary { background: var(--accent); color: var(--panel); border-color: var(--accent); }
+/* predict mode (same look and behaviour as the bond app) */
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 10px 12px; border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 12px; }
+.toolbar .note { flex: 1 1 200px; }
+.predict { border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); background: color-mix(in srgb, var(--accent) 7%, var(--panel)); border-radius: 12px; padding: 12px 14px; display: grid; gap: 10px; }
+.predict p { margin: 0; }
+.fb-ok { color: var(--pos); font-weight: 600; } .fb-no { color: var(--neg); font-weight: 600; }
+.chart.masked svg, .chart.masked details, .chart.masked .belist { filter: blur(8px); pointer-events: none; user-select: none; }
+.chart .maskmsg { position: absolute; inset: 40% 10% auto; text-align: center; font-weight: 600; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.blurred { filter: blur(7px); pointer-events: none; user-select: none; }
+.chart .hidnote { font: 600 12.5px var(--font-body); fill: var(--muted); pointer-events: none; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head><body>
@@ -157,6 +168,15 @@ footer.note p { margin: 0; }
   <section class="lesson" id="s1" aria-labelledby="h1">
     <h2 id="h1"><span class="num">1</span>The setup: one foreign-currency cash flow in 90 days</h2>
     <p class="lead">All exchange rates are direct quotes: dollars per unit of foreign currency. Interest rates are entered as annual rates and turned into 90-day rates (annual × 90/360), like the "90-day interest rate" in the Ch. 11 problems.</p>
+    <div class="toolbar">
+      <button class="btn primary" type="button" id="modeBtn1">👁 Reveal answer</button>
+      <span class="note" id="modeNote1"></span>
+    </div>
+    <div class="predict" id="predictBox1">
+      <p><b>Predict first.</b> <span id="pTerms1"></span></p>
+      <div class="row" id="pBtns1"><button class="btn" type="button" data-guess="F" id="g1F">Forward hedge</button><button class="btn" type="button" data-guess="M" id="g1M">Money market hedge</button><button class="btn" type="button" data-guess="same" id="g1same">They give the same dollars</button></div>
+      <p id="pFeedback1" aria-live="polite"></p>
+    </div>
     <div class="grid2">
       <div class="controls">
         <div class="ctl">
@@ -204,6 +224,15 @@ footer.note p { margin: 0; }
   <section class="lesson" id="s2" aria-labelledby="h2">
     <h2 id="h2"><span class="num">2</span>Payoff chart: dollars in 90 days at every future spot rate</h2>
     <p class="lead" id="lead2"></p>
+    <div class="toolbar">
+      <button class="btn primary" type="button" id="modeBtn2">👁 Reveal answer</button>
+      <span class="note" id="modeNote2"></span>
+    </div>
+    <div class="predict" id="predictBox2">
+      <p><b>Predict first.</b> <span id="pTerms2"></span></p>
+      <div class="row" id="pBtns2"><button class="btn" type="button" data-guess="U" id="g2U">Remain unhedged</button><button class="btn" type="button" data-guess="L" id="g2L">A locked-in hedge (forward or money market)</button><button class="btn" type="button" data-guess="O" id="g2O">Option hedge</button></div>
+      <p id="pFeedback2" aria-live="polite"></p>
+    </div>
     <div class="row">
       <span class="note" id="flatLab">Flat hedge on the chart:</span>
       <div class="seg" role="group" aria-labelledby="flatLab">
@@ -216,6 +245,7 @@ footer.note p { margin: 0; }
       <div class="chart" id="c1wrap">
         <div class="charthead"><h3 id="c1title">Dollars received in 90 days</h3><div class="legend" id="leg1"></div></div>
         <svg id="chart1" role="img" aria-label="Payoff chart"></svg>
+        <div class="maskmsg" id="mask1" hidden>Make your prediction to see the chart</div>
         <div class="tip" id="tip1" hidden></div>
         <ul class="belist" id="beList" aria-label="Break-even points"></ul>
         <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="tbl1"></table></div></details>
@@ -237,6 +267,15 @@ footer.note p { margin: 0; }
   <section class="lesson" id="s3" aria-labelledby="h3">
     <h2 id="h3"><span class="num">3</span>Replay history: which strategy would have won?</h2>
     <p class="lead" id="lead3"></p>
+    <div class="toolbar">
+      <button class="btn primary" type="button" id="modeBtn3">👁 Reveal answer</button>
+      <span class="note" id="modeNote3"></span>
+    </div>
+    <div class="predict" id="predictBox3">
+      <p><b>Predict first.</b> <span id="pTerms3"></span></p>
+      <div class="row" id="pBtns3"><button class="btn" type="button" data-guess="u" id="g3u">Yes, unhedged did better</button><button class="btn" type="button" data-guess="f" id="g3f">No, the forward did better</button></div>
+      <p id="pFeedback3" aria-live="polite"></p>
+    </div>
     <div class="grid2">
       <div class="controls">
         <div class="ctl big">
@@ -267,28 +306,39 @@ footer.note p { margin: 0; }
         <div class="charthead"><h3 id="c2title">The spot rate during the window</h3><div class="legend" id="leg2"></div></div>
         <svg id="chart2" role="img" aria-label="Spot rate during the selected window"></svg>
         <div class="tip" id="tip2" hidden></div>
-        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="tbl2"></table></div></details>
+        <details class="tbl" id="tbl2d"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="tbl2"></table></div></details>
       </div>
     </div>
-    <div class="tblwrap"><table class="data score" id="replayTbl"></table></div>
+    <div class="tblwrap" id="replayWrap"><table class="data score" id="replayTbl"></table></div>
     <p class="verdict" id="verdict3" aria-live="polite"></p>
 
     <h3 class="sub" id="hdist">Every 90-day window since 1999: what hedging trades away</h3>
     <p class="note" id="distLead"></p>
+    <div class="toolbar">
+      <button class="btn primary" type="button" id="modeBtn4">👁 Reveal answer</button>
+      <span class="note" id="modeNote4"></span>
+    </div>
+    <div class="predict" id="predictBox4">
+      <p><b>Predict first.</b> <span id="pTerms4"></span></p>
+      <div class="row" id="pBtns4"><button class="btn" type="button" data-guess="lo" id="g4lo">Less than 40% of the time</button><button class="btn" type="button" data-guess="mid" id="g4mid">About half the time (40% to 60%)</button><button class="btn" type="button" data-guess="hi" id="g4hi">More than 60% of the time</button></div>
+      <p id="pFeedback4" aria-live="polite"></p>
+    </div>
     <div class="stats" id="distStats"></div>
     <div class="grid2">
       <div class="chart" id="c3wrap">
         <div class="charthead"><h4><span class="sw" style="background:var(--s1)"></span>Unhedged: 90-day change in the spot rate</h4></div>
         <svg id="chart3" role="img" aria-label="Histogram of 90-day changes in the spot rate"></svg>
+        <div class="maskmsg" id="mask3" hidden>Make your prediction to see the chart</div>
         <div class="tip" id="tip3" hidden></div>
       </div>
       <div class="chart" id="c4wrap">
         <div class="charthead"><h4><span class="sw" style="background:var(--s2)"></span>Forward hedge: locked-in rate vs. spot at the start</h4></div>
         <svg id="chart4" role="img" aria-label="Histogram of forward premiums"></svg>
+        <div class="maskmsg" id="mask4" hidden>Make your prediction to see the chart</div>
         <div class="tip" id="tip4" hidden></div>
       </div>
     </div>
-    <details class="tbl"><summary>Show both histograms as a table</summary><div class="tblwrap"><table class="data" id="tbl3"></table></div></details>
+    <details class="tbl" id="tbl3d"><summary>Show both histograms as a table</summary><div class="tblwrap"><table class="data" id="tbl3"></table></div></details>
   </section>
 
   <!-- ===================== 4. NOTICE ===================== -->
@@ -501,6 +551,12 @@ const DATA={"start":"1999-01-04","m0":"1999-01","fx":{"EUR":{"sid":"DEXUSEU","k"
     hit.addEventListener('pointermove', show); hit.addEventListener('pointerdown', show); hit.addEventListener('pointerleave', hide); hit.addEventListener('pointercancel', hide);
   }
 
+  // ---------- predict mode: each section starts with its answer hidden (?mode=reveal opens everything revealed) ----------
+  const PM = { 1: { hidden: true, fb: false }, 2: { hidden: true, fb: false }, 3: { hidden: true, fb: false }, 4: { hidden: true, fb: false } };
+  const clearFb = (...ns) => ns.forEach(n => { PM[n].fb = false; $('pFeedback' + n).innerHTML = ''; });
+  const predUI = n => { $('predictBox' + n).hidden = !(PM[n].hidden || PM[n].fb); $('pBtns' + n).hidden = !PM[n].hidden; };
+  const verdictHtml = ok => ok ? '<span class="fb-ok">✓ Correct.</span>' : '<span class="fb-no">✗ Not quite.</span>';
+
   // ===================== 1. SETUP =====================
   const inputs = { amt: 'amt', S: 'spot', F: 'fwd', ih: 'ih', iff: 'if', X: 'strike', p: 'prem' };
   function writeInputs() {
@@ -517,11 +573,11 @@ const DATA={"start":"1999-01-04","m0":"1999-01","fx":{"EUR":{"sid":"DEXUSEU","k"
     if ((key === 'ih' || key === 'iff') && (v < -10 || v > 100)) return false;
     st[key] = v; return true;
   }
-  Object.keys(inputs).forEach(k => $(inputs[k]).addEventListener('input', () => { if (readInput(k)) { if (k === 'S') clampST(); renderAll(); } }));
-  $('fwdCip').addEventListener('click', () => { st.F = +irpF(st.S, st.ih, st.iff).toFixed(C().dp); $('fwd').value = st.F; renderAll(); });
-  $('reset').addEventListener('click', () => { defaults(); writeInputs(); renderAll(); });
-  $('cur').addEventListener('change', e => { st.cur = e.target.value; defaults(); writeInputs(); syncReplayIndex(curDay); renderAll(); });
-  const setPos = p => { st.pos = p; $('posRec').setAttribute('aria-pressed', p === 'rec'); $('posPay').setAttribute('aria-pressed', p === 'pay'); renderAll(); };
+  Object.keys(inputs).forEach(k => $(inputs[k]).addEventListener('input', () => { if (readInput(k)) { if (k === 'S') clampST(); clearFb(1, 2, 3); renderAll(); } }));
+  $('fwdCip').addEventListener('click', () => { st.F = +irpF(st.S, st.ih, st.iff).toFixed(C().dp); $('fwd').value = st.F; clearFb(1, 2); renderAll(); });
+  $('reset').addEventListener('click', () => { defaults(); writeInputs(); clearFb(1, 2, 3); renderAll(); });
+  $('cur').addEventListener('change', e => { st.cur = e.target.value; defaults(); writeInputs(); syncReplayIndex(curDay); clearFb(1, 2, 3, 4); renderAll(); });
+  const setPos = p => { st.pos = p; $('posRec').setAttribute('aria-pressed', p === 'rec'); $('posPay').setAttribute('aria-pressed', p === 'pay'); clearFb(1, 2, 3, 4); renderAll(); };
   $('posRec').addEventListener('click', () => setPos('rec'));
   $('posPay').addEventListener('click', () => setPos('pay'));
 
@@ -539,26 +595,26 @@ const DATA={"start":"1999-01-04","m0":"1999-01","fx":{"EUR":{"sid":"DEXUSEU","k"
     $('premHint').textContent = `${pct(st.p / st.S * 100, 2)} of spot; costs ${usd(A * st.p)} in total`;
     $('ownBox').querySelector('label').textContent = `My 90-day forward rate ($ per ${c.sym})`;
 
-    const mm = A * mmRate(), fw = A * st.F;
+    const mm = A * mmRate(), fw = A * st.F, hide1 = PM[1].hidden, q = v => hide1 ? '?' : usd(v);
     const optWorst = A * (rec ? st.X - st.p : st.X + st.p);
     $('lockTbl').innerHTML = `<thead><tr><th>Choice</th><th>${rec ? 'Dollars received' : 'Dollars paid'}</th></tr></thead><tbody>
       <tr><td class="wrapok"><span class="sw" style="background:var(--s1)"></span>${N.U}</td><td class="wrapok">${fc(A)} × S<sub>T</sub>: unknown today</td></tr>
-      <tr><td class="wrapok"><span class="sw" style="background:var(--s2)"></span>${N.F}</td><td>${usd(fw)} <span class="tag">certain</span></td></tr>
-      <tr><td class="wrapok"><span class="sw" style="background:var(--s2)"></span>${N.M}</td><td>${usd(mm)} <span class="tag">certain</span></td></tr>
+      <tr><td class="wrapok"><span class="sw" style="background:var(--s2)"></span>${N.F}</td><td>${q(fw)} <span class="tag">certain</span></td></tr>
+      <tr><td class="wrapok"><span class="sw" style="background:var(--s2)"></span>${N.M}</td><td>${q(mm)} <span class="tag">certain</span></td></tr>
       <tr><td class="wrapok"><span class="sw" style="background:var(--s3)"></span>${N.O}</td><td class="wrapok">${rec ? 'At least' : 'At most'} ${usd(optWorst)}; ${rec ? 'more if S<sub>T</sub> rises above' : 'less if S<sub>T</sub> falls below'} ${fx(st.X)}</td></tr></tbody>`;
 
     const f90 = per(st.iff), h90 = per(st.ih);
     if (rec) {
       $('mmTitle').textContent = 'Money market hedge on a receivable: borrow foreign, invest home';
       const borrow = A / (1 + f90), conv = borrow * st.S;
-      $('mmSteps').innerHTML = `<li>Borrow ${fc(borrow)} today: ${fc(A)} ÷ (1 + ${pct(f90 * 100, 4)}).</li><li>Convert at spot ${fx(st.S)}: ${usd(conv)}.</li><li>Invest at the US 90-day rate ${pct(h90 * 100, 4)}: grows to <b>${usd(mm)}</b>.</li><li>In 90 days, repay the ${c.sym} loan (${fc(A)}) with the receivable.</li>`;
+      $('mmSteps').innerHTML = `<li>Borrow ${fc(borrow)} today: ${fc(A)} ÷ (1 + ${pct(f90 * 100, 4)}).</li><li>Convert at spot ${fx(st.S)}: ${usd(conv)}.</li><li>Invest at the US 90-day rate ${pct(h90 * 100, 4)}: grows to <b>${q(mm)}</b>.</li><li>In 90 days, repay the ${c.sym} loan (${fc(A)}) with the receivable.</li>`;
     } else {
       $('mmTitle').textContent = 'Money market hedge on a payable: borrow home, invest foreign';
       const inv = A / (1 + f90), cost = inv * st.S;
-      $('mmSteps').innerHTML = `<li>Deposit ${fc(inv)} today at ${pct(f90 * 100, 4)}: grows to the ${fc(A)} you owe.</li><li>Buy those ${c.plural} at spot ${fx(st.S)}: costs ${usd(cost)}.</li><li>Borrow ${usd(cost)} at the US 90-day rate ${pct(h90 * 100, 4)}.</li><li>In 90 days, repay <b>${usd(mm)}</b>.</li>`;
+      $('mmSteps').innerHTML = `<li>Deposit ${fc(inv)} today at ${pct(f90 * 100, 4)}: grows to the ${fc(A)} you owe.</li><li>Buy those ${c.plural} at spot ${fx(st.S)}: costs ${usd(cost)}.</li><li>Borrow ${usd(cost)} at the US 90-day rate ${pct(h90 * 100, 4)}.</li><li>In 90 days, repay <b>${q(mm)}</b>.</li>`;
     }
     const Fp = irpF(st.S, st.ih, st.iff);
-    $('irp').textContent = `Interest rate parity: F = S × (1 + i_h)/(1 + i_f) = ${st.S} × ${(1 + h90).toFixed(6)} / ${(1 + f90).toFixed(6)} = ${fx(Fp, c.dp + 1)}`;
+    $('irp').textContent = `Interest rate parity: F = S × (1 + i_h)/(1 + i_f) = ${st.S} × ${(1 + h90).toFixed(6)} / ${(1 + f90).toFixed(6)} = ${hide1 ? '?' : fx(Fp, c.dp + 1)}`;
     const diff = fw - mm, tol = A * Math.pow(10, -c.dp) / 2;
     let v;
     if (Math.abs(diff) <= tol) v = `Your forward equals the parity value (to the quoted decimals), so the forward and money market hedges give the same dollars. That is what covered interest arbitrage enforces.`;
@@ -566,7 +622,13 @@ const DATA={"start":"1999-01-04","m0":"1999-01","fx":{"EUR":{"sid":"DEXUSEU","k"
       const fwdBetter = better(fw, mm);
       v = `Your forward is ${st.F > Fp ? 'above' : 'below'} the parity value, so the <b>${fwdBetter ? 'forward hedge' : 'money market hedge'}</b> is better here by ${usd(Math.abs(diff))} (${rec ? 'more received' : 'less paid'}). In real markets covered interest arbitrage keeps this gap small.`;
     }
-    $('irpVerdict').innerHTML = v;
+    $('irpVerdict').innerHTML = v; $('irpVerdict').hidden = hide1;
+    $('pTerms1').innerHTML = `S = ${fx(st.S)}, F = ${fx(st.F)}, i<sub>h</sub> = ${+st.ih}% and i<sub>f</sub> = ${+st.iff}% a year (${pct(h90 * 100, 4)} and ${pct(f90 * 100, 4)} for 90 days). Which hedge ${rec ? 'brings in more dollars' : 'costs fewer dollars'} for the ${fc(A)} ${rec ? 'receivable' : 'payable'}?`;
+    predUI(1);
+  }
+  function answer1() { // 'same' when the gap is only the rounding of F to its quoted decimals
+    const A = st.amt, mm = A * mmRate(), fw = A * st.F, tol = A * Math.pow(10, -C().dp) / 2;
+    return { k: Math.abs(fw - mm) <= tol ? 'same' : better(fw, mm) ? 'F' : 'M', mm, fw, Fp: irpF(st.S, st.ih, st.iff) };
   }
 
   // ===================== 2. PAYOFF =====================
@@ -576,7 +638,7 @@ const DATA={"start":"1999-01-04","m0":"1999-01","fx":{"EUR":{"sid":"DEXUSEU","k"
     return [Math.max(lo, st.S * 0.5), Math.min(hi, st.S * 1.5)];
   };
   function clampST() { const [lo, hi] = range(); st.ST = Math.max(lo, Math.min(hi, st.ST || st.S)); }
-  $('st').addEventListener('input', e => { st.ST = +e.target.value; render2(); });
+  $('st').addEventListener('input', e => { st.ST = +e.target.value; clearFb(2); render2(); });
   const setFlat = f => { st.flat = f; $('flatF').setAttribute('aria-pressed', f === 'F'); $('flatM').setAttribute('aria-pressed', f === 'M'); render2(); };
   $('flatF').addEventListener('click', () => setFlat('F'));
   $('flatM').addEventListener('click', () => setFlat('M'));
@@ -594,6 +656,18 @@ const DATA={"start":"1999-01-04","m0":"1999-01","fx":{"EUR":{"sid":"DEXUSEU","k"
     return out;
   }
 
+  function cat2(x) { // best of the three choices at S_T = x; locked-in = the better of forward and money market
+    const o = outcomes(x), L = better(o.F, o.M) ? o.F : o.M, v = { U: o.U, L, O: o.O };
+    const best = ['U', 'L', 'O'].reduce((a, k) => better(v[k], v[a]) ? k : a, 'U');
+    const gap = Math.min(...['U', 'L', 'O'].filter(k => k !== best).map(k => Math.abs(v[k] - v[best])));
+    return { best, gap, o, v };
+  }
+  function q2ST() { // the question uses the slider's S_T unless two choices tie there; then a clear example 5% above today's spot
+    const tol = st.amt * Math.pow(10, -C().dp);
+    if (cat2(st.ST).gap > tol) return st.ST;
+    for (const f of [1.05, 0.95, 1.08, 0.92]) { const x = +(st.S * f).toFixed(C().dp); if (cat2(x).gap > tol) return x; }
+    return st.ST;
+  }
   function render2() {
     const c = C(), rec = isRec(), A = st.amt, N = NAMES(), dp = c.dp;
     const [lo, hi] = range();
@@ -631,7 +705,7 @@ const DATA={"start":"1999-01-04","m0":"1999-01","fx":{"EUR":{"sid":"DEXUSEU","k"
       marks: marks.concat(ser.map(s => ({ x: st.ST, y: out[s.key], color: s.color }))),
       snap: v => +v.toFixed(dp),
       tipAt: x => { const o = outcomes(x); return { head: `S<sub>T</sub> = ${fx(x)}`, rows: all.map(k => ({ name: N[k], val: usd(o[k]), color: COL[k], y: (k === 'U' || k === 'O' || k === flatKey) ? o[k] : null, hollow: true })) }; },
-      onClick: v => { st.ST = +v.toFixed(dp); render2(); },
+      onClick: v => { st.ST = +v.toFixed(dp); clearFb(2); render2(); },
     });
     $('chart1').setAttribute('aria-label', `Payoff chart for a ${fc(A)} ${rec ? 'receivable' : 'payable'}. Unhedged dollars rise one-for-one with the future spot rate; the ${N[flatKey].toLowerCase()} is flat at ${usd(A * flatRate)}; the ${optName()} option hedge is ${rec ? 'at least' : 'at most'} ${usd(A * (rec ? st.X - st.p : st.X + st.p))}.`);
     $('beList').innerHTML = bes.map((b, k) => `<li>${b.x != null ? `<span class="bn">${k + 1}</span>` : '<span class="bn">–</span>'}<span>${b.text}</span></li>`).join('');
@@ -643,6 +717,13 @@ const DATA={"start":"1999-01-04","m0":"1999-01","fx":{"EUR":{"sid":"DEXUSEU","k"
     $('scoreTbl').innerHTML = `<thead><tr><th>At S<sub>T</sub> = ${fx(st.ST)}</th><th>${rec ? 'Received' : 'Paid'}</th><th>Real cost of hedging</th></tr></thead><tbody>` +
       all.map(k => { const r = k === 'U' ? null : rch(out[k], out.U); return `<tr class="${tied.includes(k) ? 'cur' : ''}"><td><span class="sw" style="background:${COL[k]}"></span>${N[k]}${tied.includes(k) ? ' <span class="tag">best here</span>' : ''}</td><td>${usd(out[k])}</td>${r == null ? '<td>–</td>' : `<td class="${r > 0.5 ? 'neg' : r < -0.5 ? 'pos' : ''}">${usdS(r)}</td>`}</tr>`; }).join('') + '</tbody>';
     $('rchDef').innerHTML = rec ? 'RCH<sub>r</sub> = dollars received without hedging − dollars received with hedging.' : 'RCH<sub>p</sub> = dollars paid with hedging − dollars paid without hedging.';
+    const hide2 = PM[2].hidden;
+    $('c1wrap').classList.toggle('masked', hide2); $('mask1').hidden = !hide2; if (hide2) $('c1wrap').querySelector('details').open = false;
+    $('scoreTbl').classList.toggle('blurred', hide2); $('take2').hidden = hide2;
+    const qx = q2ST();
+    $('g2O').textContent = `Option hedge (${optName()})`;
+    $('pTerms2').innerHTML = `Suppose the spot rate in 90 days turns out to be S<sub>T</sub> = ${fx(qx)}${Math.abs(qx - st.S) < step / 2 ? ' (the same as today)' : ''}. With F = ${fx(st.F)} and a ${optName()} at X = ${fx(st.X)} costing p = ${fx(st.p, C().pdp)}, which choice ${rec ? 'brings in the most dollars' : 'costs the fewest dollars'} for the ${fc(A)} ${rec ? 'receivable' : 'payable'}?`;
+    predUI(2);
     const unWins = better(out.U, out.F);
     $('take2').innerHTML = `At this S<sub>T</sub>, remaining unhedged ${unWins ? 'beats' : 'loses to'} the forward by ${usd(Math.abs(out.U - out.F))}. Drag S<sub>T</sub> to the other side of ${fx(st.F)} and the answer flips. The forward's dollars never move; the unhedged dollars always do.`;
 
@@ -662,13 +743,13 @@ const DATA={"start":"1999-01-04","m0":"1999-01","fx":{"EUR":{"sid":"DEXUSEU","k"
     rp.ownF = null;
   }
   let curDay = null;
-  $('win').addEventListener('input', e => { rp.w = +e.target.value; rp.ownF = null; render3(); });
-  $('winDate').addEventListener('change', e => { if (!e.target.value) return; syncReplayIndex(fromIso(e.target.value)); render3(); });
-  const setFs = own => { rp.own = own; $('fsCip').setAttribute('aria-pressed', !own); $('fsOwn').setAttribute('aria-pressed', own); $('ownBox').hidden = !own; render3(); };
+  $('win').addEventListener('input', e => { rp.w = +e.target.value; rp.ownF = null; clearFb(3); render3(); });
+  $('winDate').addEventListener('change', e => { if (!e.target.value) return; syncReplayIndex(fromIso(e.target.value)); clearFb(3); render3(); });
+  const setFs = own => { rp.own = own; $('fsCip').setAttribute('aria-pressed', !own); $('fsOwn').setAttribute('aria-pressed', own); $('ownBox').hidden = !own; clearFb(3); render3(); };
   $('fsCip').addEventListener('click', () => setFs(false));
   $('fsOwn').addEventListener('click', () => setFs(true));
-  $('ownF').addEventListener('input', e => { const v = parseFloat(e.target.value); if (isFinite(v) && v > 0) { rp.ownF = v; render3(); } });
-  $('pp').addEventListener('input', e => { rp.pp = +e.target.value; render3(); });
+  $('ownF').addEventListener('input', e => { const v = parseFloat(e.target.value); if (isFinite(v) && v > 0) { rp.ownF = v; clearFb(3); render3(); } });
+  $('pp').addEventListener('input', e => { rp.pp = +e.target.value; clearFb(3); render3(); });
 
   const PRESETS = [
     { t: 'Lehman collapse, Sep 2008', d: '2008-09-15' },
@@ -685,7 +766,7 @@ const DATA={"start":"1999-01-04","m0":"1999-01","fx":{"EUR":{"sid":"DEXUSEU","k"
       const s = getSer(st.cur), W = s.win;
       if (p.d) syncReplayIndex(fromIso(p.d));
       else { let k = 0; if (p.f === 'last') k = W.length - 1; else if (p.f === 'rand') k = Math.floor(Math.random() * W.length); else W.forEach((w, i) => { if (p.f === 'max' ? w.chg > W[k].chg : w.chg < W[k].chg) k = i; }); rp.w = k; syncReplayIndex(); }
-      render3();
+      clearFb(3); render3();
     });
     $('presets').appendChild(b);
   });
@@ -739,31 +820,44 @@ const DATA={"start":"1999-01-04","m0":"1999-01","fx":{"EUR":{"sid":"DEXUSEU","k"
     }
     vt += `On ${fmtDs(d0)} nobody knew which way it would go. That is the risk the hedge removes.`;
     $('verdict3').innerHTML = vt;
+    const hide3 = PM[3].hidden;
+    $('verdict3').hidden = hide3; $('replayWrap').classList.toggle('blurred', hide3);
+    $('tbl2d').classList.toggle('blurred', hide3); if (hide3) $('tbl2d').open = false;
+    if (F != null) {
+      $('g3u').textContent = 'Yes, unhedged did better'; $('g3f').textContent = 'No, the forward did better';
+      $('pTerms3').innerHTML = `On ${fmtD(d0)} the ${c.name} was ${fx(S0)} and the 90-day forward rate was ${fx(F)} (${rp.own ? 'your entry' : 'parity estimate'}). Would remaining unhedged have ${rec ? 'brought in more dollars' : 'cost fewer dollars'} than the forward hedge on ${fmtD(d1)}?`;
+    } else {
+      $('g3u').textContent = 'Higher'; $('g3f').textContent = 'Lower';
+      $('pTerms3').innerHTML = `On ${fmtD(d0)} the ${c.name} was ${fx(S0)}. There is no forward estimate for this month, so: was the spot rate higher or lower 90 days later, on ${fmtD(d1)}?`;
+    }
+    predUI(3);
 
     // chart
     const pts = []; for (let k = w.i; k <= w.j; k++) pts.push([s.days[k] - d0, s.vals[k]]);
     const optLine = rec ? X - p : X + p;
-    const ser = [{ name: 'Spot rate (unhedged)', color: 'var(--s1)', pts }];
+    const ser = [{ name: 'Spot rate (unhedged)', color: 'var(--s1)', pts: hide3 ? [pts[0]] : pts }];
     if (F != null) ser.push({ name: 'Forward rate locked in', color: 'var(--s2)', pts: [[0, F], [d1 - d0, F]] });
     ser.push({ name: `Option ${rec ? 'floor X − p' : 'cap X + p'}`, color: 'var(--s3)', pts: [[0, optLine], [d1 - d0, optLine]], dash: '7 5' });
     $('leg2').innerHTML = ser.map(z => `<span><i style="background:${z.color}"></i>${z.name}</span>`).join('');
-    const yv = pts.map(q => q[1]).concat([optLine, F ?? S0]);
+    // while predicting, the y-range ignores the hidden path so the axis gives nothing away
+    const yv = (hide3 ? [S0 * 0.92, S0 * 1.08] : pts.map(q => q[1])).concat([optLine, F ?? S0]);
     let y0 = Math.min(...yv), y1 = Math.max(...yv); const pd = (y1 - y0) * 0.08 || S0 * 0.01; y0 -= pd; y1 += pd;
     const yt = nticks(y0, y1, 5), ydp = dpFor(yt.s);
     const xend = d1 - d0;
-    const marks = [{ x: xend, y: ST, color: 'var(--s1)' }]; if (F != null) marks.push({ x: xend, y: F, color: 'var(--s2)' }); marks.push({ x: xend, y: effRate.O, color: 'var(--s3)' });
+    const marks = hide3 ? [{ x: 0, y: S0, color: 'var(--s1)' }] : [{ x: xend, y: ST, color: 'var(--s1)' }]; if (!hide3) { if (F != null) marks.push({ x: xend, y: F, color: 'var(--s2)' }); marks.push({ x: xend, y: effRate.O, color: 'var(--s3)' }); }
     lineChart({
       svg: $('chart2'), tip: $('tip2'), x: [0, xend], y: [y0, y1], xTicks: [0, 30, 60, 90].filter(v => v <= xend), yTicks: yt.t, ml: 64, ratio: 0.7,
       xFmt: v => fmtDs(d0 + v), yFmt: v => '$' + v.toFixed(Math.max(ydp, 2)), xTitle: `Days since ${fmtD(d0)}`, yTitle: `$ per ${c.sym}`,
       series: ser, marks,
       regions: [],
-      snap: v => { let best = pts[0]; pts.forEach(q => { if (Math.abs(q[0] - v) < Math.abs(best[0] - v)) best = q; }); return best[0]; },
+      snap: v => { if (hide3) return 0; let best = pts[0]; pts.forEach(q => { if (Math.abs(q[0] - v) < Math.abs(best[0] - v)) best = q; }); return best[0]; },
       tipAt: x => { const q = pts.find(q => q[0] === x); if (!q) return null; return { x, head: `${fmtD(d0 + x)} (day ${x})`, rows: [{ name: 'Spot', val: fx(q[1]), color: 'var(--s1)', y: q[1] }].concat(F != null ? [{ name: 'Forward', val: fx(F), color: 'var(--s2)', y: F }] : []).concat([{ name: rec ? 'Option floor' : 'Option cap', val: fx(optLine), color: 'var(--s3)', y: optLine }]) }; },
     });
-    $('chart2').setAttribute('aria-label', `Spot rate from ${fmtD(d0)} (${fx(S0)}) to ${fmtD(d1)} (${fx(ST)})` + (F != null ? `, forward rate ${fx(F)}` : '') + `, option ${rec ? 'floor' : 'cap'} ${fx(optLine)}.`);
+    if (hide3) { const svg = $('chart2'), vb = svg.viewBox.baseVal; el('text', { x: vb.width * 0.58, y: vb.height * 0.76, 'text-anchor': 'middle', class: 'hidnote' }, svg, `Path after ${fmtDs(d0)} hidden until you predict`); }
+    if (hide3) $('chart2').setAttribute('aria-label', `Spot rate on ${fmtD(d0)}: ${fx(S0)}. The rest of the window is hidden until you predict.`); else $('chart2').setAttribute('aria-label', `Spot rate from ${fmtD(d0)} (${fx(S0)}) to ${fmtD(d1)} (${fx(ST)})` + (F != null ? `, forward rate ${fx(F)}` : '') + `, option ${rec ? 'floor' : 'cap'} ${fx(optLine)}.`);
     $('tbl2').innerHTML = `<thead><tr><th>Date</th><th>Day</th><th>Spot ($ per ${c.sym})</th></tr></thead><tbody>` + pts.map(q => `<tr><td>${fmtD(d0 + q[0])}</td><td>${q[0]}</td><td>${fx(q[1])}</td></tr>`).join('') + '</tbody>';
 
-    renderDist(chg);
+    renderDist(hide3 ? null : chg);
     renderNotice();
   }
 
@@ -790,6 +884,12 @@ const DATA={"start":"1999-01-04","m0":"1999-01","fx":{"EUR":{"sid":"DEXUSEU","k"
     $('distStats').innerHTML = `<div><span class="k">Unhedged: middle 90% of windows</span><b>${pctS(D.p5)} to ${pctS(D.p95)}</b><span class="note">full range ${pctS(D.min)} to ${pctS(D.max)}; on ${fc(A)} at today's spot that is ${usdS(A * st.S * D.min / 100)} to ${usdS(A * st.S * D.max / 100)}</span></div>
       <div><span class="k">Forward hedge: full range vs. starting spot</span><b>${pctS(D.prMin, 2)} to ${pctS(D.prMax, 2)}</b><span class="note">known on day 0, set by the interest rate differential</span></div>
       <div><span class="k">Remaining unhedged beat the forward</span><b>${pct(beatPct, 0)} of windows</b><span class="note">the forward won in the other ${pct(100 - beatPct, 0)}</span></div>`;
+    const hide4 = PM[4].hidden;
+    $('distStats').classList.toggle('blurred', hide4);
+    ['c3wrap', 'c4wrap'].forEach(id => $(id).classList.toggle('masked', hide4)); $('mask3').hidden = $('mask4').hidden = !hide4;
+    $('tbl3d').classList.toggle('blurred', hide4); if (hide4) $('tbl3d').open = false;
+    $('pTerms4').innerHTML = `Across the ${D.nF.toLocaleString('en-US')} windows since ${dObj(D.firstF ?? D.first).getUTCFullYear()} with a parity forward, how often did remaining unhedged ${rec ? 'bring in more dollars' : 'cost fewer dollars'} than the forward hedge on a ${C().name} ${rec ? 'receivable' : 'payable'}?`;
+    predUI(4);
     const color1 = 'var(--s1)', color2 = 'var(--s2)';
     histChart({ svg: $('chart3'), tip: $('tip3'), bins: D.chBins, total: D.n, x: [D.lo, D.hi], color: color1, xTitle: `Change in $ per ${c.sym} over 90 days`, mark: markChg });
     histChart({ svg: $('chart4'), tip: $('tip4'), bins: D.prBins, total: D.nF, x: [D.lo, D.hi], color: color2, xTitle: 'Forward vs. starting spot, (F − S)/S', mark: w.prem });
@@ -808,7 +908,7 @@ const DATA={"start":"1999-01-04","m0":"1999-01","fx":{"EUR":{"sid":"DEXUSEU","k"
     $('notice').innerHTML = `
       <p class="takeaway"><b class="h">1 · A forward locks in certainty.</b> With F = ${fx(st.F)} the ${rec ? 'exporter receives' : 'importer pays'} ${usd(A * st.F)} whatever the spot rate does. The flat line in step 2 gives up the good outcomes to get rid of the bad ones. The money market hedge does the same with loans and deposits; under interest rate parity the two give the same dollars.</p>
       <p class="takeaway"><b class="h">2 · An option buys a ${rec ? 'floor' : 'ceiling'} and keeps the upside, for a premium.</b> The ${optName()} guarantees ${rec ? 'at least' : 'at most'} ${usd(worst)} and still lets the firm gain if the ${c.name} ${rec ? 'rises' : 'falls'}. The price is the premium, ${usd(A * st.p)} here, paid even when the option is never exercised.</p>
-      <p class="takeaway"><b class="h">3 · Whether hedging "wins" afterwards is not the point.</b> Remaining unhedged beat the parity forward in ${pct(beat, 0)} of the 90-day windows since ${dObj(D.first).getUTCFullYear()}${beat > 40 && beat < 60 ? ', close to a coin flip' : ''}. A hedge is chosen on day 0, when nobody knows the outcome. In 1 window in 20 the ${c.name} moved ${pct(adverse, 0)} or more against an unhedged ${rec ? 'exporter' : 'importer'}; the hedge removes that risk. Its real cost turns out positive in some windows and negative in others.</p>`;
+      <p class="takeaway"><b class="h">3 · Whether hedging "wins" afterwards is not the point.</b> ${PM[4].hidden ? 'How often did remaining unhedged beat the forward over history? Answer the question in step 3 to see.' : `Remaining unhedged beat the parity forward in ${pct(beat, 0)} of the 90-day windows since ${dObj(D.first).getUTCFullYear()}${beat > 40 && beat < 60 ? ', close to a coin flip' : ''}.`} A hedge is chosen on day 0, when nobody knows the outcome. In 1 window in 20 the ${c.name} moved ${pct(adverse, 0)} or more against an unhedged ${rec ? 'exporter' : 'importer'}; the hedge removes that risk. Its real cost turns out positive in some windows and negative in others.</p>`;
   }
 
   // ---------- source line ----------
@@ -819,10 +919,58 @@ const DATA={"start":"1999-01-04","m0":"1999-01","fx":{"EUR":{"sid":"DEXUSEU","k"
 
   function renderAll() { render1(); render2(); render3(); }
 
+  const RENDER = { 1: render1, 2: render2, 3: render3, 4: render3 };
+  function setHiddenN(n, h, keepFeedback) {
+    PM[n].hidden = h;
+    if (!keepFeedback) clearFb(n);
+    $('modeBtn' + n).textContent = h ? '👁 Reveal answer' : '↩ Back to predict mode';
+    $('modeNote' + n).textContent = h ? 'Predict mode: the answer is hidden. Answer the question, or click Reveal answer.'
+                                      : 'Answer shown: everything updates live. Click Back to predict mode to quiz again.';
+    RENDER[n]();
+    if (n === 4) renderNotice();
+  }
+  [1, 2, 3, 4].forEach(n => $('modeBtn' + n).addEventListener('click', () => setHiddenN(n, !PM[n].hidden)));
+  const onGuess = (n, fn) => $('pBtns' + n).addEventListener('click', e => { const g = e.target.closest('button[data-guess]'); if (!g) return; $('pFeedback' + n).innerHTML = fn(g.dataset.guess); PM[n].fb = true; setHiddenN(n, false, true); });
+
+  onGuess(1, g => {
+    const a = answer1(), rec = isRec(), cmp = st.F > a.Fp ? 'above' : 'below';
+    const NM = { F: 'forward hedge', M: 'money market hedge' };
+    const why = a.k === 'same'
+      ? `They give the same dollars: the forward gives ${usd(a.fw)} and the money market hedge ${usd(a.mm)}, a gap of only ${usd(Math.abs(a.fw - a.mm))} because F is quoted to ${C().dp} decimals. F equals the interest rate parity value S × (1 + i<sub>h</sub>)/(1 + i<sub>f</sub>) = ${fx(a.Fp, C().dp + 1)}, and covered interest arbitrage keeps the two hedges equal.`
+      : `The <b>${NM[a.k]}</b> is better: the forward gives ${usd(a.fw)}, the money market hedge ${usd(a.mm)}. Your F (${fx(st.F)}) is ${cmp} the parity value ${fx(a.Fp, C().dp + 1)}, so ${rec ? (a.k === 'F' ? 'selling forward brings in more than' : 'selling forward brings in less than') : (a.k === 'F' ? 'buying forward costs less than' : 'buying forward costs more than')} the borrow-and-lend route.`;
+    return `${verdictHtml(g === a.k)} ${why}`;
+  });
+  onGuess(2, g => {
+    const x = q2ST(), r = cat2(x), rec = isRec(), N = NAMES();
+    if (Math.abs(x - st.ST) > 1e-12) { st.ST = x; }
+    const lockName = better(r.o.F, r.o.M) ? 'forward hedge' : 'money market hedge';
+    const tiedL = Math.abs(r.o.F - r.o.M) <= st.amt * Math.pow(10, -C().dp) / 2;
+    const NM = { U: 'Remaining unhedged', L: tiedL ? `A locked-in hedge (forward or money market, within ${usd(Math.abs(r.o.F - r.o.M))} of each other)` : `The locked-in ${lockName}`, O: `The ${optName()} option hedge` };
+    return `${verdictHtml(g === r.best)} ${NM[r.best]} ${rec ? 'brings in the most' : 'costs the least'} at S<sub>T</sub> = ${fx(x)}: unhedged ${usd(r.o.U)}, forward ${usd(r.o.F)}, money market ${usd(r.o.M)}, ${optName()} ${usd(r.o.O)}. Unhedged dollars follow S<sub>T</sub>, the forward and money market hedges are fixed today, and the ${optName()} pays ${rec ? 'max(S<sub>T</sub>, X) − p' : 'min(S<sub>T</sub>, X) + p'} = ${fx(optRate(x))} per ${C().sym}.`;
+  });
+  onGuess(3, g => {
+    const s = getSer(st.cur), w = s.win[rp.w], rec = isRec(), A = st.amt, S0 = s.vals[w.i], ST = s.vals[w.j];
+    const F = rp.own ? rp.ownF : w.F;
+    if (F == null) {
+      const ok = (g === 'u') === (ST > S0);
+      return `${verdictHtml(ok)} The ${C().name} ended ${ST > S0 ? 'higher' : 'lower'}: ${fx(S0)} → ${fx(ST)} (${pctS((ST / S0 - 1) * 100, 1)}). That is ${(ST > S0) === rec ? 'good' : 'bad'} news for an unhedged ${rec ? 'exporter' : 'importer'}.`;
+    }
+    const uw = better(A * ST, A * F), ok = (g === 'u') === uw;
+    return `${verdictHtml(ok)} The ${C().name} ended at ${fx(ST)}, ${ST > F ? 'above' : 'below'} the forward rate ${fx(F)}, so remaining unhedged ${rec ? 'brought in' : 'cost'} ${usd(Math.abs(A * (ST - F)))} ${ST > F ? 'more' : 'less'} than the forward hedge: the ${uw ? 'gamble' : 'hedge'} won afterwards. Nobody could know that on ${fmtDs(s.days[w.i])}.`;
+  });
+  onGuess(4, g => {
+    const D = distFor(st.cur), rec = isRec(), beat = (rec ? D.beatRec : D.nF - D.beatRec) / D.nF * 100;
+    const k = beat < 40 ? 'lo' : beat > 60 ? 'hi' : 'mid';
+    return `${verdictHtml(g === k)} Remaining unhedged did better in <b>${pct(beat, 0)}</b> of the windows. The forward sits close to the starting spot (within ${pctS(D.prMin, 2)} to ${pctS(D.prMax, 2)}), while the spot itself moved between ${pctS(D.p5)} and ${pctS(D.p95)} in the middle 90% of windows. Which one wins is ${k === 'mid' ? 'close to a coin flip' : 'not a sure thing'}; what the forward removes is the spread of outcomes.`;
+  });
+
   // ---------- start ----------
   defaults(); writeInputs(); renderSource();
   syncReplayIndex(fromIso('2008-09-15'));
+  const startHidden = !['reveal', 'explore'].includes(new URLSearchParams(location.search).get('mode'));
+  [1, 2, 3, 4].forEach(n => { PM[n].hidden = startHidden; });
   renderAll();
+  [1, 2, 3, 4].forEach(n => setHiddenN(n, startHidden));
   let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { render2(); render3(); }, 150); });
 })();
 </script>

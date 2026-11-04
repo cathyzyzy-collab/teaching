@@ -684,16 +684,21 @@ footer.note p { margin: 0; }
 
   function render3() {
     const Y = st.win, rows = scatterRows(Y), hid3 = P[3].hidden;
-    // predict question: three currencies with their inflation rates as the givens
-    const byInf = rows.slice().sort((a, b) => a.If - b.If);
-    const loser = rows.slice().sort((a, b) => a.y - b.y)[0];
-    const lowI = byInf.find(r => r !== loser);
-    const rest = byInf.filter(r => r !== loser && r !== lowI);
-    const midI = rest[Math.floor(rest.length / 2)];
-    const ch = [loser, lowI, midI].sort((a, b) => a.c.c < b.c.c ? -1 : 1);
+    // predict question: three currencies (not the lira, which always loses the most) with their inflation rates as the givens
+    const tr = rows.find(r => r.c.c === 'TRY');
+    const pool = rows.filter(r => r !== tr);
+    const byInf = pool.slice().sort((a, b) => a.If - b.If);
+    const hiI0 = byInf[byInf.length - 1], lowI = byInf[0];
+    const loser = pool.slice().sort((a, b) => a.y - b.y)[0];
+    const ch = [hiI0];
+    [loser, lowI, byInf[Math.floor(byInf.length / 2)], byInf[1], byInf[byInf.length - 2]].forEach(r => { if (ch.length < 3 && ch.indexOf(r) < 0) ch.push(r); });
+    ch.sort((a, b) => a.c.c < b.c.c ? -1 : 1);
     P[3].ans = loser.c.c;
+    const trBig = tr && rows.every(r => r === tr || r.y > tr.y);
     $('predictBox3').hidden = !(hid3 || P[3].fb); $('pBtns3').hidden = !hid3;
-    $('pTerms3').innerHTML = `From ${Y} to ${lab(END)}, U.S. consumer prices rose ${(loser.Ih * 100).toFixed(1)}% a year. Average inflation per year: ${ch.map(r => `${r.c.n} ${(r.If * 100).toFixed(1)}%`).join(', ')}. Which of these three currencies lost the most value against the dollar per year?`;
+    $('pTerms3').innerHTML = `From ${Y} to ${lab(END)}, U.S. consumer prices rose ${(loser.Ih * 100).toFixed(1)}% a year.` +
+      (tr ? ` Leaving aside the Turkish lira (${trBig ? 'by far the biggest loser, ' : ''}${pp(tr.y)}% a year, with ${(tr.If * 100).toFixed(1)}% inflation), here is average inflation per year:` : ' Average inflation per year:') +
+      ` ${ch.map(r => `${r.c.n} ${(r.If * 100).toFixed(1)}%`).join(', ')}. Which of these three currencies lost the most value against the dollar per year?`;
     $('pBtns3').innerHTML = ch.map(r => `<button class="btn" type="button" data-guess="${r.c.c}">${r.c.n}</button>`).join('');
     P[3].why = () => {
       const hiI = ch.slice().sort((a, b) => b.If - a.If)[0];

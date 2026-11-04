@@ -156,6 +156,17 @@ details.tbl[open] summary { margin-bottom: 8px; }
 .warn { color: var(--neg); font-weight: 600; }
 footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 86ch; display: grid; gap: 6px; }
 footer.note p { margin: 0; }
+/* predict-first mode (same look as the bond app) */
+.btn.primary { background: var(--accent); color: var(--panel); border-color: var(--accent); }
+.btn:disabled { opacity: .45; cursor: default; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 10px 12px; border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 12px; }
+.toolbar .note { flex: 1 1 200px; }
+.predict { border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); background: color-mix(in srgb, var(--accent) 7%, var(--panel)); border-radius: 12px; padding: 12px 14px; display: grid; gap: 10px; }
+.predict p { margin: 0; }
+.fb-ok { color: var(--pos); font-weight: 600; } .fb-no { color: var(--neg); font-weight: 600; }
+.chart.masked svg, .chart.masked details { filter: blur(8px); pointer-events: none; user-select: none; }
+.chart .maskmsg { position: absolute; inset: 40% 10% auto; text-align: center; font-weight: 600; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.blurred { filter: blur(7px); pointer-events: none; user-select: none; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 </style>
 </head><body>
@@ -426,6 +437,9 @@ footer.note p { margin: 0; }
 (function () {
   'use strict';
   const HIST = {"first":1928,"last":2025,"sp":[0.4381116,-0.0829795,-0.2512364,-0.4383755,-0.0864236,0.4998223,-0.0118857,0.4674042,0.3194341,-0.3533673,0.2928265,-0.0109756,-0.1067287,-0.1277146,0.1917376,0.2506131,0.1903068,0.3582108,-0.0842915,0.052,0.0570458,0.1830322,0.3080554,0.2367846,0.1815099,-0.012082,0.5256332,0.3259733,0.0743951,-0.1045736,0.4371995,0.1205646,0.0033654,0.2663771,-0.0881146,0.2261193,0.1641546,0.1239924,-0.0997095,0.2380297,0.1081486,-0.0824137,0.0356114,0.1422115,0.1875536,-0.1430805,-0.2590179,0.3699514,0.23831,-0.069797,0.0650928,0.1851949,0.3173525,-0.0470239,0.2041906,0.2233716,0.0614614,0.3123515,0.1849458,0.0581272,0.1653719,0.3147518,-0.0306445,0.3023484,0.0749373,0.0996705,0.0132592,0.371952,0.2268097,0.3310365,0.2833795,0.2088535,-0.0903182,-0.1184976,-0.2196605,0.283558,0.1074278,0.0483448,0.1561256,0.0548474,-0.3655234,0.2593523,0.1482109,0.0209837,0.1589059,0.3214509,0.1352442,0.0137889,0.1177308,0.2160548,-0.0422687,0.3121168,0.180232,0.2846885,-0.1803751,0.2606068,0.2487861,0.1772366],"tb":[0.0308,0.0316,0.0455,0.0231,0.0107,0.0096,0.0027833,0.001675,0.001725,0.0027583,0.00065,0.0004583,0.0003583,0.0012917,0.003425,0.0038,0.0038,0.0038,0.0038,0.0060083,0.01045,0.01115,0.0120333,0.015175,0.017225,0.0189083,0.0093752,0.0172434,0.0262139,0.0322457,0.0176655,0.0338602,0.0287297,0.0235249,0.0277237,0.0315602,0.0354574,0.0394908,0.0485572,0.0429345,0.053376,0.0666847,0.06391,0.0433426,0.0406184,0.0703544,0.0784578,0.0578639,0.049766,0.0526096,0.0717831,0.1005427,0.1139188,0.1403618,0.1109,0.0895,0.0992,0.0772,0.0615,0.0596,0.0689,0.0839,0.0775,0.0554,0.0351,0.0307,0.0437,0.0566,0.0515,0.052,0.0491,0.0478,0.06,0.0348,0.0164,0.0103,0.014,0.0322,0.0485,0.0448,0.014,0.0015,0.0014,0.0005,0.0009,0.0006,0.0003,0.0005,0.0032,0.0095,0.0197,0.0211,0.0036,0.0004,0.0209,0.0528,0.0518,0.0421],"bd":[0.0083547,0.042038,0.0454093,-0.0255886,0.0879031,0.0185527,0.0796344,0.0447205,0.0501788,0.0137915,0.0421325,0.0441226,0.0540248,-0.020222,0.0229487,0.0249,0.0257761,0.0380442,0.0312837,0.009197,0.0195104,0.0466349,0.004296,-0.0029531,0.02268,0.0414384,0.032898,-0.0133644,-0.0225577,0.0679701,-0.0209902,-0.0264663,0.116395,0.0206092,0.0569354,0.0168416,0.0372806,0.0071886,0.0290794,-0.0158062,0.0327462,-0.0501405,0.1675474,0.097869,0.0281845,0.0365866,0.0198861,0.0360525,0.1598456,0.0128996,-0.0077758,0.0067072,-0.0298974,0.0819922,0.3281455,0.0320021,0.1373336,0.2571249,0.2428422,-0.0496051,0.082236,0.1769365,0.0623538,0.1500451,0.0936164,0.1421096,-0.0803666,0.2348078,0.0142861,0.0993913,0.1492143,-0.0825421,0.1665527,0.0557218,0.151164,0.0037532,0.0449068,0.0286753,0.01961,0.1020992,0.2010128,-0.111167,0.0846293,0.1603533,0.0297157,-0.0910457,0.1074618,0.012843,0.0069055,0.0280172,-0.0001669,0.0963563,0.113319,-0.0441603,-0.1782817,0.0388,-0.0163718,0.0779548],"cpi":[17.3,17.1,17.2,16.1,14.6,13.1,13.2,13.4,13.8,14.0,14.4,14.0,14.0,14.1,15.5,16.9,17.4,17.8,18.2,21.5,23.4,24.1,23.6,25.0,26.5,26.7,26.9,26.7,26.8,27.6,28.4,28.9,29.4,29.8,30.0,30.4,30.9,31.2,31.8,32.9,33.9,35.5,37.7,39.8,41.1,42.5,46.2,51.9,55.5,58.2,62.1,67.7,76.7,86.3,94.0,97.6,101.3,105.3,109.3,110.5,115.4,120.5,126.1,133.8,137.9,141.9,145.8,149.7,153.5,158.6,161.3,163.9,168.3,174.0,176.7,180.9,184.3,190.3,196.8,201.8,210.036,210.228,215.949,219.179,225.672,229.601,233.049,234.812,236.525,241.432,246.524,251.233,256.974,260.474,278.802,296.797,306.746,315.605,324.054]};
+  // Predict-first mode is the default; ?mode=reveal (or explore) opens every section revealed.
+  const START_HIDDEN = !['reveal', 'explore'].includes(new URLSearchParams(location.search).get('mode'));
+  const PM = {}; ['e', 'h', 't', 'l', 'c', 'm', 'd'].forEach(k => { PM[k] = { hidden: START_HIDDEN, fb: false }; });
   const $ = id => document.getElementById(id);
   const NS = 'http://www.w3.org/2000/svg';
   const el = (tag, attrs, parent, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; if (parent) parent.appendChild(e); return e; };
@@ -513,7 +527,7 @@ footer.note p { margin: 0; }
   const eA = (x, r, age) => age <= 20 ? 0 : age <= 30 ? x * fvAnn(age - 20, r) : x * fvAnn(10, r) * Math.pow(1 + r, age - 30);
   const eB = (x, r, age) => age <= 30 ? 0 : x * fvAnn(age - 30, r);
   function eBreakEven(R) { let lo = 1e-6, hi = 1; for (let k = 0; k < 200; k++) { const mid = (lo + hi) / 2; if (eA(1, mid, R) > eB(1, mid, R)) hi = mid; else lo = mid; } return (lo + hi) / 2 * 100; }
-  function renderE() {
+  function renderE0() {
     const x = E.amt, r = E.r / 100, R = E.R;
     $('e_amtOut').textContent = money(x, 0); $('e_rOut').textContent = pct(E.r);
     document.querySelectorAll('.e_R').forEach(s => { s.textContent = R; });
@@ -573,7 +587,7 @@ footer.note p { margin: 0; }
     return out;
   }
   const logTickFmt = v => v >= 1 ? '$' + v.toLocaleString('en-US') : '$' + v.toFixed(v >= 0.1 ? 2 : 3).replace(/0+$/, '');
-  function renderH() {
+  function renderH0() {
     const s = H2.start, last = HIST.last, N = last - s + 1;
     $('h_startOut').textContent = s;
     const P = histPaths(s, H2.real);
@@ -645,7 +659,7 @@ footer.note p { margin: 0; }
   }
   function syncT() { $('t_n').value = TL.n; $('t_r').value = TL.r; setPressed([$('t_end'), $('t_bgn')], TL.bgn ? $('t_bgn') : $('t_end')); buildInputs(); renderT(); }
   const sup = n => String(n).split('').map(d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]).join('');
-  function renderT() {
+  function renderT0() {
     const n = TL.n, r = TL.r / 100, f = effFlows();
     $('t_nOut').textContent = n; $('t_rOut').textContent = pct(TL.r);
     const pv = f.map((c, t) => c / Math.pow(1 + r, t)), total = pv.reduce((a, b) => a + b, 0);
@@ -751,7 +765,7 @@ footer.note p { margin: 0; }
   const lotPV = r => { let s = 0; for (let k = 0; k < NP; k++) s += P1 * Math.pow(1 + G, k) / Math.pow(1 + r, k); return s; };
   const lotBE = (() => { let lo = 0, hi = 0.2; for (let k = 0; k < 200; k++) { const mid = (lo + hi) / 2; if (lotPV(mid) > CASH) lo = mid; else hi = mid; } return (lo + hi) / 2 * 100; })();
   let LR = 6;
-  function renderL() {
+  function renderL0() {
     const r = LR / 100, v = lotPV(r);
     $('l_rOut').textContent = pct(LR); $('l_pv').textContent = compact(v).replace('B', ' billion').replace('M', ' million');
     $('l_p1').textContent = compact(P1).replace('M', ' million'); $('l_p30').textContent = compact(P1 * Math.pow(1 + G, NP - 1)).replace('M', ' million');
@@ -788,7 +802,7 @@ footer.note p { margin: 0; }
     return { never: bal > 0.004, pts, interest, months: m, pays };
   }
   const yrsMo = m => { const y = Math.floor(m / 12), mo = m % 12; return (y ? `${y} yr` : '') + (y && mo ? ' ' : '') + (mo ? `${mo} mo` : '') || '0 mo'; };
-  function renderC() {
+  function renderC0() {
     const { bal, apr, pmt } = CC;
     $('c_balOut').textContent = money(bal, 0); $('c_aprOut').textContent = pct(apr); $('c_pmtOut').textContent = money(pmt, 0);
     const mn = payoff(bal, apr, null), fx = payoff(bal, apr, pmt);
@@ -854,7 +868,7 @@ footer.note p { margin: 0; }
   const fP = v => { const t = (+v.toFixed(4)).toString(); const d = (t.split('.')[1] || '').length; return num(v, Math.max(2, d)) + '%'; }; // periodic rate, trailing zeros trimmed
   const fM = v => Number.isInteger(v) ? String(v) : num(v, 4);
   const fD = v => num(v, v % 1 ? 2 : 0);
-  function renderM() {
+  function renderM0() {
     const R = {}; MP.forEach(p => { R[p.k] = mCalc(p.k); });
     const c = R[MSEL], v = MV[MSEL], P = MP.find(p => p.k === MSEL);
     let cost;
@@ -928,7 +942,7 @@ footer.note p { margin: 0; }
   // ===================== 7. RULE OF 72 =====================
   let DR = 10;
   const exactN = r => Math.log(2) / Math.log(1 + r / 100);
-  function renderD() {
+  function renderD0() {
     const ex = exactN(DR), r72 = 72 / DR, err = r72 - ex;
     $('d_rOut').textContent = pct(DR, 1);
     $('d_72').textContent = num(r72) + ' years'; $('d_72s').textContent = `72 ÷ ${num(DR, 1)}`;
@@ -950,9 +964,106 @@ footer.note p { margin: 0; }
   }
   $('d_r').addEventListener('input', e => { DR = +e.target.value; renderD(); });
 
+  // ===================== PREDICT-FIRST MODE =====================
+  // Each section: one question from the current inputs, answer hidden until a guess or Reveal.
+  const PMC = {
+    e: { sec: 's1', render: renderE, chart: ['e_wrap'], q: ['#e_A', '#e_B'], hide: ['e_verdict', 'e_take'], blur: ['e_bars', 'e_calc'], disable: ['e_be'],
+      choices: [['A', 'Saver A (started early)'], ['B', 'Saver B (saved longer)'], ['tie', 'About the same']],
+      question: () => `Saver A deposits ${money(E.amt, 0)} a year for 10 years (ages 20–30), then stops. Saver B deposits ${money(E.amt, 0)} a year from 30 to ${E.R} (${E.R - 30} deposits). Both earn ${pct(E.r)} a year. Who has more at ${E.R}?`,
+      answer: () => { const r = E.r / 100, A = eA(E.amt, r, E.R), B = eB(E.amt, r, E.R), be = eBreakEven(E.R);
+        const c = Math.abs(A - B) < 0.005 * Math.max(A, B) ? 'tie' : A > B ? 'A' : 'B';
+        return { c, why: `Saver A ends with <b>${money(A)}</b> from ${money(10 * E.amt, 0)} of deposits; Saver B ends with <b>${money(B)}</b> from ${money((E.R - 30) * E.amt, 0)}. The break-even return is ${pct(be)}: above it A's ten-year head start wins, below it B's extra ${E.R - 40} deposits win.` }; } },
+    h: { sec: 's2', render: renderH, chart: ['h_wrap'], q: ['#h_stats .v', '#h_stats .s'], hide: ['h_take'], blur: ['h_keys', 'h_excel'],
+      choices: [['lt10', 'Less than $10'], ['10', '$10 to $100'], ['100', '$100 to $1,000'], ['1000', 'More than $1,000']],
+      question: () => `$1 goes into the S&amp;P 500 at the start of ${H2.start}, with every dividend reinvested. Roughly what was it worth at the end of ${HIST.last}${H2.real ? `, after inflation (in ${H2.start - 1} dollars)` : ''}?`,
+      answer: () => { const P = histPaths(H2.start, H2.real), v = P.sp[P.sp.length - 1][1], tb = P.tb[P.tb.length - 1][1], N = HIST.last - H2.start + 1, g = (Math.pow(v, 1 / N) - 1) * 100;
+        const c = v < 10 ? 'lt10' : v < 100 ? '10' : v < 1000 ? '100' : '1000';
+        return { c, why: `It became <b>${money(v)}</b>${H2.real ? ' after inflation' : ''}: ${N} years of compounding at ${pct(g)} a year (${N} N, −1 PV, 0 PMT, ${num(v)} FV, CPT I/Y). The same $1 in T-bills became only ${money(tb)}.` }; } },
+    t: { sec: 's3', render: renderT, chart: ['t_wrap'], q: ['#t_stats .v', '#t_stats .s'], hide: ['t_mode'], blur: ['t_calc'],
+      choices: [['end', 'END is larger'], ['bgn', 'BGN is larger'], ['same', 'They are the same']],
+      question: () => `Keep these cash flows and I/Y = ${pct(TL.r)}. Is the present value larger in END mode (each period's payment at the end of the period) or in BGN mode (at the start)?`,
+      answer: () => { const r = TL.r / 100, n = TL.n, fe = Array(n + 1).fill(0), fb = Array(n + 1).fill(0);
+        fe[0] = fb[0] = TL.cf[0]; for (let t = 1; t <= n; t++) { fe[t] += TL.cf[t]; fb[t - 1] += TL.cf[t]; }
+        const pe = npv(fe, r), pb = npv(fb, r), c = Math.abs(pe - pb) < 0.005 ? 'same' : pb > pe ? 'bgn' : 'end';
+        const lvl = TL.cf[0] === 0 && c === 'bgn' ? ` Here BGN = END × (1 + I) = ${money(pe)} × ${num(1 + r, 4)}.` : '';
+        const why = c === 'same' ? 'Timing makes no difference here (a 0% rate, or no payments during the periods).' : c === 'bgn' ? `In BGN every payment arrives one period earlier, so it is discounted one period less.${lvl}` : 'In BGN every payment arrives one period earlier. Here the period payments are mostly outflows, and paying out earlier costs more in today’s dollars.';
+        return { c, why: `END: <b>${money(pe)}</b>; BGN: <b>${money(pb)}</b>. ${why}` }; } },
+    l: { sec: 's4', render: renderL, chart: ['l_wrap'], q: ['#l_pv'], hide: ['l_verdict'], blur: ['l_calc'], disable: ['l_be'], svgInput: true,
+      choices: [['cash', 'The $997.6M cash'], ['ann', 'The 30 payments'], ['same', 'About the same']],
+      question: () => `At a ${pct(LR)} discount rate, which is worth more today: $997.6 million in cash now, or the 30 payments (first one today, each 5% larger) that add up to $2.04 billion?`,
+      answer: () => { const v = lotPV(LR / 100), c = Math.abs(v - CASH) < 0.002 * CASH ? 'same' : v > CASH ? 'ann' : 'cash';
+        return { c, why: `At ${pct(LR)} the 30 payments are worth <b>${compact(v)}</b> today, against <b>$997.6M</b> cash. The break-even rate is ${pct(lotBE)}: at lower rates the payments are worth more, at higher rates the cash wins. The further away a payment is, the more a higher rate shrinks it.` }; } },
+    c: { sec: 's5', render: renderC, chart: ['c_wrap'], q: ['#c_minT', '#c_minI', '#c_fixT', '#c_fixI'], hide: ['c_verdict'], blur: ['c_keys', 'c_excel'],
+      choices: [['lt5', 'Under 5 years'], ['5', '5 to 10 years'], ['10', '10 to 20 years'], ['20', 'More than 20 years']],
+      question: () => `You owe ${money(CC.bal, 0)} on a card with a ${pct(CC.apr)} APR, stop using it, and pay only the minimum each month (that month's interest + 1% of the balance, at least $25). About how long until it is paid off?`,
+      answer: () => { const mn = payoff(CC.bal, CC.apr, null), mo = mn.never ? Infinity : mn.months;
+        const c = mo < 60 ? 'lt5' : mo < 120 ? '5' : mo < 240 ? '10' : '20';
+        return { c, why: mn.never ? 'More than 50 years.' : `It takes <b>${mn.months} months (${yrsMo(mn.months)})</b> and <b>${money(mn.interest)}</b> of interest, ${num(mn.interest / CC.bal * 100, 0)}% of what you owed. The minimum shrinks as the balance shrinks, so you pay down very little principal each month.` }; } },
+    m: { sec: 's6', render: renderM, chart: ['m_wrap'], q: ['#m_stats .stat:nth-child(-n+2) .v', '#m_stats .stat:nth-child(-n+2) .s'], hide: ['m_take'], blur: ['m_calc'],
+      choices: MP.map(p => [p.k, p.name]),
+      question: () => { const v = MV; return `Payday loan: ${money(v.pd.fee)} per $100 for ${v.pd.days} days. BNPL: a ${money(v.bnpl.fee)} late fee on a ${money(v.bnpl.inst)} installment, ${v.bnpl.days} days late. Rent-to-own: ${money(v.rto.pmt)} a week for ${v.rto.weeks} weeks for a ${money(v.rto.cash)} item. Credit card: ${pct(v.cc.apr)} APR, charged monthly. Which has the highest effective annual rate (EAR)?`; },
+      answer: () => { const R = MP.map(p => ({ p, r: mCalc(p.k) })).sort((a, b) => b.r.ear - a.r.ear);
+        return { c: R[0].p.k, why: `<b>${R[0].p.name}</b>, with an EAR of <b>${pct(R[0].r.ear)}</b> (APR ${pct(R[0].r.apr)}). Then ${R.slice(1).map(x => `${x.p.name} ${pct(x.r.ear)}`).join(', ')}. A cost for a short period, repeated ${Number.isInteger(R[0].r.m) ? R[0].r.m : num(R[0].r.m, 1)} times a year, compounds into an enormous annual rate.` }; } },
+    d: { sec: 's7', render: renderD, chart: ['d_wrap'], q: ['#d_ex', '#d_err'], hide: ['d_take'], blur: ['d_keys', 'd_excel'], svgInput: true,
+      choices: [['over', 'More: the rule overestimates'], ['under', 'Less: the rule underestimates'], ['same', 'About right (within 0.01 years)']],
+      question: () => `At ${pct(DR, 1)} growth, the Rule of 72 says money doubles in 72 ÷ ${num(DR, 1)} = ${num(72 / DR)} years. Is that more or less than the exact answer from CPT N?`,
+      answer: () => { const ex = exactN(DR), err = 72 / DR - ex, c = Math.abs(err) < 0.01 ? 'same' : err > 0 ? 'over' : 'under';
+        return { c, why: `The exact answer is <b>${num(ex)} years</b>, so the rule is ${c === 'same' ? 'within 0.01 years' : `${num(Math.abs(err))} years too ${err > 0 ? 'long' : 'short'}`}. The rule is almost exact near 7.85%; below that it overestimates, above it underestimates.` }; } },
+  };
+  const NOTE_H = 'Predict mode: the answer is hidden. Answer the question, or click Reveal answer.';
+  const NOTE_R = 'Answer shown: everything updates live. Click Back to predict mode to quiz again.';
+  function pmApply(k) {
+    const c = PMC[k], st = PM[k], hide = st.hidden;
+    if (!$('pb_' + k)) return; // not built yet (first render)
+    $('pb_' + k).hidden = !(hide || st.fb);
+    $('pB_' + k).hidden = !hide;
+    $('pq_' + k).innerHTML = c.question();
+    c.chart.forEach(id => { const w = $(id); w.classList.toggle('masked', hide); w.querySelector('.maskmsg').hidden = !hide;
+      if (hide) { w.querySelector('.tip').hidden = true; w.querySelectorAll('details').forEach(d => { d.open = false; }); }
+      w.querySelectorAll('.colhit').forEach(r => r.setAttribute('tabindex', hide ? -1 : 0)); });
+    if (hide) c.q.forEach(sel => document.querySelectorAll(sel).forEach(e => { e.textContent = '?'; }));
+    c.hide.forEach(id => { $(id).hidden = hide; });
+    c.blur.forEach(id => { $(id).classList.toggle('blurred', hide); if (hide) $(id).setAttribute('aria-hidden', 'true'); else $(id).removeAttribute('aria-hidden'); });
+    (c.disable || []).forEach(id => { $(id).disabled = hide; });
+  }
+  function pmSet(k, h, keep) {
+    const st = PM[k]; st.hidden = h;
+    if (!keep) { st.fb = false; $('pf_' + k).innerHTML = ''; }
+    $('mb_' + k).textContent = h ? '👁 Reveal answer' : '↩ Back to predict mode';
+    $('mn_' + k).textContent = h ? NOTE_H : NOTE_R;
+    PMC[k].render();
+  }
+  const pmStale = k => { if (PM[k].fb) { PM[k].fb = false; $('pf_' + k).innerHTML = ''; } };
+  Object.keys(PMC).forEach(k => {
+    const c = PMC[k], sec = $(c.sec), lead = sec.querySelector('p.lead');
+    const tb = document.createElement('div'); tb.className = 'toolbar';
+    tb.innerHTML = `<button class="btn primary" type="button" id="mb_${k}">👁 Reveal answer</button><span class="note" id="mn_${k}"></span>`;
+    const box = document.createElement('div'); box.className = 'predict'; box.id = 'pb_' + k;
+    box.innerHTML = `<p><b>Predict first.</b> <span id="pq_${k}"></span></p><div class="row" id="pB_${k}" role="group" aria-label="Your prediction">${c.choices.map(([g, t]) => `<button class="btn" type="button" data-guess="${g}">${t}</button>`).join('')}</div><p id="pf_${k}" aria-live="polite"></p>`;
+    lead.after(tb, box);
+    c.chart.forEach(id => { const m = document.createElement('div'); m.className = 'maskmsg'; m.hidden = true; m.textContent = 'Make your prediction to see the chart'; $(id).appendChild(m); });
+    $('mb_' + k).addEventListener('click', () => pmSet(k, !PM[k].hidden));
+    $('pB_' + k).addEventListener('click', e => {
+      const g = e.target.closest('button[data-guess]'); if (!g) return;
+      const a = c.answer();
+      $('pf_' + k).innerHTML = `${g.dataset.guess === a.c ? '<span class="fb-ok">✓ Correct.</span>' : '<span class="fb-no">✗ Not quite.</span>'} ${a.why}`;
+      PM[k].fb = true; pmSet(k, false, true);
+    });
+    // any change to the inputs makes old feedback stale (capture phase: clear before the section re-renders)
+    sec.addEventListener('input', e => { if (!e.target.closest('.predict')) pmStale(k); }, true);
+    sec.addEventListener('click', e => { const t = e.target; if (t.closest('.predict, .toolbar, details')) return; if (t.closest('svg') ? c.svgInput : t.closest('button')) pmStale(k); }, true);
+  });
+  function renderE() { renderE0(); pmApply('e'); }
+  function renderH() { renderH0(); pmApply('h'); }
+  function renderT() { renderT0(); pmApply('t'); }
+  function renderL() { renderL0(); pmApply('l'); }
+  function renderC() { renderC0(); pmApply('c'); }
+  function renderM() { renderM0(); pmApply('m'); }
+  function renderD() { renderD0(); pmApply('d'); }
+
   // ---------- render all, re-render on resize ----------
   const renderAll = () => { renderE(); renderH(); renderT(); renderL(); renderC(); renderM(); renderD(); };
-  buildInputs(); renderAll();
+  buildInputs(); Object.keys(PMC).forEach(k => pmSet(k, START_HIDDEN));
   let rt = null, lastW = document.documentElement.clientWidth;
   window.addEventListener('resize', () => { const w = document.documentElement.clientWidth; if (w === lastW) return; lastW = w; clearTimeout(rt); rt = setTimeout(renderAll, 120); });
 })();

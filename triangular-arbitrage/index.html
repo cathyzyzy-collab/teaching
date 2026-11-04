@@ -197,6 +197,16 @@ ol.notice h3 { margin: 0; font-size: 15px; font-weight: 600; }
 ol.notice p { margin: 0; font-size: 14.5px; }
 footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 90ch; display: grid; gap: 6px; }
 footer.note p { margin: 0; }
+/* predict mode (same look as bond-price-yield) */
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 10px 12px; border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 12px; }
+.toolbar .note { flex: 1 1 200px; }
+.predict { border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); background: color-mix(in srgb, var(--accent) 7%, var(--panel)); border-radius: 12px; padding: 12px 14px; display: grid; gap: 10px; }
+.predict p { margin: 0; }
+.fb-ok { color: var(--pos); font-weight: 600; } .fb-no { color: var(--neg); font-weight: 600; }
+.chart.masked svg, .chart.masked details { filter: blur(8px); pointer-events: none; user-select: none; }
+.chart.masked .legend { visibility: hidden; }
+.chart .maskmsg { position: absolute; inset: 40% 10% auto; text-align: center; font-weight: 600; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.blurred { filter: blur(7px); pointer-events: none; user-select: none; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
 </head><body>
@@ -211,6 +221,15 @@ footer.note p { margin: 0; }
   <section class="lesson" id="s1" aria-labelledby="h1">
     <h2 id="h1"><span class="num">1</span>Learn the triangle</h2>
     <p class="lead">Three currencies, three quotes. Two quotes are against the U.S. dollar; the third is the cross rate the bank quotes directly. Move the bank’s cross rate away from the implied rate and watch $1,000,000 travel around the triangle in each direction.</p>
+    <div class="toolbar">
+      <button class="btn primary" type="button" id="modeBtn1">👁 Reveal answer</button>
+      <span class="note" id="modeNote1"></span>
+    </div>
+    <div class="predict" id="predictBox1">
+      <p><b>Predict first.</b> <span id="pQ1"></span></p>
+      <div class="row" id="pBtns1"></div>
+      <p id="pFeedback1" aria-live="polite"></p>
+    </div>
     <div class="learn">
       <div class="col">
         <div class="ctl">
@@ -319,20 +338,35 @@ footer.note p { margin: 0; }
   <!-- ===================== 3. WHY IT DISAPPEARS ===================== -->
   <section class="lesson" id="s3" aria-labelledby="h3">
     <h2 id="h3"><span class="num">3</span>Why it disappears</h2>
-    <p class="lead">Arbitrage removes itself. Every trader running the profitable route buys the cheap currency and sells the expensive one, and those orders move all three prices toward parity. Once the gap is smaller than the cost of crossing three bid–ask spreads, nobody can profit and trading stops.</p>
+    <p class="lead">Arbitrage removes itself. Every trader running the profitable route buys the cheap currency and sells the expensive one, and those orders move all three prices toward parity. But how far do they move?</p>
+    <div class="toolbar">
+      <button class="btn primary" type="button" id="modeBtn3">👁 Reveal answer</button>
+      <span class="note" id="modeNote3"></span>
+    </div>
+    <div class="predict" id="predictBox3">
+      <p><b>Predict first.</b> <span id="pQ3"></span></p>
+      <div class="row" id="pBtns3">
+        <button class="btn" type="button" data-guess="zero">Yes, all the way to zero</button>
+        <button class="btn" type="button" data-guess="band">No, it stops at a small gap</button>
+        <button class="btn" type="button" data-guess="none">It does not shrink at all</button>
+      </div>
+      <p id="pFeedback3" aria-live="polite"></p>
+    </div>
     <div class="why3">
       <div class="col">
         <div class="chart" id="gapWrap">
           <div class="charthead"><h3 id="gapTitle">Gap between the quoted and implied cross rate</h3><div class="legend" id="gapLeg"></div></div>
           <svg id="gapSvg" role="img" aria-label="Gap between quoted and implied cross rate after each wave of arbitrage trades"></svg>
           <div class="tip" id="gapTip" hidden></div>
+          <div class="maskmsg" id="mask3" hidden>Make your prediction to see the chart</div>
         </div>
         <div class="ctl">
           <label class="lab" for="waveSl">Waves of arbitrage trades so far: <output id="waveOut"></output></label>
           <input type="range" id="waveSl" min="0" max="12" step="1" value="0">
           <div class="row"><button class="btn primary" type="button" id="wPlay" aria-pressed="false">▶ Play</button><button class="btn" type="button" id="wStep">One more wave</button><button class="btn" type="button" id="wReset">Back to the start</button></div>
+          <p class="note">The split of each price move (half on the bank’s cross rate, a quarter on each dollar rate) is an illustrative assumption; in real markets it depends on how deep each market is.</p>
         </div>
-        <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="gapTbl"></table></div></details>
+        <details class="tbl" id="gapTblD"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="gapTbl"></table></div></details>
       </div>
       <div class="col">
         <div class="ctl"><label class="lab" for="g0Sl">Starting gap (bank’s cross above implied): <output id="g0Out"></output></label><input type="range" id="g0Sl" min="0.2" max="3" step="0.1" value="1.5"></div>
@@ -347,7 +381,7 @@ footer.note p { margin: 0; }
     </div>
     <ol class="notice" id="notice">
       <li><h3>Who pushes which price</h3><p id="pushTxt"></p></li>
-      <li><h3>Parity, up to costs</h3><p>With no trading costs the gap is driven all the way to zero. With bid–ask spreads, trading stops at the edge of the no-arbitrage band, so a small gap can survive. That is why many apparent gaps on the Hard boards vanish once you use bid and ask prices.</p></li>
+      <li id="noticeCost"><h3>Parity, up to costs</h3><p>With no trading costs the gap is driven all the way to zero. With bid–ask spreads, trading stops once the gap is smaller than the cost of crossing three bid–ask spreads (the edge of the no-arbitrage band), so a small gap can survive. That is why many apparent gaps on the Hard boards vanish once you use bid and ask prices.</p></li>
       <li><h3>Real markets are fast</h3><p>In the real interbank market, computers watch these triangles constantly, so mispricings are tiny and last a fraction of a second. The gaps in this game are much larger than you will see in practice, so you can learn the arithmetic.</p></li>
     </ol>
   </section>
@@ -428,9 +462,10 @@ footer.note p { margin: 0; }
     return { bid, ask: 1 / askInv, mid };
   }
   const midVal = (q, c) => q.b === c ? qmid(q) : 1 / qmid(q); // dollar value of one unit of c at mid
-  function impliedFormula(bd, kind) {
+  function impliedFormula(bd, kind, hide) {
     const P = PAIRS[bd.pair], sA = CUR[P.A].s, sB = CUR[P.B].s, d = bd.qX.dec + 2;
-    const imp = implied(bd);
+    const imp0 = implied(bd), H = { toFixed: () => '?' };
+    const imp = hide ? { mid: H, bid: H, ask: H } : imp0;
     const pick = (q, side) => side === 'mid' ? qmid(q) : q[side];
     const fv = (q, side) => pick(q, side).toFixed(q.dec);
     if (kind === 'mid') {
@@ -451,8 +486,9 @@ footer.note p { margin: 0; }
   const ONE = { USD: 'U.S. dollar', EUR: 'euro', GBP: 'British pound', JPY: 'yen' };
   const describeQuote = q => `Value of one ${ONE[q.b]} in ${PLURAL[q.p]}`;
   const quoteKind = q => q.p === 'USD' ? 'direct quote' : q.b === 'USD' ? 'indirect quote' : 'cross rate';
-  function stepLine(st) {
-    const sIn = fmtAmt(st.from, st.amtIn), sOut = fmtAmt(st.to, st.out);
+  function stepLine(st, hide) {
+    const sIn = hide && st.from !== 'USD' ? CUR[st.from].s + '?' : hide ? fmtAmt('USD', st.amtIn) : fmtAmt(st.from, st.amtIn);
+    const sOut = hide ? (st.to === 'USD' ? '$' : CUR[st.to].s) + '?' : fmtAmt(st.to, st.out);
     const verb = st.from === 'USD' ? `Buy ${CUR[st.to].s} with $` : st.to === 'USD' ? `Sell ${CUR[st.from].s} for $` : `Sell ${CUR[st.from].s} for ${CUR[st.to].s}`;
     const rt = st.rate.toFixed(st.q.dec) + ' ' + qname(st.q);
     return { main: `${verb}: ${sIn} ${st.op} ${rt} = ${sOut}`, rate: rt };
@@ -478,6 +514,25 @@ footer.note p { margin: 0; }
     return h + '</tbody>';
   }
 
+  // ===================== PREDICT MODE (sections 1 and 3; section 2 is already a guess-then-reveal game) =====================
+  const PM = { 1: { hidden: true, fb: false }, 3: { hidden: true, fb: false } };
+  const MIN_PROFIT = 100; // below this (per $1M) a mid-rate difference is rounding in the last decimal
+  const RENDER = { 1: () => renderLearn(), 3: () => renderWhy() };
+  function clearFb(n) { PM[n].fb = false; $('pFeedback' + n).innerHTML = ''; }
+  function setHiddenN(n, h, keepFeedback) {
+    PM[n].hidden = h;
+    if (!keepFeedback) clearFb(n);
+    if (n === 3) stopPlay();
+    $('modeBtn' + n).textContent = h ? '👁 Reveal answer' : '↩ Back to predict mode';
+    $('modeNote' + n).textContent = h ? 'Predict mode: the answer is hidden. Answer the question, or click Reveal answer.'
+                                      : 'Answer shown: everything updates live. Click Back to predict mode to quiz again.';
+    RENDER[n]();
+  }
+  const fbHead = ok => ok ? '<span class="fb-ok">✓ Correct.</span>' : '<span class="fb-no">✗ Not quite.</span>';
+  function readLink() { const q = new URLSearchParams(location.search); return !['reveal', 'explore'].includes(q.get('mode')); }
+  const startPredict = readLink();
+  PM[1].hidden = PM[3].hidden = startPredict;
+
   // ===================== 1. LEARN =====================
   const L = { pair: 'EG', spread: 0, cross: null, first: 'GBP', shown: 3 };
   let onLearnChange = () => {};
@@ -490,7 +545,7 @@ footer.note p { margin: 0; }
   }
   function fairCross() { const P = PAIRS[L.pair]; const bd = { pair: L.pair, qA: mkQuote(legSpec(P.A), FRED[P.A], 0), qB: mkQuote(legSpec(P.B), FRED[P.B], 0) }; return implied(bd).mid; }
   function setPair(k) {
-    L.pair = k; const P = PAIRS[k], f = fairCross(), unit = Math.pow(10, -P.dec);
+    clearFb(1); L.pair = k; const P = PAIRS[k], f = fairCross(), unit = Math.pow(10, -P.dec);
     const sl = $('crossSl');
     sl.min = rnd(f * 0.975, P.dec); sl.max = rnd(f * 1.025, P.dec); sl.step = unit;
     L.cross = rnd(f * 1.01, P.dec); sl.value = L.cross;
@@ -539,17 +594,18 @@ footer.note p { margin: 0; }
     svg.setAttribute('aria-label', `Triangle: U.S. dollar at the top, ${CUR[P.A].n} and ${CUR[P.B].n} at the bottom. Route ${routeName(P, rt.first)}, ${shown} of 3 steps shown.`);
   }
   function renderLearn() {
-    const P = PAIRS[L.pair], bd = learnBoard(), two = L.spread > 0;
+    const P = PAIRS[L.pair], bd = learnBoard(), two = L.spread > 0, hide = PM[1].hidden;
     btnGroup($('pairBtns'), PAIR_KEYS.map(k => [k, PAIRS[k].label]), L.pair, setPair);
-    btnGroup($('sprBtns'), SPREADS, L.spread, v => { L.spread = v; renderLearn(); });
+    btnGroup($('sprBtns'), SPREADS, L.spread, v => { clearFb(1); L.spread = v; renderLearn(); });
     $('crossOut').textContent = `${CUR[P.A].s}${L.cross.toFixed(P.dec)} per ${CUR[P.B].s}`;
     $('lQuotes').innerHTML = quoteRows(bd, { recip: true, spread: true });
     const imp = implied(bd), d = P.dec + 2;
     const gap = (L.cross / imp.mid - 1) * 100;
-    $('lFormula').innerHTML = impliedFormula(bd, 'mid') + (two ? '<br>' + impliedFormula(bd, 'ba') : '');
-    $('lImp').textContent = imp.mid.toFixed(d);
+    $('lFormula').innerHTML = impliedFormula(bd, 'mid', hide) + (two ? '<br>' + impliedFormula(bd, 'ba', hide) : '');
+    $('lImp').textContent = hide ? '?' : imp.mid.toFixed(d);
     $('lQuo').textContent = L.cross.toFixed(P.dec);
-    $('lGap').textContent = pctTxt(gap);
+    $('lGap').textContent = hide ? '?' : pctTxt(gap);
+    $('lRead').hidden = hide;
     const sA = CUR[P.A].s, sB = CUR[P.B].s;
     let read;
     if (Math.abs(gap) < 0.005) read = `The bank’s ${sA}/${sB} matches the implied rate: one ${sB} buys the same number of ${sA} whether you go direct or through the dollar.`;
@@ -561,27 +617,47 @@ footer.note p { margin: 0; }
     btnGroup($('routeBtns'), [[P.B, 'Route 1: ' + routeName(P, P.B)], [P.A, 'Route 2: ' + routeName(P, P.A)]], L.first, v => { L.first = v; L.shown = 3; renderLearn(); });
     const rt = route(bd, L.first);
     drawTriangle(bd, rt, L.shown);
-    $('lSteps').innerHTML = rt.steps.map((st, i) => { const s = stepLine(st); return `<li class="${i < L.shown ? '' : 'pending'}"><span>${i < L.shown ? s.main : 'Step ' + (i + 1) + ': press Next step'}</span>${i < L.shown ? `<span class="why">${whyLine(st, two)}</span>` : ''}</li>`; }).join('');
+    $('lSteps').innerHTML = rt.steps.map((st, i) => { const s = stepLine(st, hide); return `<li class="${i < L.shown ? '' : 'pending'}"><span>${i < L.shown ? s.main : 'Step ' + (i + 1) + ': press Next step'}</span>${i < L.shown ? `<span class="why">${whyLine(st, two)}</span>` : ''}</li>`; }).join('');
     $('stepBtn').textContent = L.shown < 3 ? `Next step (${L.shown + 1} of 3)` : 'Replay step by step';
     $('allBtn').disabled = L.shown >= 3;
 
     const r1 = route(bd, P.B), r2 = route(bd, P.A);
-    const card = (r, n) => { const win = r.profit >= 0.5; const tag = win ? '<span class="tag good">Makes money</span>' : r.profit <= -0.5 ? '<span class="tag bad">Loses money</span>' : '<span class="tag flat">Breaks even</span>';
+    const card = (r, n) => { const win = r.profit >= MIN_PROFIT; const tag = win ? '<span class="tag good">Makes money</span>' : r.profit <= -0.5 ? '<span class="tag bad">Loses money</span>' : r.profit >= 0.5 ? '<span class="tag flat">Rounding only</span>' : '<span class="tag flat">Breaks even</span>';
+      if (hide) return `<div class="route"><div class="rt"><span>Route ${n}: ${routeName(P, r.first)}</span></div><span class="note">$1,000,000 becomes ?</span><span class="big">?</span></div>`;
       return `<div class="route${win ? ' win' : ''}"><div class="rt"><span>Route ${n}: ${routeName(P, r.first)}</span>${tag}</div><span class="note">$1,000,000 becomes ${fmtUSD(r.end)}</span><span class="big ${win ? 'pos' : r.profit <= -0.5 ? 'neg' : ''}">${fmtPL(r.profit)}</span></div>`; };
     $('lRoutes').innerHTML = card(r1, 1) + card(r2, 2);
     const best = r1.profit >= r2.profit ? [r1, 1] : [r2, 2];
     let take;
-    if (best[0].profit >= 0.5) take = `<b>Route ${best[1]} (${routeName(P, best[0].first)}) earns ${fmtUSD(best[0].profit)}</b> on $1,000,000 with no risk. ` + (two ? 'The other route loses. ' : 'The other route loses almost the same amount: going the wrong way around the triangle buys the expensive currency. ') + 'Rule of thumb: start by buying the currency that is cheap at the bank’s cross rate, or sell the one that is expensive there.';
-    else take = two && Math.abs(gap) >= 0.005 ? `<b>Neither route makes money.</b> The mid rates show a ${pctTxt(gap)} gap, but crossing three bid–ask spreads costs more than the gap. An apparent arbitrage at mid rates can vanish after costs.` : `<b>No arbitrage.</b> When the quoted cross rate equals the implied cross rate, both routes end where they started (or lower, once you pay bid–ask spreads).`;
-    $('lTake').innerHTML = take;
+    if (best[0].profit >= MIN_PROFIT) take = `<b>Route ${best[1]} (${routeName(P, best[0].first)}) earns ${fmtUSD(best[0].profit)}</b> on $1,000,000 with no risk. ` + (two ? 'The other route loses. ' : 'The other route loses almost the same amount: going the wrong way around the triangle buys the expensive currency. ') + 'Rule of thumb: start by buying the currency that is cheap at the bank’s cross rate, or sell the one that is expensive there.';
+    else if (two && Math.abs(gap) >= 0.005) take = `<b>Neither route makes money.</b> The mid rates show a ${pctTxt(gap)} gap, but crossing three bid–ask spreads costs more than the gap. An apparent arbitrage at mid rates can vanish after costs.`;
+    else take = `<b>No arbitrage.</b> When the quoted cross rate equals the implied cross rate, both routes end where they started (or lower, once you pay bid–ask spreads).` + (best[0].profit >= 0.5 ? ` Here the best route nets only ${fmtUSD(best[0].profit)}: the quote is rounded to its last decimal, and gaps under $${MIN_PROFIT} per $1M are rounding, not arbitrage (the same rule as in the game).` : '');
+    $('lTake').innerHTML = take; $('lTake').hidden = hide;
+    // predict question, written from the current inputs
+    $('predictBox1').hidden = !(hide || PM[1].fb); $('pBtns1').hidden = !hide;
+    $('pQ1').textContent = `The bank quotes ${sA}/${sB} at ${two ? `bid ${bd.qX.bid.toFixed(P.dec)} / ask ${bd.qX.ask.toFixed(P.dec)}, with a ${(L.spread * 100).toFixed(2)}% bid–ask spread on every quote` : `${L.cross.toFixed(P.dec)} (mid rates, no spread)`}. Is there an arbitrage at this cross rate, and which route makes money? Gaps under $${MIN_PROFIT} per $1M count as rounding.`;
+    $('pBtns1').innerHTML = `<button class="btn" type="button" data-guess="${P.B}">Yes: Route 1, ${routeName(P, P.B)}</button><button class="btn" type="button" data-guess="${P.A}">Yes: Route 2, ${routeName(P, P.A)}</button><button class="btn" type="button" data-guess="none">No: neither route makes money</button>`;
     onLearnChange();
   }
-  $('crossSl').addEventListener('input', e => { L.cross = rnd(+e.target.value, PAIRS[L.pair].dec); renderLearn(); });
-  $('crossFair').addEventListener('click', () => { L.cross = rnd(fairCross(), PAIRS[L.pair].dec); $('crossSl').value = L.cross; renderLearn(); });
-  $('crossHi').addEventListener('click', () => { L.cross = rnd(fairCross() * 1.01, PAIRS[L.pair].dec); $('crossSl').value = L.cross; renderLearn(); });
-  $('crossLo').addEventListener('click', () => { L.cross = rnd(fairCross() * 0.99, PAIRS[L.pair].dec); $('crossSl').value = L.cross; renderLearn(); });
+  $('crossSl').addEventListener('input', e => { clearFb(1); L.cross = rnd(+e.target.value, PAIRS[L.pair].dec); renderLearn(); });
+  $('crossFair').addEventListener('click', () => { clearFb(1); L.cross = rnd(fairCross(), PAIRS[L.pair].dec); $('crossSl').value = L.cross; renderLearn(); });
+  $('crossHi').addEventListener('click', () => { clearFb(1); L.cross = rnd(fairCross() * 1.01, PAIRS[L.pair].dec); $('crossSl').value = L.cross; renderLearn(); });
+  $('crossLo').addEventListener('click', () => { clearFb(1); L.cross = rnd(fairCross() * 0.99, PAIRS[L.pair].dec); $('crossSl').value = L.cross; renderLearn(); });
   $('stepBtn').addEventListener('click', () => { L.shown = L.shown >= 3 ? 0 : L.shown + 1; if (L.shown === 0) L.shown = 1; renderLearn(); });
   $('allBtn').addEventListener('click', () => { L.shown = 3; renderLearn(); });
+  $('modeBtn1').addEventListener('click', () => setHiddenN(1, !PM[1].hidden));
+  $('pBtns1').addEventListener('click', e => {
+    const g = e.target.closest('button[data-guess]'); if (!g) return;
+    const P = PAIRS[L.pair], bd = learnBoard(), two = L.spread > 0, sA = CUR[P.A].s, sB = CUR[P.B].s;
+    const r1 = route(bd, P.B), r2 = route(bd, P.A), best = r1.profit >= r2.profit ? r1 : r2, n = best === r1 ? 1 : 2;
+    const imp = implied(bd), d = P.dec + 2, gap = (L.cross / imp.mid - 1) * 100;
+    const actual = best.profit >= MIN_PROFIT ? best.first : 'none';
+    let why;
+    if (actual !== 'none') why = `Route ${n} (${routeName(P, best.first)}) turns $1,000,000 into ${fmtUSD(best.end)}, a profit of ${fmtUSD(best.profit)}. The implied ${sA}/${sB} is ${imp.mid.toFixed(d)} but the bank quotes ${L.cross.toFixed(P.dec)}${two ? ' at mid' : ''} (${pctTxt(gap)}), so the ${sB} is ${gap > 0 ? 'expensive' : 'cheap'} at the bank${two ? ', and the gap is larger than the cost of the three bid–ask spreads' : ''}.`;
+    else if (two && Math.abs(gap) >= 0.005) why = `Neither route makes money: the better one ends at ${fmtUSD(best.end)} (${fmtPL(best.profit)}). The mid-rate gap of ${pctTxt(gap)} is smaller than the cost of crossing three bid–ask spreads.`;
+    else why = `The bank’s ${L.cross.toFixed(P.dec)} is within rounding of the implied ${imp.mid.toFixed(d)}, so ${best.profit >= 0.5 ? `the better route nets only ${fmtUSD(best.profit)}, which is rounding in the quote’s last decimal, not arbitrage` : 'neither route makes money'}.`;
+    $('pFeedback1').innerHTML = fbHead(g.dataset.guess === actual) + ' ' + why;
+    PM[1].fb = true; setHiddenN(1, false, true);
+  });
   setPair('EG');
 
   // ===================== 2. PLAY =====================
@@ -593,7 +669,6 @@ footer.note p { margin: 0; }
     M: { name: 'Medium', time: 90, note: 'Mid rates, gaps of 0.15% to 0.6%. Some boards are fair.' },
     H: { name: 'Hard', time: 120, note: 'Bid and ask on every quote. Many gaps vanish once you pay the spreads.' }
   };
-  const MIN_PROFIT = 100; // below this (per $1M) a mid-rate difference is rounding in the last decimal
   function evalBoard(bd) {
     const P = PAIRS[bd.pair], r1 = route(bd, P.B), r2 = route(bd, P.A);
     const best = r1.profit >= r2.profit ? r1 : r2;
@@ -764,8 +839,15 @@ footer.note p { margin: 0; }
     return { rows, upPct: (up - 1) * 100, P };
   }
   function legShow(c, v) { return c === 'JPY' ? { name: '¥/$', txt: '¥' + (1 / v).toFixed(2) } : { name: `$/${CUR[c].s}`, txt: '$' + v.toFixed(4) }; }
+  function why3Answer(sim) { return W.cost === 0 ? 'zero' : W.g0 <= sim.upPct + 1e-9 ? 'none' : 'band'; }
   function renderWhy() {
-    const sim = simulate(), P = sim.P, sA = CUR[P.A].s, sB = CUR[P.B].s, rows = sim.rows, cur = rows[W.wave];
+    const sim = simulate(), P = sim.P, sA = CUR[P.A].s, sB = CUR[P.B].s, rows = sim.rows, cur = rows[W.wave], hide = PM[3].hidden;
+    $('gapWrap').classList.toggle('masked', hide); $('mask3').hidden = !hide;
+    $('wRates').classList.toggle('blurred', hide); $('wNote').hidden = hide;
+    $('gapTblD').classList.toggle('blurred', hide); if (hide) $('gapTblD').open = false;
+    $('noticeCost').hidden = hide; $('wPlay').disabled = hide;
+    $('predictBox3').hidden = !(hide || PM[3].fb); $('pBtns3').hidden = !hide;
+    $('pQ3').textContent = `The bank’s ${sA}/${sB} starts ${W.g0.toFixed(1)}% above the implied cross rate. ${W.cost > 0 ? `One trip around the triangle costs ${W.cost.toFixed(2)}% in bid–ask spreads.` : 'Trading is free here (no bid–ask cost).'} As arbitrageurs keep trading, does the gap close all the way to zero?`;
     $('g0Out').textContent = W.g0.toFixed(1) + '%'; $('costOut').textContent = W.cost.toFixed(2) + '%'; $('impOut').textContent = W.f + '%';
     $('waveOut').textContent = String(W.wave); $('waveSl').value = W.wave;
     $('gapTitle').textContent = `Gap between the bank’s ${sA}/${sB} and the implied ${sA}/${sB}, %`;
@@ -780,7 +862,7 @@ footer.note p { margin: 0; }
       <tr><td>Bank’s ${sA}/${sB}</td><td>${rows[0].cross.toFixed(xd)}</td><td>${cur.cross.toFixed(xd)}</td><td>${dir(rows[0].cross, cur.cross)}</td></tr>
       <tr><td>Implied ${sA}/${sB}</td><td>${rows[0].imp.toFixed(xd)}</td><td>${cur.imp.toFixed(xd)}</td><td>${dir(rows[0].imp, cur.imp)}</td></tr></tbody>`;
     const lastActive = rows.findIndex(r => !r.active);
-    $('wHead').textContent = cur.active ? `Wave ${W.wave}: gap ${pctTxt(cur.gap)}, still profitable` : `Wave ${W.wave}: gap ${pctTxt(cur.gap)}, arbitrage has stopped`;
+    if (hide) $('wHead').textContent = `Wave ${W.wave}: gap ?`; else $('wHead').textContent = cur.active ? `Wave ${W.wave}: gap ${pctTxt(cur.gap)}, still profitable` : `Wave ${W.wave}: gap ${pctTxt(cur.gap)}, arbitrage has stopped`;
     $('wNote').textContent = cur.active ? `The next wave earns about ${fmtUSD(cur.profit)} per $1,000,000 after costs, so traders keep going.` : (W.cost > 0 ? `The gap is inside the band (up to ${sim.upPct.toFixed(2)}%): after paying the spreads, every route loses money.` : 'The gap is essentially zero: the cross rate is back at parity.');
     if (W.cost === 0 && cur.active) $('wNote').textContent += ' With zero costs, any gap pays, so the gap keeps shrinking toward zero.';
     if (lastActive > 0 && W.wave === 0) $('wNote').textContent += ` Profits fade wave by wave; by wave ${lastActive} they are gone.`;
@@ -801,9 +883,9 @@ footer.note p { margin: 0; }
     const xt = Wd < 420 ? 3 : 2; for (let k = 0; k <= W.N; k += xt) el('text', { x: X(k), y: H - m.b + 18, 'text-anchor': 'middle', class: 'tick' }, svg, String(k));
     el('line', { x1: m.l, x2: Wd - m.r, y1: H - m.b, y2: H - m.b, class: 'axisl' }, svg);
     el('text', { x: (m.l + Wd - m.r) / 2, y: H - 6, 'text-anchor': 'middle', class: 'axtitle' }, svg, 'Waves of arbitrage trades');
-    if (W.cost > 0) { const lo = ((1 - W.cost / 100) - 1) * 100; el('rect', { x: m.l, y: Y(sim.upPct), width: Wd - m.l - m.r, height: Y(lo) - Y(sim.upPct), class: 'band' }, svg); el('text', { x: m.l + 6, y: Y(sim.upPct) - 6, 'text-anchor': 'start', class: 'bandlab' }, svg, 'No-arbitrage band'); }
+    if (W.cost > 0) { const lo = ((1 - W.cost / 100) - 1) * 100; el('rect', { x: m.l, y: Y(sim.upPct), width: Wd - m.l - m.r, height: Y(lo) - Y(sim.upPct), class: 'band' }, svg); if (Wd >= 520) el('text', { x: m.l + 6, y: Y(sim.upPct) - 6, 'text-anchor': 'start', class: 'bandlab' }, svg, 'No-arbitrage band'); }
     el('line', { x1: m.l, x2: Wd - m.r, y1: Y(0), y2: Y(0), class: 'zero' }, svg);
-    el('text', { x: Wd - m.r - 4, y: Y(0) - 6, 'text-anchor': 'end', class: 'zerolab' }, svg, 'Parity');
+    el('text', { x: m.l + 6, y: Y(0) + 14, 'text-anchor': 'start', class: 'zerolab' }, svg, 'Parity');
     el('path', { d: rows.map((r, i) => (i ? 'L' : 'M') + X(r.k).toFixed(1) + ' ' + Y(r.gap).toFixed(1)).join(' '), class: 'series', stroke: 'var(--s1)' }, svg);
     rows.forEach(r => el('circle', { cx: X(r.k), cy: Y(r.gap), r: r.k === W.wave ? 6 : 4, fill: 'var(--s1)', class: 'dot' }, svg));
     const cur = rows[W.wave];
@@ -839,11 +921,22 @@ footer.note p { margin: 0; }
   $('wStep').addEventListener('click', () => { stopPlay(); W.wave = Math.min(W.N, W.wave + 1); renderWhy(); });
   $('wReset').addEventListener('click', () => { stopPlay(); W.wave = 0; renderWhy(); });
   $('waveSl').addEventListener('input', e => { stopPlay(); W.wave = +e.target.value; renderWhy(); });
-  $('g0Sl').addEventListener('input', e => { W.g0 = +e.target.value; renderWhy(); });
-  $('costSl').addEventListener('input', e => { W.cost = +e.target.value; renderWhy(); });
-  $('impSl').addEventListener('input', e => { W.f = +e.target.value; renderWhy(); });
+  $('g0Sl').addEventListener('input', e => { clearFb(3); W.g0 = +e.target.value; renderWhy(); });
+  $('costSl').addEventListener('input', e => { clearFb(3); W.cost = +e.target.value; renderWhy(); });
+  $('impSl').addEventListener('input', e => { clearFb(3); W.f = +e.target.value; renderWhy(); });
+  $('modeBtn3').addEventListener('click', () => setHiddenN(3, !PM[3].hidden));
+  $('pBtns3').addEventListener('click', e => {
+    const g = e.target.closest('button[data-guess]'); if (!g) return;
+    const sim = simulate(), actual = why3Answer(sim), r0 = sim.rows[0], rN = sim.rows[W.N];
+    let why;
+    if (actual === 'zero') why = `With no trading costs every gap pays, so traders keep going: the gap falls from ${pctTxt(r0.gap)} to ${pctTxt(rN.gap, 3)} after ${W.N} waves and keeps heading to zero.`;
+    else if (actual === 'band') why = `The gap falls from ${pctTxt(r0.gap)} to ${pctTxt(rN.gap, 3)} after ${W.N} waves and stops near ${pctTxt(sim.upPct, 2)}, the edge of the no-arbitrage band. Inside the band, the ${W.cost.toFixed(2)}% cost of the spreads is larger than the gap, so every route loses money and trading stops.`;
+    else why = `The starting gap of ${pctTxt(r0.gap)} is already inside the no-arbitrage band (up to ${pctTxt(sim.upPct, 2)}): after the ${W.cost.toFixed(2)}% cost of the spreads every route loses money, so nobody trades and the gap stays where it is.`;
+    $('pFeedback3').innerHTML = fbHead(g.dataset.guess === actual) + ' ' + why;
+    PM[3].fb = true; setHiddenN(3, false, true);
+  });
   onLearnChange = renderWhy;
-  renderWhy();
+  setHiddenN(1, startPredict); setHiddenN(3, startPredict);
   let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(renderWhy, 120); });
 })();
 </script>
