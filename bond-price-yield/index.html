@@ -253,13 +253,9 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
   <!-- ===================== 3. OVER TIME ===================== -->
   <section class="lesson" id="s3" aria-labelledby="h3">
     <h2 id="h3"><span class="num">3</span>Bond values over time: the pull to par</h2>
-    <p class="lead">Three 10-year bonds with the same risk, paying 13%, 10% and 7% annual coupons. If r<sub>d</sub> stays where it is, each price moves toward $1,000 as maturity approaches. At maturity every bond is worth its par value.</p>
+    <p class="lead">The same 10-year, 10% annual coupon bond, with its yield staying at 7%, 10% or 13% for the rest of its life. Each price moves toward $1,000 as maturity approaches. At maturity every bond is worth its par value.</p>
     <div class="grid2">
       <div class="controls">
-        <div class="ctl big">
-          <div class="lab"><label for="rd3">Required return r<sub>d</sub> (held constant)</label><b id="rd3Out">10.00%</b></div>
-          <input type="range" id="rd3" min="4" max="16" step="0.25" value="10">
-        </div>
         <p class="takeaway" id="timetake"></p>
         <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="tbl3"></table></div></details>
       </div>
@@ -382,8 +378,8 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
   const st = { rd: 10, cpn: 10, mat: 10, m: 1 };
   const PRESETS = [
     { t: 'Par: 10% coupon, rₓ = 10%', s: { cpn: 10, rd: 10, mat: 10, m: 1 } },
-    { t: 'Premium: 13% coupon', s: { cpn: 13, rd: 10, mat: 10, m: 1 } },
-    { t: 'Discount: 7% coupon', s: { cpn: 7, rd: 10, mat: 10, m: 1 } },
+    { t: 'Premium: rₓ falls to 7%', s: { cpn: 10, rd: 7, mat: 10, m: 1 } },
+    { t: 'Discount: rₓ rises to 13%', s: { cpn: 10, rd: 13, mat: 10, m: 1 } },
     { t: 'Semiannual, rₓ = 13%', s: { cpn: 10, rd: 13, mat: 10, m: 2 } },
   ];
   const presetsEl = $('presets');
@@ -509,13 +505,12 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
   $('play2').addEventListener('click', () => sweep($('play2'), r => { s2.rd = r; $('rd2').value = r; render2(); }));
 
   // ===================== 3. OVER TIME =====================
-  const s3 = { rd: 10 };
-  const B3 = [{ c: 13, color: 'var(--s1)' }, { c: 10, color: 'var(--s2)' }, { c: 7, color: 'var(--s3)' }];
+  // one 10% coupon bond; its yield stays at 7%, 10% or 13% until maturity
+  const B3 = [{ r: 7, color: 'var(--s1)', kind: 'premium' }, { r: 10, color: 'var(--s2)', kind: 'par' }, { r: 13, color: 'var(--s3)', kind: 'discount' }];
   function render3() {
-    $('rd3Out').textContent = pct(s3.rd);
-    const val = (c, yr) => price(c, s3.rd, 10 - yr); // value at year yr, just after that year's coupon
-    const series = B3.map(b => ({ name: b.c + '% coupon', color: b.color, markers: true, pts: ticks(0, 10, 1).map(y => [y, val(b.c, y)]), at: y => val(b.c, y),
-      label: `${b.c}%`, labelAt: [0, val(b.c, 0)], labelAnchor: 'end', labelDx: -10, labelDy: 4 }));
+    const val = (r, yr) => price(10, r, 10 - yr); // value at year yr, just after that year's coupon
+    const series = B3.map(b => ({ name: 'Yield ' + b.r + '%', color: b.color, markers: true, pts: ticks(0, 10, 1).map(y => [y, val(b.r, y)]), at: y => val(b.r, y),
+      label: `${b.r}%`, labelAt: [0, val(b.r, 0)], labelAnchor: 'end', labelDx: -10, labelDy: 4 }));
     const all = series.flatMap(s => s.pts.map(p => p[1]));
     const lo = Math.floor(Math.min(...all) / 100) * 100 - 50, hi = Math.ceil(Math.max(...all) / 100) * 100 + 50;
     const span = hi - lo, step = span > 900 ? 200 : 100;
@@ -528,13 +523,11 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
       refs: [{ y: PAR, label: '' }],
       series, snap: v => Math.max(0, Math.min(10, Math.round(v)))
     });
-    $('leg3').innerHTML = B3.map(b => `<span><i style="background:${b.color}"></i>${b.c}% coupon</span>`).join('');
-    const kind = c => Math.abs(c - s3.rd) < 1e-9 ? 'par' : c > s3.rd ? 'premium' : 'discount';
-    $('timetake').innerHTML = `With r<sub>d</sub> = ${pct(s3.rd)}: the 13% bond is a <b>${kind(13)}</b> bond, the 10% bond a <b>${kind(10)}</b> bond and the 7% bond a <b>${kind(7)}</b> bond. Premium prices fall toward $1,000, discount prices rise toward $1,000, and a par bond stays at $1,000.`;
-    $('tbl3').innerHTML = `<thead><tr><th>Year</th>${B3.map(b => `<th>${b.c}% coupon</th>`).join('')}</tr></thead><tbody>` +
-      ticks(0, 10, 1).map(y => `<tr><td>${y}${y === 10 ? ' (maturity)' : ''}</td>${B3.map(b => `<td>${money(val(b.c, y))}</td>`).join('')}</tr>`).join('') + '</tbody>';
+    $('leg3').innerHTML = B3.map(b => `<span><i style="background:${b.color}"></i>Yield ${b.r}% (${b.kind})</span>`).join('');
+    $('timetake').innerHTML = `At a 7% yield the bond is a <b>premium</b> bond (${money(val(7, 0))}), at 10% a <b>par</b> bond ($1,000.00) and at 13% a <b>discount</b> bond (${money(val(13, 0))}). If the yield stays put, the premium price falls toward $1,000, the discount price rises toward $1,000, and the par price stays at $1,000.`;
+    $('tbl3').innerHTML = `<thead><tr><th>Year</th>${B3.map(b => `<th>Yield ${b.r}%</th>`).join('')}</tr></thead><tbody>` +
+      ticks(0, 10, 1).map(y => `<tr><td>${y}${y === 10 ? ' (maturity)' : ''}</td>${B3.map(b => `<td>${money(val(b.r, y))}</td>`).join('')}</tr>`).join('') + '</tbody>';
   }
-  $('rd3').addEventListener('input', e => { s3.rd = +e.target.value; render3(); });
 
   sync1(); render2(); render3();
   let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { render1(); render2(); render3(); }, 150); });
