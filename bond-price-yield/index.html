@@ -67,6 +67,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; marg
 .btn { font: 600 13px var(--font-body); color: var(--accent); background: transparent; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
 .btn:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .btn.primary { background: var(--accent); color: var(--panel); border-color: var(--accent); }
+.btn:disabled { opacity: .45; cursor: default; }
 .btn:focus-visible, .seg button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 select { font: 500 14px var(--font-body); color: var(--fg); background: var(--cap); border: 1px solid var(--line); border-radius: 8px; padding: 3px 6px; }
 .presets { display: grid; gap: 6px; }
@@ -144,6 +145,19 @@ details.tbl[open] summary { margin-bottom: 8px; }
 .sawcap { text-align: center; font-size: 14px; font-weight: 600; margin: 0; }
 .sawcap .sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
 .takeaway { margin: 0; padding: 10px 14px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); border-radius: 0 8px 8px 0; font-size: 14.5px; }
+/* predict-first and share */
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 10px 12px; border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 12px; }
+.toolbar .note { flex: 1 1 200px; }
+.sharebox { display: flex; gap: 8px; align-items: center; flex: 1 1 100%; }
+.sharebox input { flex: 1; min-width: 0; font: 13px ui-monospace, Consolas, monospace; color: var(--fg); background: var(--cap); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; }
+.predict { border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); background: color-mix(in srgb, var(--accent) 7%, var(--panel)); border-radius: 12px; padding: 12px 14px; display: grid; gap: 10px; }
+.predict p { margin: 0; }
+.predict .guessrow label { font-size: 13px; color: var(--muted); font-weight: 600; }
+.predict input[type=number] { width: 120px; font: 500 14px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 3px 8px; }
+.fb-ok { color: var(--pos); font-weight: 600; } .fb-no { color: var(--neg); font-weight: 600; }
+.chart.masked svg, .chart.masked details { filter: blur(8px); pointer-events: none; user-select: none; }
+.chart .maskmsg { position: absolute; inset: 40% 10% auto; text-align: center; font-weight: 600; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.calc.masked .split, .calc.masked #excel, .calc.masked #keys { visibility: hidden; }
 footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 80ch; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -159,6 +173,19 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
   <section class="lesson" id="s1" aria-labelledby="h1">
     <h2 id="h1"><span class="num">1</span>Price a bond, then move the yield</h2>
     <p class="lead">Set the bond's terms, then drag r<sub>d</sub>. When r<sub>d</sub> equals the coupon rate the seesaw is level and the bond sells at par. A $1,000 par value is assumed.</p>
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="Mode">
+        <button type="button" id="mExplore" aria-pressed="true">Explore</button>
+        <button type="button" id="mPredict" aria-pressed="false">Predict first</button>
+      </div>
+      <button class="btn" type="button" id="newBond" hidden>🎲 New random bond</button>
+      <button class="btn" type="button" id="shareBtn">🔗 Link to this scenario</button>
+      <span class="note" id="modeNote">Explore: everything updates as you move the controls.</span>
+      <div class="sharebox" id="shareBox" hidden>
+        <input type="text" id="shareUrl" readonly aria-label="Link to this scenario">
+        <span class="note" id="shareMsg" aria-live="polite"></span>
+      </div>
+    </div>
     <div class="grid2">
       <div class="controls">
         <div class="ctl big">
@@ -192,6 +219,16 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
 
       <div style="display:grid;gap:12px;min-width:0">
         <svg class="seesaw" id="saw1" viewBox="0 0 600 270" role="img" aria-label="Seesaw showing yield on the left and price on the right"></svg>
+        <div class="predict" id="predictBox" hidden>
+          <p><b>Predict first.</b> <span id="pTerms"></span> Will it sell at a premium, at par, or at a discount?</p>
+          <div class="guessrow row"><label for="pGuess">Your price estimate (optional): $</label><input type="number" id="pGuess" inputmode="decimal" min="0" step="1" placeholder="e.g. 950"></div>
+          <div class="row" id="pBtns">
+            <button class="btn" type="button" data-guess="prem">Premium (above $1,000)</button>
+            <button class="btn" type="button" data-guess="par">At par ($1,000)</button>
+            <button class="btn" type="button" data-guess="disc">Discount (below $1,000)</button>
+          </div>
+          <p id="pFeedback" aria-live="polite"></p>
+        </div>
         <p class="verdict" id="verdict" aria-live="polite"></p>
       </div>
     </div>
@@ -211,6 +248,7 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
       <div class="chart" id="c1wrap">
         <div class="charthead"><h3>Price at every yield</h3><span class="note">Hover to read · click to set r<sub>d</sub></span></div>
         <svg id="chart1" viewBox="0 0 560 320" aria-label="Price-yield curve for the bond"></svg>
+        <div class="maskmsg" id="mask1" hidden>Make your prediction to see the chart</div>
         <div class="tip" id="tip1" hidden></div>
         <details class="tbl"><summary>Show as a table</summary><div class="tblwrap"><table class="data" id="tbl1"></table></div></details>
       </div>
@@ -299,7 +337,7 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
     svg.textContent = '';
     const cx = 300, cy = 150, L = 440;
     const dev = (pr - PAR) / PAR * 100;
-    let deg = dev * DEG_PER_PCT; const clipped = Math.abs(deg) > MAX_DEG; deg = Math.max(-MAX_DEG, Math.min(MAX_DEG, deg));
+    let deg = opts.hide ? 0 : dev * DEG_PER_PCT; const clipped = Math.abs(deg) > MAX_DEG; deg = Math.max(-MAX_DEG, Math.min(MAX_DEG, deg));
     const t = deg * Math.PI / 180, dx = L / 2 * Math.cos(t), dy = L / 2 * Math.sin(t);
     const lx = cx - dx, ly = cy + dy, rx = cx + dx, ry = cy - dy; // right end (price) rises when price > par
     el('line', { x1: 20, y1: 236, x2: 580, y2: 236, class: 'ground' }, svg);
@@ -317,7 +355,8 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
       el('text', { x: bx + w / 2, y: by + 45, 'text-anchor': 'middle', class: 'boxval' }, svg, val);
     };
     box(lx, ly, 'Yield r', pct(rdPct), null, 'd');
-    box(rx, ry, 'Price', money(pr), opts.color);
+    box(rx, ry, 'Price', opts.hide ? '?' : money(pr), opts.color);
+    if (opts.hide) { el('text', { x: 300, y: 22, 'text-anchor': 'middle', class: 'tag' }, svg, 'Which way will it tip? Make your prediction.'); svg.setAttribute('aria-label', `Seesaw hidden until you predict. Yield ${pct(rdPct)}.`); return; }
     if (Math.abs(dev) > 0.05) {
       const yUp = dev < 0; // yield end up when price below par
       el('text', { x: lx < 90 ? lx + 92 : lx - 88, y: ly + 8, 'text-anchor': 'middle', class: 'arrow ' + (yUp ? 'up' : 'down') }, svg, yUp ? '▲' : '▼');
@@ -383,7 +422,7 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
     { t: 'Semiannual, rₓ = 13%', s: { cpn: 10, rd: 13, mat: 10, m: 2 } },
   ];
   const presetsEl = $('presets');
-  PRESETS.forEach(p => { const b = document.createElement('button'); b.className = 'btn'; b.type = 'button'; b.innerHTML = p.t.replace(/rₓ/g, 'r<sub>d</sub>'); b.addEventListener('click', () => { stopPlay(); Object.assign(st, p.s); sync1(); }); presetsEl.appendChild(b); });
+  PRESETS.forEach(p => { const b = document.createElement('button'); b.className = 'btn'; b.type = 'button'; b.innerHTML = p.t.replace(/rₓ/g, 'r<sub>d</sub>'); b.addEventListener('click', () => { stopPlay(); Object.assign(st, p.s); rehide(); sync1(); }); presetsEl.appendChild(b); });
 
   function sync1() {
     $('rd').value = st.rd; $('cpn').value = st.cpn; $('mat').value = st.mat;
@@ -392,10 +431,17 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
   }
   function render1() {
     const b = bond(st.cpn, st.rd, st.mat, st.m);
+    const hide = pm.on && !pm.revealed;
     $('rdOut').textContent = pct(st.rd); $('cpnOut').textContent = pct(st.cpn); $('matOut').textContent = st.mat;
-    drawSaw($('saw1'), st.rd, b.price, { color: 'var(--s1)' });
+    drawSaw($('saw1'), st.rd, b.price, { color: 'var(--s1)', hide });
     const diff = st.rd - st.cpn;
     const v = $('verdict');
+    v.hidden = hide;
+    $('predictBox').hidden = !pm.on;
+    $('pTerms').textContent = `A ${st.mat}-year bond with a ${pct(st.cpn)} coupon (${st.m === 2 ? 'semiannual' : 'annual'} payments) and rᵈ = ${pct(st.rd)}.`.replace('rᵈ', 'rd');
+    $('pBtns').hidden = !hide; document.querySelector('.guessrow').hidden = !hide;
+    $('c1wrap').classList.toggle('masked', hide); $('mask1').hidden = !hide;
+    document.querySelector('.calc').classList.toggle('masked', hide);
     if (Math.abs(b.price - PAR) < 0.005) v.innerHTML = `<b class="par">Par bond.</b> r<sub>d</sub> equals the ${pct(st.cpn)} coupon, so the price equals par, $1,000.`;
     else if (diff > 0) v.innerHTML = `<b class="disc">Discount bond.</b> r<sub>d</sub> (${pct(st.rd)}) is above the coupon rate (${pct(st.cpn)}), so the price, ${money(b.price)}, is below par.`;
     else v.innerHTML = `<b class="prem">Premium bond.</b> r<sub>d</sub> (${pct(st.rd)}) is below the coupon rate (${pct(st.cpn)}), so the price, ${money(b.price)}, is above par.`;
@@ -405,7 +451,7 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
     const rows = [
       ['N (periods)', per ? `${b.n}  (${st.mat} × 2)` : `${b.n}`],
       ['I/YR (rate' + (per ? ' per period)' : ')'), per ? `${trimPct(st.rd / 2)}  (${trimPct(st.rd)} ÷ 2)` : trimPct(st.rd)],
-      ['PV (price)', money(b.price), true],
+      ['PV (price)', hide ? '?' : money(b.price), true],
       ['PMT (coupon)', per ? `${num(b.pmt)}  (${num(b.pmt * 2)} ÷ 2)` : num(b.pmt)],
       ['FV (par)', '1,000'],
     ];
@@ -431,7 +477,7 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
       series: [{ name: 'Price', color: 'var(--s1)', pts, at: r => price(st.cpn, r, st.mat, st.m) }],
       marks: [{ x: st.rd, y: b.price, color: 'var(--s1)' }],
       snap: v => Math.round(v * 20) / 20,
-      onClick: v => { stopPlay(); st.rd = Math.round(v * 20) / 20; sync1(); }
+      onClick: v => { stopPlay(); st.rd = Math.round(v * 20) / 20; rehide(); sync1(); }
     });
     // table
     const rs = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20];
@@ -439,12 +485,66 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
     $('tbl1').innerHTML = '<thead><tr><th>r<sub>d</sub></th><th>Price</th><th>vs. par</th></tr></thead><tbody>' +
       rs.map(r => { const p = price(st.cpn, r, st.mat, st.m); const d = p - PAR; return `<tr class="${r === st.rd ? 'cur' : ''}"><td>${pct(r)}</td><td>${money(p)}</td><td class="${d > 0.005 ? 'pos' : d < -0.005 ? 'neg' : ''}">${Math.abs(d) < 0.005 ? 'at par' : d > 0 ? 'premium' : 'discount'}</td></tr>`; }).join('') + '</tbody>';
   }
-  $('rd').addEventListener('input', e => { stopPlay(); st.rd = +e.target.value; render1(); });
-  $('cpn').addEventListener('input', e => { st.cpn = +e.target.value; render1(); });
-  $('mat').addEventListener('input', e => { st.mat = +e.target.value; render1(); });
-  $('fAnn').addEventListener('click', () => { st.m = 1; sync1(); });
-  $('fSemi').addEventListener('click', () => { st.m = 2; sync1(); });
-  $('toCoupon').addEventListener('click', () => { stopPlay(); st.rd = Math.max(1, Math.min(20, st.cpn)); sync1(); });
+  // ----- predict-first mode: hide the answer until the student commits to a guess -----
+  const pm = { on: false, revealed: false };
+  const rehide = () => { if (pm.on) { pm.revealed = false; $('pFeedback').innerHTML = ''; $('pGuess').value = ''; } };
+  function setMode(on) {
+    stopPlay(); pm.on = on; pm.revealed = false; $('pFeedback').innerHTML = ''; $('pGuess').value = '';
+    $('mExplore').setAttribute('aria-pressed', !on); $('mPredict').setAttribute('aria-pressed', on);
+    $('newBond').hidden = !on; $('play').disabled = on;
+    $('modeNote').textContent = on ? 'Predict first: the price stays hidden until you choose premium, par or discount.' : 'Explore: everything updates as you move the controls.';
+    render1();
+  }
+  $('mExplore').addEventListener('click', () => setMode(false));
+  $('mPredict').addEventListener('click', () => setMode(true));
+  $('pBtns').addEventListener('click', e => {
+    const g = e.target.closest('button[data-guess]'); if (!g) return;
+    const p = price(st.cpn, st.rd, st.mat, st.m);
+    const actual = Math.abs(p - PAR) < 0.005 ? 'par' : p > PAR ? 'prem' : 'disc';
+    const NAME = { prem: 'a premium bond', par: 'a par bond', disc: 'a discount bond' };
+    const why = actual === 'par' ? `r<sub>d</sub> equals the coupon rate` : actual === 'prem' ? `r<sub>d</sub> (${pct(st.rd)}) is below the coupon rate (${pct(st.cpn)})` : `r<sub>d</sub> (${pct(st.rd)}) is above the coupon rate (${pct(st.cpn)})`;
+    let html = g.dataset.guess === actual ? `<span class="fb-ok">✓ Correct.</span> It is ${NAME[actual]} because ${why}.` : `<span class="fb-no">✗ Not quite.</span> It is ${NAME[actual]} because ${why}.`;
+    const est = parseFloat($('pGuess').value);
+    if (isFinite(est) && est > 0) { const off = est - p; html += ` Your estimate of ${money(est)} was ${money(Math.abs(off))} (${(Math.abs(off) / p * 100).toFixed(1)}%) ${off > 0 ? 'too high' : 'too low'}.`; }
+    pm.revealed = true; $('pFeedback').innerHTML = html; render1();
+  });
+  $('newBond').addEventListener('click', () => {
+    const pick = a => a[Math.floor(Math.random() * a.length)];
+    st.cpn = pick([4, 5, 6, 7, 8, 9, 10, 12]); st.mat = pick([1, 2, 5, 10, 20, 30]); st.m = pick([1, 2]);
+    st.rd = Math.random() < 0.15 ? st.cpn : pick([3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].filter(r => r !== st.cpn));
+    rehide(); sync1();
+  });
+
+  // ----- shareable scenario links: ?rd=13&coupon=10&years=10&pay=semi&mode=predict -----
+  const clampNum = (v, lo, hi) => { const n = parseFloat(v); return isFinite(n) ? Math.max(lo, Math.min(hi, n)) : null; };
+  function readLink() {
+    const q = new URLSearchParams(location.search); let v;
+    if ((v = clampNum(q.get('rd'), 1, 20)) != null) st.rd = v;
+    if ((v = clampNum(q.get('coupon'), 0, 20)) != null) st.cpn = v;
+    if ((v = clampNum(q.get('years'), 1, 30)) != null) st.mat = Math.round(v);
+    if (q.get('pay') === 'semi') st.m = 2; else if (q.get('pay') === 'annual') st.m = 1;
+    if ((v = clampNum(q.get('rd2'), 1, 20)) != null) s2.rd = v;
+    if (['1', '2', '5'].includes(q.get('short'))) s2.a = +q.get('short');
+    if (['10', '20', '30'].includes(q.get('long'))) s2.b = +q.get('long');
+    $('rd2').value = s2.rd; $('mA').value = s2.a; $('mB').value = s2.b;
+    return q.get('mode') === 'predict';
+  }
+  $('shareBtn').addEventListener('click', async () => {
+    const q = new URLSearchParams({ rd: st.rd, coupon: st.cpn, years: st.mat, pay: st.m === 2 ? 'semi' : 'annual' });
+    if (s2.rd !== 10 || s2.a !== 1 || s2.b !== 10) { q.set('rd2', s2.rd); q.set('short', s2.a); q.set('long', s2.b); }
+    if (pm.on) q.set('mode', 'predict');
+    const url = location.href.split(/[?#]/)[0] + '?' + q.toString();
+    $('shareBox').hidden = false; const inp = $('shareUrl'); inp.value = url; inp.focus(); inp.select();
+    try { await navigator.clipboard.writeText(url); $('shareMsg').textContent = 'Copied. Paste it into a slide, an announcement or Canvas.'; }
+    catch (e) { $('shareMsg').textContent = 'Press Ctrl+C (Cmd+C on a Mac) to copy.'; }
+  });
+
+  $('rd').addEventListener('input', e => { stopPlay(); st.rd = +e.target.value; rehide(); render1(); });
+  $('cpn').addEventListener('input', e => { st.cpn = +e.target.value; rehide(); render1(); });
+  $('mat').addEventListener('input', e => { st.mat = +e.target.value; rehide(); render1(); });
+  $('fAnn').addEventListener('click', () => { st.m = 1; rehide(); sync1(); });
+  $('fSemi').addEventListener('click', () => { st.m = 2; rehide(); sync1(); });
+  $('toCoupon').addEventListener('click', () => { stopPlay(); st.rd = Math.max(1, Math.min(20, st.cpn)); rehide(); sync1(); });
 
   // sweep animation, shared by sections 1 and 2
   let anim = null;
@@ -529,7 +629,9 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
       ticks(0, 10, 1).map(y => `<tr><td>${y}${y === 10 ? ' (maturity)' : ''}</td>${B3.map(b => `<td>${money(val(b.r, y))}</td>`).join('')}</tr>`).join('') + '</tbody>';
   }
 
+  const startPredict = readLink();
   sync1(); render2(); render3();
+  if (startPredict) setMode(true);
   let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { render1(); render2(); render3(); }, 150); });
 })();
 </script>
