@@ -174,13 +174,10 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
     <h2 id="h1"><span class="num">1</span>Price a bond, then move the yield</h2>
     <p class="lead">Set the bond's terms, then drag r<sub>d</sub>. When r<sub>d</sub> equals the coupon rate the seesaw is level and the bond sells at par. A $1,000 par value is assumed.</p>
     <div class="toolbar">
-      <div class="seg" role="group" aria-label="Mode">
-        <button type="button" id="mExplore" aria-pressed="true">Explore</button>
-        <button type="button" id="mPredict" aria-pressed="false">Predict first</button>
-      </div>
-      <button class="btn" type="button" id="newBond" hidden>🎲 New random bond</button>
+      <button class="btn primary" type="button" id="modeBtn">👁 Reveal answer</button>
+      <button class="btn" type="button" id="newBond">🎲 New random bond</button>
       <button class="btn" type="button" id="shareBtn">🔗 Link to this scenario</button>
-      <span class="note" id="modeNote">Explore: everything updates as you move the controls.</span>
+      <span class="note" id="modeNote"></span>
       <div class="sharebox" id="shareBox" hidden>
         <input type="text" id="shareUrl" readonly aria-label="Link to this scenario">
         <span class="note" id="shareMsg" aria-live="polite"></span>
@@ -431,13 +428,13 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
   }
   function render1() {
     const b = bond(st.cpn, st.rd, st.mat, st.m);
-    const hide = pm.on && !pm.revealed;
+    const hide = pm.hidden;
     $('rdOut').textContent = pct(st.rd); $('cpnOut').textContent = pct(st.cpn); $('matOut').textContent = st.mat;
     drawSaw($('saw1'), st.rd, b.price, { color: 'var(--s1)', hide });
     const diff = st.rd - st.cpn;
     const v = $('verdict');
     v.hidden = hide;
-    $('predictBox').hidden = !pm.on;
+    $('predictBox').hidden = !(pm.hidden || pm.fb);
     $('pTerms').textContent = `A ${st.mat}-year bond with a ${pct(st.cpn)} coupon (${st.m === 2 ? 'semiannual' : 'annual'} payments) and rᵈ = ${pct(st.rd)}.`.replace('rᵈ', 'rd');
     $('pBtns').hidden = !hide; document.querySelector('.guessrow').hidden = !hide;
     $('c1wrap').classList.toggle('masked', hide); $('mask1').hidden = !hide;
@@ -486,17 +483,20 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
       rs.map(r => { const p = price(st.cpn, r, st.mat, st.m); const d = p - PAR; return `<tr class="${r === st.rd ? 'cur' : ''}"><td>${pct(r)}</td><td>${money(p)}</td><td class="${d > 0.005 ? 'pos' : d < -0.005 ? 'neg' : ''}">${Math.abs(d) < 0.005 ? 'at par' : d > 0 ? 'premium' : 'discount'}</td></tr>`; }).join('') + '</tbody>';
   }
   // ----- predict-first mode: hide the answer until the student commits to a guess -----
-  const pm = { on: false, revealed: false };
-  const rehide = () => { if (pm.on) { pm.revealed = false; $('pFeedback').innerHTML = ''; $('pGuess').value = ''; } };
-  function setMode(on) {
-    stopPlay(); pm.on = on; pm.revealed = false; $('pFeedback').innerHTML = ''; $('pGuess').value = '';
-    $('mExplore').setAttribute('aria-pressed', !on); $('mPredict').setAttribute('aria-pressed', on);
-    $('newBond').hidden = !on; $('play').disabled = on;
-    $('modeNote').textContent = on ? 'Predict first: the price stays hidden until you choose premium, par or discount.' : 'Explore: everything updates as you move the controls.';
+  // Two states: predicting (answer hidden, the default) and revealed (everything live). One button switches.
+  const pm = { hidden: true, fb: false };
+  const rehide = () => { pm.fb = false; $('pFeedback').innerHTML = ''; }; // any change makes old feedback stale
+  function setHidden(h, keepFeedback) {
+    stopPlay(); pm.hidden = h;
+    if (!keepFeedback) { pm.fb = false; $('pFeedback').innerHTML = ''; }
+    if (h) $('pGuess').value = '';
+    $('play').disabled = h;
+    $('modeBtn').textContent = h ? '👁 Reveal answer' : '↩ Back to predict mode';
+    $('modeNote').textContent = h ? 'Predict mode: the price is hidden. Choose premium, par or discount, or click Reveal answer.'
+                                  : 'Answer shown: move any control and everything updates live. Click Back to predict mode to quiz again.';
     render1();
   }
-  $('mExplore').addEventListener('click', () => setMode(false));
-  $('mPredict').addEventListener('click', () => setMode(true));
+  $('modeBtn').addEventListener('click', () => setHidden(!pm.hidden));
   $('pBtns').addEventListener('click', e => {
     const g = e.target.closest('button[data-guess]'); if (!g) return;
     const p = price(st.cpn, st.rd, st.mat, st.m);
@@ -506,7 +506,7 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
     let html = g.dataset.guess === actual ? `<span class="fb-ok">✓ Correct.</span> It is ${NAME[actual]} because ${why}.` : `<span class="fb-no">✗ Not quite.</span> It is ${NAME[actual]} because ${why}.`;
     const est = parseFloat($('pGuess').value);
     if (isFinite(est) && est > 0) { const off = est - p; html += ` Your estimate of ${money(est)} was ${money(Math.abs(off))} (${(Math.abs(off) / p * 100).toFixed(1)}%) ${off > 0 ? 'too high' : 'too low'}.`; }
-    pm.revealed = true; $('pFeedback').innerHTML = html; render1();
+    $('pFeedback').innerHTML = html; pm.fb = true; setHidden(false, true);
   });
   $('newBond').addEventListener('click', () => {
     const pick = a => a[Math.floor(Math.random() * a.length)];
@@ -527,12 +527,12 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
     if (['1', '2', '5'].includes(q.get('short'))) s2.a = +q.get('short');
     if (['10', '20', '30'].includes(q.get('long'))) s2.b = +q.get('long');
     $('rd2').value = s2.rd; $('mA').value = s2.a; $('mB').value = s2.b;
-    return q.get('mode') === 'predict';
+    return !['reveal', 'explore'].includes(q.get('mode'));
   }
   $('shareBtn').addEventListener('click', async () => {
     const q = new URLSearchParams({ rd: st.rd, coupon: st.cpn, years: st.mat, pay: st.m === 2 ? 'semi' : 'annual' });
     if (s2.rd !== 10 || s2.a !== 1 || s2.b !== 10) { q.set('rd2', s2.rd); q.set('short', s2.a); q.set('long', s2.b); }
-    if (pm.on) q.set('mode', 'predict');
+    if (!pm.hidden) q.set('mode', 'reveal');
     const url = location.href.split(/[?#]/)[0] + '?' + q.toString();
     $('shareBox').hidden = false; const inp = $('shareUrl'); inp.value = url; inp.focus(); inp.select();
     try { await navigator.clipboard.writeText(url); $('shareMsg').textContent = 'Copied. Paste it into a slide, an announcement or Canvas.'; }
@@ -631,7 +631,7 @@ footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 
 
   const startPredict = readLink();
   sync1(); render2(); render3();
-  if (startPredict) setMode(true);
+  setHidden(startPredict);
   let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { render1(); render2(); render3(); }, 150); });
 })();
 </script>
