@@ -5,6 +5,7 @@ Interactive finance apps for course use. All apps are listed at https://cathyzyz
 **Corporate finance**
 
 - [Who Gets Paid?](https://cathyzyzy-collab.github.io/teaching/who-gets-paid/)
+- [Where the Money Goes](https://cathyzyzy-collab.github.io/teaching/money-flow/)
 - [Financial Calculator](https://cathyzyzy-collab.github.io/teaching/financial-calculator/)
 - [TVM Stories](https://cathyzyzy-collab.github.io/teaching/tvm-stories/)
 - [Yield Curve Time Machine](https://cathyzyzy-collab.github.io/teaching/yield-curve/)

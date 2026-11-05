@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Where the Money Goes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Three short sections. 1: coins drip down the income statement, each claimant paid in turn.
+   2: debt's tax shield as two stacked bars. 3: ratios as bars, before/after doubling interest. */
+:root {
+  color-scheme: light;
+  --bg: #eef1f1; --fg: #1a2328; --muted: #5b6a70; --panel: #ffffff; --line: #d5dcde;
+  --accent: #0f7c71; --cap: #f3f6f6; --neg: #a1402f; --pos: #1d6b3a;
+  --grid: #e3e8e9; --axis: #8a989d;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a;
+  --coin: #3d4b51; --staff: #aab4b8; --ghost: #dfe5e6;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-cond: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #11171a; --fg: #e2e8ea; --muted: #9aaab0; --panel: #182024; --line: #29343a;
+    --accent: #5cc9bb; --cap: #1f292e; --neg: #e3826f; --pos: #6fcf8f;
+    --grid: #253035; --axis: #6f7f85;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+    --coin: #c9d2d5; --staff: #5c6a70; --ghost: #2c383d;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #11171a; --fg: #e2e8ea; --muted: #9aaab0; --panel: #182024; --line: #29343a;
+  --accent: #5cc9bb; --cap: #1f292e; --neg: #e3826f; --pos: #6fcf8f;
+  --grid: #253035; --axis: #6f7f85;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  --coin: #c9d2d5; --staff: #5c6a70; --ghost: #2c383d;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+[hidden] { display: none !important; }
+.wrap { max-width: 1000px; margin: 0 auto; padding: 28px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); }
+header.top { display: grid; gap: 6px; margin-bottom: 22px; }
+header.top h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+header.top p { margin: 0; color: var(--muted); max-width: 76ch; }
+nav.steps { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+nav.steps a { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 999px; padding: 3px 12px; }
+nav.steps a:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+a { color: var(--accent); }
+
+section.lesson { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px 22px; margin-bottom: 22px; display: grid; gap: 14px; min-width: 0; }
+.lesson > h2 { margin: 0; font-size: 19px; font-weight: 600; display: flex; gap: 10px; align-items: baseline; }
+.lesson > h2 .num { font-family: var(--font-cond); font-size: 13px; color: var(--panel); background: var(--accent); border-radius: 999px; padding: 1px 9px; flex: none; }
+.lesson > p.lead { margin: -6px 0 0; font-size: 15.5px; max-width: 82ch; }
+@media (max-width: 520px) { section.lesson { padding: 16px 14px 18px; } header.top h1 { font-size: 23px; } }
+
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ctl { display: grid; gap: 4px; flex: 1 1 220px; min-width: 0; }
+.ctl .lab { font-size: 13px; font-weight: 600; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.ctl .lab b { color: var(--fg); font-size: 15px; font-variant-numeric: tabular-nums; }
+.ctl.big .lab b { font-size: 20px; color: var(--accent); }
+input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; margin: 0; }
+.ctlgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 26px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; flex-wrap: wrap; }
+.seg button { font: 600 13px var(--font-body); border: 0; background: transparent; color: var(--muted); padding: 4px 11px; cursor: pointer; }
+.seg button[aria-pressed=true] { background: var(--accent); color: var(--panel); }
+.seg button:disabled { opacity: .45; cursor: default; }
+.btn { font: 600 13px var(--font-body); color: var(--accent); background: transparent; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+.btn:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.btn[aria-pressed=true] { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.btn.primary { background: var(--accent); color: var(--panel); border-color: var(--accent); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn:focus-visible, .seg button:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visible, [data-tip]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* charts */
+.chart { position: relative; min-width: 0; display: grid; gap: 8px; }
+.chart svg { width: 100%; height: auto; display: block; touch-action: pan-y; overflow: visible; }
+#svg1 { max-width: 600px; }
+#svg2 { max-width: 660px; }
+.chart .nm { font: 600 12.5px var(--font-body); fill: var(--muted); }
+.chart .amt { font: 600 17px var(--font-body); fill: var(--fg); font-variant-numeric: tabular-nums; }
+.chart .amt.q { fill: var(--muted); }
+.chart .ord { font: 600 12px var(--font-cond); fill: var(--muted); letter-spacing: .02em; }
+.chart .box { fill: none; stroke: var(--line); stroke-width: 1.25; }
+.chart .box.ph { stroke-dasharray: 4 4; }
+.chart .box.re { stroke: var(--s3); }
+.chart .hit { fill: transparent; }
+.chart .arrow { stroke: var(--axis); stroke-width: 1.5; fill: none; }
+.chart .arrowhead { fill: var(--axis); }
+.chart .ghostc { fill: none; stroke: var(--ghost); stroke-width: 1.25; }
+.coin { stroke: var(--panel); stroke-width: 1; fill: var(--coin); transition: transform 600ms ease, fill 300ms ease; }
+.coin.j0 { fill: var(--staff); }
+.coin.j1 { fill: var(--s1); }
+.coin.j2 { fill: var(--s2); }
+.coin.j3 { fill: var(--s3); }
+.coin.re { fill: color-mix(in srgb, var(--s3) 28%, var(--panel)); stroke: var(--s3); stroke-width: 1.75; }
+.chart .seglab { font: 600 12.5px var(--font-body); fill: #fff; font-variant-numeric: tabular-nums; pointer-events: none; }
+.chart .seglab.dark { fill: #10181b; }
+.chart .flab { font: 600 13px var(--font-body); fill: var(--fg); }
+.chart .note2 { font: 500 12.5px var(--font-body); fill: var(--muted); font-variant-numeric: tabular-nums; }
+.chart .inv { font: 600 13px var(--font-body); fill: var(--fg); font-variant-numeric: tabular-nums; }
+.chart .bracket { fill: none; stroke: var(--axis); stroke-width: 1.25; }
+.chart .ref { stroke: var(--fg); stroke-width: 1.25; stroke-dasharray: 4 3; }
+.chart .shield { font: 600 13px var(--font-body); fill: var(--fg); }
+.chart rect.segr { transition: x 500ms ease, width 500ms ease; }
+.tip { position: absolute; pointer-events: none; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; font-size: 12.5px; line-height: 1.45; box-shadow: 0 4px 14px rgba(0,0,0,.12); max-width: 260px; font-variant-numeric: tabular-nums; z-index: 2; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--muted); }
+.legend i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.legend i.sq { border-radius: 2px; }
+.legend i.ring { background: color-mix(in srgb, var(--s3) 28%, var(--panel)); border: 2px solid var(--s3); }
+.bigline { margin: 0; font-size: 16px; min-height: 1.5em; }
+.note { margin: 0; font-size: 13px; color: var(--muted); }
+
+/* ratio bars (section 3) */
+.rbars { display: grid; gap: 16px; }
+.rrow { display: grid; gap: 5px; }
+.rrow .t { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
+.rrow .t b { font-size: 15px; }
+.rrow .t .f { font-size: 12.5px; color: var(--muted); font-weight: 500; margin-left: 6px; }
+.rrow .v { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.rrow .v .was { color: var(--muted); font-weight: 500; font-size: 15px; }
+.track { position: relative; height: 22px; background: var(--cap); border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
+.track .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 0 4px 4px 0; transition: width 600ms ease; }
+.track .was { position: absolute; top: -2px; bottom: -2px; width: 0; border-left: 2px dashed var(--fg); transition: left 600ms ease; }
+.blocks { display: flex; gap: 2px; height: 22px; }
+.blocks span { background: var(--s1); border-radius: 3px; transition: flex-basis 600ms ease; flex: 0 0 auto; }
+.blocks span.part { opacity: .45; }
+.scale { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* predict mode (same look as the other apps) */
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 10px 12px; border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 12px; }
+.toolbar .note { flex: 1 1 200px; }
+.predict { border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); background: color-mix(in srgb, var(--accent) 7%, var(--panel)); border-radius: 12px; padding: 12px 14px; display: grid; gap: 10px; }
+.predict p { margin: 0; }
+.predict .q { font-weight: 600; }
+.fb-ok { color: var(--pos); font-weight: 600; } .fb-no { color: var(--neg); font-weight: 600; }
+.chart.masked svg, .chart.masked .legend { filter: blur(8px); pointer-events: none; user-select: none; }
+.chart .maskmsg { position: absolute; inset: 38% 10% auto; text-align: center; font-weight: 600; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.blurred { filter: blur(7px); pointer-events: none; user-select: none; }
+.takeaway { margin: 0; padding: 10px 14px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); border-radius: 0 8px 8px 0; font-size: 15.5px; }
+
+/* folded details */
+details.more, details.how { border-top: 1px solid var(--line); padding-top: 10px; min-width: 0; }
+details.more > summary, details.how > summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var(--accent); width: max-content; max-width: 100%; }
+details .dbody { display: grid; gap: 12px; margin-top: 12px; min-width: 0; }
+details .dbody p { margin: 0; }
+.formula { font-family: ui-monospace, Consolas, monospace; font-size: 13px; background: var(--cap); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; line-height: 1.8; overflow-wrap: anywhere; }
+.tblwrap { overflow-x: auto; }
+table.data { border-collapse: collapse; width: 100%; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+table.data th, table.data td { padding: 4px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.data th { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+table.data th:first-child, table.data td:first-child { text-align: left; }
+table.data td.who { text-align: left; color: var(--muted); }
+table.data tr.sub td { font-weight: 600; background: color-mix(in srgb, var(--accent) 6%, transparent); }
+footer.note { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 86ch; display: grid; gap: 6px; }
+footer.note p { margin: 0; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Where the Money Goes</h1>
+    <p>Follow $1,000 of sales down the income statement. Everyone else is paid first. The owners get what is left.</p>
+    <nav class="steps" aria-label="Sections">
+      <a href="#s1">1 · Owners are paid last</a>
+      <a href="#s2">2 · Debt's tax shield</a>
+      <a href="#s3">3 · Ratios from the picture</a>
+    </nav>
+  </header>
+
+  <!-- 1 -->
+  <section class="lesson" id="s1" aria-labelledby="h1">
+    <h2 id="h1"><span class="num">1</span>Owners are paid last</h2>
+    <p class="lead">Customers pay $1,000. Each coin is $10. Watch who gets paid, in order.</p>
+    <div class="toolbar"><button class="btn primary" type="button" id="modeBtn1"></button><span class="note" id="modeNote1"></span></div>
+    <div class="predict" id="pred1">
+      <p class="q" id="q1"></p>
+      <div class="row" id="pBtns1"></div>
+      <p id="fb1" aria-live="polite"></p>
+    </div>
+    <div class="chart" id="c1wrap">
+      <div class="row">
+        <button class="btn primary" type="button" id="play1">▶ Play</button>
+        <div class="seg" role="group" aria-label="Step" id="steps1">
+          <button type="button" data-s="0">Sales</button><button type="button" data-s="1">1 Costs</button><button type="button" data-s="2">2 Interest</button><button type="button" data-s="3">3 Taxes</button><button type="button" data-s="4">4 Dividends</button>
+        </div>
+      </div>
+      <p class="bigline" id="cap1" aria-live="polite"></p>
+      <svg id="svg1" role="img" aria-label="Coins flow from sales down to operating profit, pre-tax profit, net income and retained earnings. At each step one group is paid: employees and suppliers, lenders, the government, then owners."><g id="frame1"></g><g id="coins1"></g></svg>
+      <div class="legend"><span><i style="background:var(--staff)"></i>Employees &amp; suppliers</span><span><i style="background:var(--s1)"></i>Lenders</span><span><i style="background:var(--s2)"></i>Government</span><span><i style="background:var(--s3)"></i>Owners: paid out</span><span><i class="ring"></i>Owners: kept in the firm</span></div>
+      <div class="tip" hidden></div>
+    </div>
+    <p class="takeaway" id="take1">Owners are paid last. They get only what is left after employees, suppliers, lenders and taxes.</p>
+    <details class="more"><summary>More options</summary><div class="dbody">
+      <div class="ctlgrid">
+        <div class="ctl"><div class="lab"><label for="i_cost">Operating costs</label><b id="o_cost"></b></div><input type="range" id="i_cost" min="600" max="850" step="10" value="800"></div>
+        <div class="ctl"><div class="lab"><label for="i_int">Interest</label><b id="o_int"></b></div><input type="range" id="i_int" min="10" max="100" step="5" value="50"></div>
+        <div class="ctl"><div class="lab"><label for="i_tax">Tax rate</label><b id="o_tax"></b></div><input type="range" id="i_tax" min="0" max="40" step="1" value="21"></div>
+        <div class="ctl"><div class="lab"><label for="i_pay">Paid out as dividends</label><b id="o_pay"></b></div><input type="range" id="i_pay" min="0" max="100" step="5" value="40"></div>
+      </div>
+      <p class="note">These settings also feed sections 2 and 3. <button class="btn" type="button" id="reset">Reset</button></p>
+    </div></details>
+    <details class="how" id="how1"><summary>How it's calculated</summary><div class="dbody">
+      <div class="tblwrap"><table class="data" id="tbl1"></table></div>
+      <p class="note">One coin = 1% of sales ($10). Coins are rounded, so a small amount can show as one coin more or less; the table has the exact amounts. Operating costs include wages, materials, rent and depreciation.</p>
+    </div></details>
+  </section>
+
+  <!-- 2 -->
+  <section class="lesson" id="s2" aria-labelledby="h2">
+    <h2 id="h2"><span class="num">2</span>Debt shrinks the government's slice</h2>
+    <p class="lead">Two firms with the same operating profit. Only Firm B borrows.</p>
+    <div class="toolbar"><button class="btn primary" type="button" id="modeBtn2"></button><span class="note" id="modeNote2"></span></div>
+    <div class="predict" id="pred2">
+      <p class="q" id="q2"></p>
+      <div class="row" id="pBtns2"></div>
+      <p id="fb2" aria-live="polite"></p>
+    </div>
+    <div class="ctl big" style="max-width:420px"><div class="lab"><label for="i_intB">Firm B pays interest</label><b id="o_intB"></b></div><input type="range" id="i_intB" min="0" max="150" step="5" value="50"></div>
+    <div class="chart" id="c2wrap">
+      <p class="note" id="c2title"></p>
+      <svg id="svg2" role="img" aria-label="Two bars split operating profit among government, lenders and owners. Firm B pays less tax, so lenders and owners together get more."></svg>
+      <div class="legend"><span><i class="sq" style="background:var(--s2)"></i>Government (taxes)</span><span><i class="sq" style="background:var(--s1)"></i>Lenders (interest)</span><span><i class="sq" style="background:var(--s3)"></i>Owners (net income)</span></div>
+      <div class="maskmsg" id="mask2">Make your prediction to see the chart</div>
+      <div class="tip" hidden></div>
+    </div>
+    <p class="takeaway" id="take2"></p>
+    <details class="how" id="how2"><summary>How it's calculated</summary><div class="dbody">
+      <div class="formula" id="f2"></div>
+      <div class="tblwrap"><table class="data" id="tbl2"></table></div>
+      <p class="note">This is why the cost of debt in WACC is after tax: r<sub>d</sub> × (1 − tax rate) (Module 7).</p>
+    </div></details>
+  </section>
+
+  <!-- 3 -->
+  <section class="lesson" id="s3" aria-labelledby="h3">
+    <h2 id="h3"><span class="num">3</span>Ratios from the picture</h2>
+    <p class="lead">Each ratio compares two pieces of the same income statement. Same firm as above.</p>
+    <div class="toolbar"><button class="btn primary" type="button" id="modeBtn3"></button><span class="note" id="modeNote3"></span></div>
+    <div class="predict" id="pred3">
+      <p class="q" id="q3"></p>
+      <div class="row" id="pBtns3"></div>
+      <p id="fb3" aria-live="polite"></p>
+    </div>
+    <div class="row"><button class="btn" type="button" id="dbl" aria-pressed="false">Double the interest</button><span class="note" id="dblNote"></span></div>
+    <div class="chart" id="c3wrap">
+      <div class="rbars" id="rbars"></div>
+      <div class="tip" hidden></div>
+    </div>
+    <p class="takeaway" id="take3">Operating margin is measured before interest, so borrowing does not change it. Net profit margin and times interest earned both fall.</p>
+    <details class="how" id="how3"><summary>How it's calculated</summary><div class="dbody">
+      <div class="formula">Operating margin = EBIT ÷ Sales<br>Net profit margin = Net income ÷ Sales<br>Times interest earned = EBIT ÷ Interest<br>Payout ratio = Dividends ÷ Net income · Retention ratio = 1 − payout</div>
+      <div class="tblwrap"><table class="data" id="tbl3"></table></div>
+    </div></details>
+  </section>
+
+  <footer class="note">
+    <details class="how"><summary>Sources and notes</summary><div class="dbody">
+      <p>An example firm with round numbers, not a real company. The default 21% tax rate is the U.S. federal corporate rate since 2018.</p>
+      <p>Simplified: one tax rate, no tax refund in a loss year, no preferred stock, no other income. Order of payment follows the income statement: operating costs, interest, taxes, then the owners (dividends and retained earnings).</p>
+    </div></details>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const SALES = 1000;
+  const DEF = { cost: 800, int: 50, tax: 21, pay: 40, intB: 50 };
+  const st = Object.assign({}, DEF);
+  const reduce = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- model ----------
+  function model(cost, int, taxPct, payPct) {
+    const ebit = SALES - cost, ebt = ebit - int;
+    const tax = Math.max(0, ebt) * taxPct / 100, ni = ebt - tax;
+    const div = Math.max(0, ni) * payPct / 100, re = ni - div;
+    return { sales: SALES, cost, ebit, int, ebt, tax, ni, div, re };
+  }
+  const cur = () => model(st.cost, st.int, st.tax, st.pay);
+
+  // ---------- formatting ----------
+  function money(x) {
+    const a = Math.abs(x), s = x < -0.004 ? '−' : '';
+    if (Math.abs(a - Math.round(a)) < 0.005) return s + '$' + Math.round(a).toLocaleString('en-US');
+    return s + '$' + a.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  const pic = x => Math.abs(x) >= 100 ? (x < 0 ? '−' : '') + '$' + Math.round(Math.abs(x)).toLocaleString('en-US') : money(x);
+  const pct = (x, dp = 1) => { const f = Math.pow(10, dp); return (Math.round(x * 100 * f + (x >= 0 ? 1e-7 : -1e-7)) / f).toFixed(dp).replace('-', '−') + '%'; };
+  const times = x => isFinite(x) ? x.toFixed(1) + '×' : '—';
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const NS = 'http://www.w3.org/2000/svg';
+  function el(tag, attrs, text) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  // ---------- tooltips (pointer + keyboard) ----------
+  function wireTips(wrap) {
+    const tip = wrap.querySelector('.tip');
+    function show(t, x, y) {
+      tip.innerHTML = t; tip.hidden = false;
+      const W = wrap.clientWidth, tw = tip.offsetWidth;
+      tip.style.left = Math.max(0, Math.min(W - tw, x + 12)) + 'px';
+      tip.style.top = (y + 14) + 'px';
+    }
+    wrap.addEventListener('pointermove', e => {
+      const t = e.target.closest && e.target.closest('[data-tip]');
+      if (!t || wrap.classList.contains('masked')) { tip.hidden = true; return; }
+      const r = wrap.getBoundingClientRect();
+      show(t.getAttribute('data-tip'), e.clientX - r.left, e.clientY - r.top);
+    });
+    wrap.addEventListener('pointerleave', () => { tip.hidden = true; });
+    wrap.addEventListener('focusin', e => {
+      const t = e.target.closest && e.target.closest('[data-tip]');
+      if (!t) return;
+      const r = wrap.getBoundingClientRect(), b = t.getBoundingClientRect();
+      show(t.getAttribute('data-tip'), b.left - r.left, b.bottom - r.top - 10);
+    });
+    wrap.addEventListener('focusout', () => { tip.hidden = true; });
+  }
+
+  // ---------- predict-mode plumbing ----------
+  const P = { 1: { hidden: true }, 2: { hidden: true }, 3: { hidden: true } };
+  const NOTE_H = 'Predict mode: the answer is hidden. Answer the question, or click Reveal answer.';
+  const NOTE_R = 'Answer shown: everything updates live. Click Back to predict mode to quiz again.';
+  function modeUI(n) {
+    const h = P[n].hidden;
+    $('modeBtn' + n).textContent = h ? '👁 Reveal answer' : '↩ Back to predict mode';
+    $('modeNote' + n).textContent = h ? NOTE_H : NOTE_R;
+    $('take' + n).hidden = h;
+    const how = $('how' + n);
+    if (h) how.open = false;
+    how.querySelectorAll('.tblwrap, .formula').forEach(x => x.classList.toggle('blurred', h));
+  }
+  function choices(n, opts, onPick) {
+    const box = $('pBtns' + n); box.innerHTML = '';
+    opts.forEach(o => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'btn'; b.dataset.guess = o.key; b.textContent = o.label;
+      b.addEventListener('click', () => onPick(o.key));
+      box.appendChild(b);
+    });
+  }
+  const fb = (ok, text) => (ok ? '<span class="fb-ok">✓ Correct.</span> ' : '<span class="fb-no">✗ Not quite.</span> ') + text;
+
+  // =====================================================================
+  // 1 · coins drip down the income statement
+  // =====================================================================
+  const svg1 = $('svg1'), frame1 = $('frame1'), coinsG = $('coins1'), wrap1 = $('c1wrap');
+  const coins = [];
+  let step = 0, timers = [], G = null, L = null, C = [0, 0, 0, 0, 0];
+
+  const TANK = ['Sales', 'Operating profit (EBIT)', 'Pre-tax profit (EBT)', 'Net income', 'Kept in the firm (retained earnings)'];
+  const TANK_S = ['Sales', 'Operating profit (EBIT)', 'Pre-tax profit (EBT)', 'Net income', 'Kept (retained earnings)'];
+  const JAR = ['Employees & suppliers', 'Lenders: interest', 'Government: taxes', 'Owners: dividends'];
+  const JAR_S = ['Staff & suppliers', 'Lenders: interest', 'Government: taxes', 'Owners: dividends'];
+  const ORD = ['paid 1st', 'paid 2nd', 'paid 3rd', 'paid 4th'];
+  const CAPS = [
+    m => `Customers pay ${pic(m.sales)}.`,
+    m => `1. Employees and suppliers are paid first: ${pic(m.cost)}.`,
+    m => `2. Lenders get their interest next: ${pic(m.int)}.`,
+    m => `3. The government taxes what is left: ${pic(m.tax)}.`,
+    m => `4. The owners get the rest, ${pic(m.ni)}: ${pic(m.div)} paid out, ${pic(m.re)} kept in the firm.`,
+  ];
+
+  for (let i = 0; i < 100; i++) {
+    const c = el('circle', { class: 'coin', cx: 0, cy: 0, r: 6 });
+    coinsG.appendChild(c); coins.push(c);
+  }
+
+  function plan(m) {
+    const parts = [m.cost, m.int, m.tax, m.div];
+    const out = [0]; let cum = 0;
+    parts.forEach(p => { cum += p; out.push(Math.min(100, Math.max(0, Math.round(cum / SALES * 100)))); });
+    return out; // C[k] = coins paid out before jar k; tank k holds 100 - C[k]
+  }
+  function geom() {
+    const w = svg1.clientWidth || wrap1.clientWidth || 520;
+    return w < 500
+      ? { W: 340, d: 11, r: 4.4, pad: 6, tx: 2, compact: true }
+      : { W: 520, d: 15, r: 6, pad: 6, tx: 2, compact: false };
+  }
+  function layout(hidden) {
+    const g = geom(), boxW = 10 * g.d + 2 * g.pad, jx = g.W - 2 - boxW;
+    const rows = n => Math.max(1, Math.ceil(n / 10)), bh = r => r * g.d + 2 * g.pad;
+    const LBL = 40, GAP = 30;
+    const T = [], J = [];
+    let y = 2;
+    for (let k = 0; k < 5; k++) {
+      const tn = 100 - C[k], jn = k < 4 ? C[k + 1] - C[k] : 0;
+      const tr = (hidden && k > 0) ? 2 : rows(tn);
+      const jr = k < 4 ? (hidden ? 2 : rows(jn)) : 0;
+      const boxY = y + LBL;
+      T.push({ x: g.tx, y: boxY, w: boxW, h: bh(tr), n: tn, ly: y });
+      if (k < 4) J.push({ x: jx, y: boxY, w: boxW, h: bh(jr), n: jn, ly: y });
+      y = boxY + Math.max(bh(tr), k < 4 ? bh(jr) : 0) + (k < 4 ? GAP : 4);
+    }
+    return { g, T, J, H: y, boxW, jx };
+  }
+  function slot(box, j) {
+    const g = G;
+    return { x: box.x + g.pad + g.d / 2 + g.d * (j % 10), y: box.y + g.pad + g.d / 2 + g.d * Math.floor(j / 10) };
+  }
+  function where(i, s) {
+    for (let k = 0; k < 4; k++) if (k < s && i >= C[k] && i < C[k + 1]) return { p: slot(L.J[k], i - C[k]), cls: 'coin j' + k };
+    const t = Math.min(s, 4);
+    return { p: slot(L.T[t], i - C[t]), cls: (t === 4 && !P[1].hidden) ? 'coin re' : 'coin' };
+  }
+
+  function drawFrame() {
+    const m = cur(), hid = P[1].hidden, g = G;
+    const amts = [m.sales, m.ebit, m.ebt, m.ni, m.re], jam = [m.cost, m.int, m.tax, m.div];
+    frame1.innerHTML = '';
+    svg1.setAttribute('viewBox', `0 0 ${g.W} ${Math.ceil(L.H)}`);
+    const tn = g.compact ? TANK_S : TANK, jn = g.compact ? JAR_S : JAR;
+    // arrowhead marker-free: draw small triangles
+    const tri = (x, y, dir) => {
+      const s = 5;
+      const pts = dir === 'r' ? `${x},${y} ${x - s * 1.6},${y - s} ${x - s * 1.6},${y + s}` : `${x},${y} ${x - s},${y - s * 1.6} ${x + s},${y - s * 1.6}`;
+      frame1.appendChild(el('polygon', { points: pts, class: 'arrowhead' }));
+    };
+    L.T.forEach((b, k) => {
+      const shown = !hid && step >= k;
+      const ph = hid && k > 0;
+      frame1.appendChild(el('text', { x: b.x, y: b.ly + 14, class: 'nm' }, tn[k]));
+      frame1.appendChild(el('text', { x: b.x, y: b.ly + 33, class: 'amt' + ((k === 0 || shown) ? '' : ' q') }, (k === 0 || shown) ? pic(amts[k]) : '?'));
+      frame1.appendChild(el('rect', { x: b.x, y: b.y, width: b.w, height: b.h, rx: 8, class: 'box' + (ph ? ' ph' : '') + (k === 4 && !hid ? ' re' : '') }));
+      // ghost rings show what passed through an earlier level
+      if (!hid && k < step) {
+        for (let j = 0; j < b.n; j++) { const p = slot(b, j); frame1.appendChild(el('circle', { cx: p.x, cy: p.y, r: g.r, class: 'ghostc' })); }
+      }
+      if (k === 0 || shown) {
+        const hit = el('rect', { x: b.x, y: b.y, width: b.w, height: b.h, class: 'hit', tabindex: 0,
+          'data-tip': `<b>${esc(TANK[k])}</b><br>${money(amts[k])} · ${pct(amts[k] / SALES)} of sales` });
+        frame1.appendChild(hit);
+      }
+      if (k < 4) {
+        // drip arrow down to the next level
+        const x = b.x + b.w / 2, y1 = b.y + b.h + 5, y2 = b.y + b.h + 24;
+        frame1.appendChild(el('line', { x1: x, y1, x2: x, y2: y2 - 6, class: 'arrow' }));
+        tri(x, y2, 'd');
+      }
+    });
+    L.J.forEach((b, k) => {
+      const shown = !hid && step > k;
+      frame1.appendChild(el('text', { x: b.x, y: b.ly + 14, class: 'nm' }, jn[k]));
+      frame1.appendChild(el('text', { x: b.x, y: b.ly + 33, class: 'amt' + (shown ? '' : ' q') }, shown ? pic(jam[k]) : '?'));
+      frame1.appendChild(el('rect', { x: b.x, y: b.y, width: b.w, height: b.h, rx: 8, class: 'box' + (hid ? ' ph' : '') }));
+      if (shown) frame1.appendChild(el('rect', { x: b.x, y: b.y, width: b.w, height: b.h, class: 'hit', tabindex: 0,
+        'data-tip': `<b>${esc(JAR[k])}</b><br>${money(jam[k])} · ${pct(jam[k] / SALES)} of sales` }));
+      // sideways arrow from the level to the claimant
+      const tb = L.T[k], x1 = tb.x + tb.w + 8, x2 = b.x - 8, y = b.y + 14;
+      frame1.appendChild(el('line', { x1, y1: y, x2: x2 - 7, y2: y, class: 'arrow' }));
+      tri(x2, y, 'r');
+      frame1.appendChild(el('text', { x: (x1 + x2) / 2, y: y - 7, 'text-anchor': 'middle', class: 'ord' }, ORD[k]));
+    });
+  }
+
+  function placeCoins(animateFrom) {
+    coins.forEach((c, i) => {
+      const w = where(i, step);
+      let delay = 0, dur = 0;
+      if (animateFrom != null && !reduce()) {
+        dur = 650;
+        const k = step - 1;
+        if (i >= C[k] && i < C[k + 1]) delay = Math.min((i - C[k]) * 7, 420);
+        else if (i >= C[step]) delay = 560 + Math.min((i - C[step]) * 8, 300);
+      }
+      c.style.transition = dur ? `transform ${dur}ms ease ${delay}ms, fill 300ms ease ${delay + dur - 200}ms` : 'none';
+      c.setAttribute('r', G.r);
+      c.style.transform = `translate(${w.p.x}px, ${w.p.y}px)`;
+      c.setAttribute('class', w.cls);
+    });
+  }
+
+  function setStep(s, animate) {
+    const prev = step; step = s;
+    drawFrame();
+    placeCoins(animate && s === prev + 1 ? prev : null);
+    document.querySelectorAll('#steps1 button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.s === s)));
+    $('cap1').textContent = P[1].hidden ? CAPS[0](cur()) : CAPS[s](cur());
+  }
+  function stopPlay() { timers.forEach(clearTimeout); timers = []; $('play1').textContent = '▶ Play'; }
+  function play() {
+    stopPlay();
+    if (reduce()) { setStep(4, false); return; }
+    setStep(0, false);
+    $('play1').textContent = '▶ Playing…';
+    for (let s = 1; s <= 4; s++) timers.push(setTimeout(() => setStep(s, true), 350 + (s - 1) * 1700));
+    timers.push(setTimeout(() => { $('play1').textContent = '▶ Play again'; timers = []; }, 350 + 3 * 1700 + 1300));
+  }
+
+  function render1(keepStep) {
+    const m = cur();
+    C = plan(m);
+    G = geom(); L = layout(P[1].hidden);
+    if (!keepStep) stopPlay();
+    setStep(P[1].hidden ? 0 : (keepStep ? step : 4), false);
+    // question + table
+    const ni = m.ni, r10 = x => Math.max(10, Math.round(x / 10) * 10);
+    $('q1').textContent = `Out of ${pic(SALES)} of sales, about how much is left for the owners (net income)?`;
+    const opts = [{ key: 'x4', label: 'About ' + pic(r10(ni * 4)) }, { key: 'x2', label: 'About ' + pic(r10(ni * 2)) }, { key: 'x1', label: 'About ' + pic(r10(ni)) }];
+    choices(1, opts, k => {
+      const ok = k === 'x1';
+      setHidden1(false, true);
+      $('fb1').innerHTML = fb(ok, `Only ${pic(ni)} of ${pic(SALES)} (${pct(ni / SALES, 0)}) reaches the owners. ${pic(m.cost)} goes to employees and suppliers first.`);
+      play();
+    });
+    const rows = [
+      ['Sales', m.sales, 'Customers pay', 0],
+      ['− Operating costs', m.cost, 'Employees & suppliers', 0],
+      ['= Operating profit (EBIT)', m.ebit, '', 1],
+      ['− Interest', m.int, 'Lenders', 0],
+      ['= Pre-tax profit (EBT)', m.ebt, '', 1],
+      [`− Taxes (${st.tax}%)`, m.tax, 'Government', 0],
+      ['= Net income', m.ni, 'Owners', 1],
+      [`− Dividends (${st.pay}% paid out)`, m.div, 'Owners, paid out', 0],
+      ['= Retained earnings', m.re, 'Owners, kept in the firm', 1],
+    ];
+    $('tbl1').innerHTML = '<thead><tr><th>Income statement</th><th>Amount</th><th>% of sales</th><th>Who gets it</th></tr></thead><tbody>' +
+      rows.map(r => `<tr${r[3] ? ' class="sub"' : ''}><td>${r[0]}</td><td>${money(r[1])}</td><td>${pct(r[1] / SALES)}</td><td class="who">${r[2]}</td></tr>`).join('') + '</tbody>';
+  }
+  function setHidden1(h, keep) {
+    P[1].hidden = h; modeUI(1);
+    if (!keep) $('fb1').innerHTML = '';
+    $('play1').disabled = h;
+    document.querySelectorAll('#steps1 button').forEach(b => { b.disabled = h; });
+    stopPlay();
+    G = geom(); L = layout(h);
+    setStep(h ? 0 : 4, false);
+  }
+  $('play1').addEventListener('click', play);
+  document.querySelectorAll('#steps1 button').forEach(b => b.addEventListener('click', () => {
+    stopPlay(); const s = +b.dataset.s; setStep(s, s === step + 1);
+  }));
+  $('modeBtn1').addEventListener('click', () => setHidden1(!P[1].hidden, false));
+  wireTips(wrap1);
+  let lastCompact = null;
+  new ResizeObserver(() => {
+    const c = geom().compact;
+    if (c !== lastCompact) { lastCompact = c; G = geom(); L = layout(P[1].hidden); drawFrame(); placeCoins(null); }
+  }).observe(wrap1);
+
+  // =====================================================================
+  // 2 · tax shield
+  // =====================================================================
+  const svg2 = $('svg2'), wrap2 = $('c2wrap');
+  function render2() {
+    const A = model(st.cost, 0, st.tax, st.pay), B = model(st.cost, st.intB, st.tax, st.pay);
+    const invA = A.ni, invB = B.int + B.ni, shield = A.tax - B.tax, hid = P[2].hidden;
+    $('o_intB').textContent = money(st.intB);
+    $('c2title').textContent = `Who gets the ${pic(A.ebit)} of operating profit (EBIT)?`;
+    const compact = (svg2.clientWidth || wrap2.clientWidth) < 500;
+    const W = compact ? 340 : 560, X0 = 2, BW = W - 4, sc = BW / A.ebit;
+    const H = 222;
+    svg2.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg2.innerHTML = '';
+    const bars = [
+      { y: 24, lab: 'Firm A · no debt', segs: [['Government', 's2', A.tax], ['Owners', 's3', A.ni]], inv: invA, lend: 0 },
+      { y: 148, lab: `Firm B · pays ${pic(st.intB)} interest`, segs: [['Government', 's2', B.tax], ['Lenders', 's1', B.int], ['Owners', 's3', B.ni]], inv: invB, lend: B.int },
+    ];
+    const BH = 36;
+    bars.forEach((b, bi) => {
+      svg2.appendChild(el('text', { x: W - 2, y: b.y - 7, 'text-anchor': 'end', class: 'flab' }, b.lab));
+      let x = X0;
+      b.segs.forEach(([name, col, v]) => {
+        const w = Math.max(0, v * sc);
+        if (w > 0.01) {
+          svg2.appendChild(el('rect', { x: x, y: b.y, width: Math.max(0, w - 2), height: BH, rx: 3, fill: `var(--${col})`, class: 'segr', tabindex: 0,
+            'data-tip': `<b>${esc(b.lab.split(' · ')[0])}: ${name}</b><br>${money(v)} · ${pct(v / A.ebit)} of EBIT` }));
+          let label = `${compact && name === 'Government' ? 'Gov.' : name} ${pic(v)}`;
+          if (w <= label.length * 7.4 + 10) label = pic(v);
+          if (w > label.length * 7.4 + 10) svg2.appendChild(el('text', { x: x + 7, y: b.y + BH / 2 + 4.5, class: 'seglab' + (col === 's1' ? '' : ' dark') }, label));
+        }
+        x += w;
+      });
+      // bracket under lenders + owners = investors
+      const xs = X0 + (bi === 0 ? A.tax : B.tax) * sc, xe = X0 + BW - 2, yb = b.y + BH + 6;
+      svg2.appendChild(el('path', { d: `M${xs},${yb} v6 H${xe} v-6`, class: 'bracket' }));
+      svg2.appendChild(el('text', { x: xe, y: yb + 22, 'text-anchor': 'end', class: 'inv' }, `Lenders + owners: ${pic(b.inv)}`));
+    });
+    // the shift: government's line moves left by the tax shield
+    const xa = X0 + A.tax * sc, xb = X0 + B.tax * sc;
+    svg2.appendChild(el('line', { x1: xa, y1: 24 + BH, x2: xa, y2: 148, class: 'ref' }));
+    if (shield > 0.005) {
+      svg2.appendChild(el('line', { x1: xb, y1: 106, x2: xb, y2: 148, class: 'ref' }));
+      svg2.appendChild(el('path', { d: `M${xb},106 H${xa}`, class: 'bracket', 'stroke-width': 2 }));
+    }
+    const sLab = shield > 0.005 ? `Tax shield: ${pic(shield)} less tax (${st.tax}% × ${pic(B.int)})` : 'No tax saved';
+    svg2.appendChild(el('text', { x: xa + 8 > W * 0.55 ? xb - 8 : xa + 8, y: 111, class: 'shield', 'text-anchor': xa + 8 > W * 0.55 ? 'end' : 'start' }, sLab));
+
+    // question
+    const correct = shield > 0.005 ? 'more' : 'same';
+    $('q2').textContent = `Firm B pays ${pic(Math.max(st.intB, 0))} of interest. Together, do its lenders and owners get more, less, or the same as Firm A's owners?`;
+    choices(2, [{ key: 'less', label: 'Less' }, { key: 'same', label: 'The same' }, { key: 'more', label: 'More' }], k => {
+      setHidden2(false, true);
+      $('fb2').innerHTML = fb(k === correct, shield > 0.005
+        ? `${pic(invB)} vs. ${pic(invA)}: ${pic(shield)} more, because interest is paid before tax. The government gets ${pic(shield)} less.`
+        : `With no interest or no tax, both firms pay the same tax, so investors get the same ${pic(invA)}.`);
+    });
+    $('take2').textContent = `Interest is paid before taxes, so debt moves money from the government to investors. The gain is the tax shield: tax rate × interest = ${st.tax}% × ${pic(B.int)} = ${pic(shield)}.`;
+    $('f2').innerHTML = `Tax shield = tax rate × interest = ${st.tax}% × ${money(B.int)} = ${money(shield)}<br>Taxes: Firm A ${money(A.tax)} → Firm B ${money(B.tax)}`;
+    const tr = (n, a, b) => `<tr><td>${n}</td><td>${money(a)}</td><td>${money(b)}</td></tr>`;
+    $('tbl2').innerHTML = '<thead><tr><th></th><th>Firm A</th><th>Firm B</th></tr></thead><tbody>' +
+      tr('Operating profit (EBIT)', A.ebit, B.ebit) + tr('− Interest (lenders)', 0, B.int) + tr('= Pre-tax profit', A.ebt, B.ebt) +
+      tr(`− Taxes (${st.tax}%)`, A.tax, B.tax) + tr('= Net income (owners)', A.ni, B.ni) +
+      `<tr class="sub"><td>Lenders + owners</td><td>${money(invA)}</td><td>${money(invB)}</td></tr></tbody>`;
+  }
+  function setHidden2(h, keep) {
+    P[2].hidden = h; modeUI(2);
+    if (!keep) $('fb2').innerHTML = '';
+    wrap2.classList.toggle('masked', h); $('mask2').hidden = !h;
+  }
+  $('modeBtn2').addEventListener('click', () => setHidden2(!P[2].hidden, false));
+  $('i_intB').addEventListener('input', e => { st.intB = +e.target.value; $('fb2').innerHTML = ''; render2(); });
+  wireTips(wrap2);
+  new ResizeObserver(() => render2()).observe(wrap2);
+
+  // =====================================================================
+  // 3 · ratios before / after doubling interest
+  // =====================================================================
+  let dbl = false;
+  function render3() {
+    const m = cur(), m2 = model(st.cost, st.int * 2, st.tax, st.pay), now = dbl ? m2 : m;
+    const MAXM = 0.4;
+    const rows = [
+      { name: 'Operating margin', f: 'EBIT ÷ Sales', a: m.ebit / SALES, b: m2.ebit / SALES, fmt: pct, col: 'var(--axis)', kind: 'm' },
+      { name: 'Net profit margin', f: 'Net income ÷ Sales', a: m.ni / SALES, b: m2.ni / SALES, fmt: pct, col: 'var(--s3)', kind: 'm' },
+      { name: 'Times interest earned', f: 'EBIT ÷ Interest', a: m.ebit / m.int, b: m2.ebit / m2.int, fmt: times, kind: 't' },
+    ];
+    const box = $('rbars'); box.innerHTML = '';
+    rows.forEach(r => {
+      const v = dbl ? r.b : r.a;
+      const d = document.createElement('div'); d.className = 'rrow';
+      const val = dbl ? `<span class="was">${r.fmt(r.a)} → </span>${r.fmt(r.b)}` : r.fmt(r.a);
+      d.innerHTML = `<div class="t"><span><b>${r.name}</b><span class="f">${r.f}</span></span><span class="v">${val}</span></div>`;
+      if (r.kind === 'm') {
+        const t = document.createElement('div'); t.className = 'track'; t.tabIndex = 0;
+        t.setAttribute('data-tip', `<b>${r.name}</b><br>${dbl ? 'Interest ×2: ' : ''}${r.fmt(v)} of sales`);
+        t.innerHTML = `<div class="fill" style="width:${Math.max(0, Math.min(1, v / MAXM)) * 100}%;background:${r.col}"></div>` +
+          (dbl ? `<div class="was" style="left:${Math.max(0, Math.min(1, r.a / MAXM)) * 100}%"></div>` : '');
+        d.appendChild(t);
+        const s = document.createElement('div'); s.className = 'scale';
+        s.innerHTML = '<span>0%</span><span>10%</span><span>20%</span><span>30%</span><span>40% of sales</span>';
+        d.appendChild(s);
+      } else {
+        const ebit = now.ebit, int = now.int, n = ebit / int;
+        const bl = document.createElement('div'); bl.className = 'blocks'; bl.tabIndex = 0;
+        bl.setAttribute('data-tip', `<b>Times interest earned</b><br>EBIT ${money(ebit)} covers interest of ${money(int)} ${times(n)}`);
+        if (n <= 14) {
+          const full = Math.floor(n + 1e-9), part = n - full;
+          for (let i = 0; i < full; i++) { const s = document.createElement('span'); s.style.flexBasis = `calc(${100 / n}% - 2px)`; bl.appendChild(s); }
+          if (part > 0.02) { const s = document.createElement('span'); s.className = 'part'; s.style.flexBasis = `calc(${100 * part / n}% - 2px)`; bl.appendChild(s); }
+        } else { const s = document.createElement('span'); s.style.flexBasis = '100%'; bl.appendChild(s); }
+        d.appendChild(bl);
+        const s = document.createElement('div'); s.className = 'scale';
+        s.innerHTML = `<span>Operating profit ${pic(ebit)}, cut into interest-size pieces of ${pic(int)}</span>`;
+        d.appendChild(s);
+      }
+      box.appendChild(d);
+    });
+    $('dbl').setAttribute('aria-pressed', String(dbl));
+    $('dbl').textContent = dbl ? '↩ Back to the original interest' : 'Double the interest';
+    $('dblNote').textContent = dbl ? `Interest ${pic(m.int)} → ${pic(m2.int)}` : `Interest now ${pic(m.int)}`;
+    // question (answer computed from the numbers)
+    const opF = rows[0].b < rows[0].a - 1e-9, netF = rows[1].b < rows[1].a - 1e-9;
+    const correct = opF && netF ? 'both' : opF ? 'op' : 'net';
+    $('q3').textContent = `The firm borrows more and its interest doubles, from ${pic(m.int)} to ${pic(m2.int)}. Which margin falls?`;
+    choices(3, [{ key: 'op', label: 'Operating margin' }, { key: 'net', label: 'Net profit margin' }, { key: 'both', label: 'Both' }], k => {
+      setHidden3(false, true); dbl = true; render3();
+      $('fb3').innerHTML = fb(k === correct, `Operating margin stays ${pct(rows[0].a)}: it is measured before interest. Net profit margin falls from ${pct(rows[1].a)} to ${pct(rows[1].b)}, and times interest earned from ${times(rows[2].a)} to ${times(rows[2].b)}.`);
+    });
+    const tr = (n, a, b) => `<tr><td>${n}</td><td>${a}</td><td>${b}</td></tr>`;
+    $('tbl3').innerHTML = `<thead><tr><th></th><th>Interest ${money(m.int)}</th><th>Interest ${money(m2.int)}</th></tr></thead><tbody>` +
+      tr('Operating margin', pct(rows[0].a), pct(rows[0].b)) + tr('Net profit margin', pct(rows[1].a), pct(rows[1].b)) +
+      tr('Times interest earned', times(rows[2].a), times(rows[2].b)) +
+      tr('Payout ratio', pct(m.ni > 0 ? m.div / m.ni : 0, 0), pct(m2.ni > 0 ? m2.div / m2.ni : 0, 0)) +
+      tr('Retention ratio', pct(m.ni > 0 ? m.re / m.ni : 0, 0), pct(m2.ni > 0 ? m2.re / m2.ni : 0, 0)) + '</tbody>';
+  }
+  function setHidden3(h, keep) {
+    P[3].hidden = h; modeUI(3);
+    if (!keep) $('fb3').innerHTML = '';
+    if (h) dbl = false;
+    $('dbl').disabled = h;
+    render3();
+  }
+  $('modeBtn3').addEventListener('click', () => setHidden3(!P[3].hidden, false));
+  $('dbl').addEventListener('click', () => { dbl = !dbl; render3(); });
+  wireTips($('c3wrap'));
+
+  // ---------- shared inputs ----------
+  const ins = [['i_cost', 'cost', 'o_cost', money], ['i_int', 'int', 'o_int', money], ['i_tax', 'tax', 'o_tax', v => v + '%'], ['i_pay', 'pay', 'o_pay', v => v + '%']];
+  function syncOut() { ins.forEach(([id, k, o, f]) => { $(o).textContent = f(st[k]); }); }
+  ins.forEach(([id, k]) => $(id).addEventListener('input', e => {
+    st[k] = +e.target.value; syncOut();
+    ['fb1', 'fb2', 'fb3'].forEach(f => { $(f).innerHTML = ''; });
+    render1(false); render2(); render3();
+  }));
+  $('reset').addEventListener('click', () => {
+    Object.assign(st, DEF);
+    ins.forEach(([id, k]) => { $(id).value = st[k]; }); $('i_intB').value = st.intB;
+    syncOut(); render1(false); render2(); render3();
+  });
+
+  // ---------- start ----------
+  const reveal = /[?&]mode=(reveal|explore)\b/.test(location.search);
+  syncOut();
+  P[1].hidden = P[2].hidden = P[3].hidden = !reveal;
+  render1(false); render2(); render3();
+  setHidden1(!reveal, false); setHidden2(!reveal, false); setHidden3(!reveal, false);
+  lastCompact = geom().compact;
+})();
+</script>
+</body>
+</html>
